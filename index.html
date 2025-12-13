@@ -126,6 +126,96 @@
     0%, 100% { transform: translateY(0); }
     50% { transform: translateY(-15px); }
 }
+
+/* --- PINTEREST-STYLE AUTH SCREEN --- */
+#auth-overlay {
+    background-color: #000000 !important; /* Pitch black background */
+    padding: 40px 25px;
+    display: flex !important;
+    flex-direction: column;
+    justify-content: space-between; /* Pushes footer to bottom */
+    align-items: center;
+    z-index: 9999; /* Ensure it's on top */
+}
+
+/* Center Content Area */
+.auth-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    max-width: 360px; /* Mobile width */
+}
+
+/* Logo Area */
+.auth-logo-icon {
+    font-size: 3rem;
+    color: var(--accent);
+    margin-bottom: 20px;
+}
+
+/* Headline: "Create a life you love" style */
+.auth-headline {
+    font-size: 2rem;
+    font-weight: 600;
+    color: #ffffff;
+    text-align: center;
+    line-height: 1.2;
+    margin-bottom: 10px;
+    letter-spacing: -0.5px;
+}
+
+.auth-subhead {
+    font-size: 1rem;
+    color: var(--text-secondary);
+    margin-bottom: 40px;
+    text-align: center;
+}
+
+/* Pinterest-style Google Button (Dark with outline) */
+.pinterest-google-btn {
+    width: 100%;
+    background-color: transparent;
+    border: 1px solid #3f3f3f;
+    border-radius: 50px; /* Full pill shape */
+    padding: 14px 20px;
+    color: #ffffff;
+    font-size: 1rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+    margin-bottom: 20px;
+}
+
+.pinterest-google-btn:active {
+    background-color: #1a1a1a;
+    transform: scale(0.98);
+    border-color: #666;
+}
+
+/* Bottom Legal Text */
+.auth-footer {
+    width: 100%;
+    max-width: 300px;
+    text-align: center;
+    font-size: 0.75rem;
+    color: #777;
+    line-height: 1.5;
+    padding-bottom: 10px;
+}
+
+.auth-footer a {
+    color: #fff;
+    text-decoration: none;
+    font-weight: 500;
+}
         
         .secondary-btn {
             background: transparent; color: var(--text-primary); border: 1px solid var(--border);
@@ -417,20 +507,31 @@
     </div>
 </div>
 
+    
     <div id="auth-overlay">
-        <img src="https://ik.imagekit.io/rstofficial/shuttle.png" class="hero-illustration" alt="Welcome Illustration">
+    
+    <div class="auth-content">
+            <img src="https://ik.imagekit.io/rstofficial/shuttle.png" class="hero-illustration" style="width:120px; margin-bottom:15px;" alt="Logo">
+            
+            <h1 class="auth-headline">Connect.<br>Collaborate.<br>Thrive.</h1>
+            
+            <p class="auth-subhead">Your campus network starts here.</p>
 
-        <h1 class="mono" style="font-size: 2.2rem; margin-bottom: 10px;">CAMPUS<span style="color:var(--accent)">POINT</span></h1>
-        
-        <p style="color: var(--text-secondary); margin-bottom: 30px; text-align: center; max-width: 80%;">
-            Connect with students nearby.<br>Collaborate on goals. Thrive together.
-        </p>
-        
-        <button class="auth-btn" onclick="googleLogin()" style="width: auto; padding: 15px 40px; display:flex; align-items:center; gap:10px;">
-            <i class="fa-brands fa-google" style="font-size:1.2rem;"></i> CONTINUE WITH GOOGLE
-        </button>
-        
-        <p id="auth-error" style="color: #ff5555; margin-top: 20px; font-size: 0.8rem;"></p>
+            <button class="pinterest-google-btn" onclick="googleLogin()">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" style="width:20px; height:20px;">
+                Continue with Google
+            </button>
+
+            <p id="auth-error" style="color: #ff5555; font-size: 0.8rem; height: 20px;"></p>
+        </div>
+
+        <div class="auth-footer">
+            By continuing, you agree to Campus Point's 
+            <a href="#" onclick="alert('Terms of Service: Be kind and respectful.')">Terms of Service</a> 
+            and acknowledge you've read our 
+            <a href="#" onclick="alert('Privacy Policy: We respect your data.')">Privacy Policy</a>.
+        </div>
+
     </div>
 
     <div class="app-container">
