@@ -945,27 +945,28 @@ let selectedHobbies = new Set();
                 // --- USER LOGGED IN ---
                 currentUser = user;
                 
-                // 1. Hide the entire auth screen
-                overlay.classList.add('hidden');
-                
-                // 2. Load the app data
-                checkUserProfile(user);
+                // WAIT 2 SECONDS (2000ms) before transitioning
+                setTimeout(() => {
+                    // 1. Hide the auth screen
+                    overlay.classList.add('hidden');
+                    
+                    // 2. Load the app data
+                    checkUserProfile(user);
+                }, 2000);
+
             } else {
                 // --- USER NOT LOGGED IN ---
+                // Show the login button immediately if no user is found
                 
-                // 1. Make sure auth screen is visible
                 overlay.classList.remove('hidden');
                 
-                // 2. Hide the loading spinner
                 if(loader) loader.style.display = 'none';
                 
-                // 3. Show the Google button
                 if(btn) {
                     btn.classList.remove('hidden');
                     btn.style.display = 'flex'; 
                 }
                 
-                // 4. Hide the main app nav
                 document.getElementById('main-nav').classList.add('hidden');
             }
         });
