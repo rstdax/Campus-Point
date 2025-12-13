@@ -1370,16 +1370,24 @@ followingEl.parentElement.onclick = () => openFollowList('following', currentUse
 
 // Updated toggle function to handle unique IDs based on source
 function togglePostMenu(pid, source, event) {
-    if(event) event.stopPropagation();
+    // Check if event exists before trying to use it
+    if(event && event.stopPropagation) {
+        event.stopPropagation();
+    }
     
-    // Close all other open menus
+    // 1. Close all OTHER open menus first
     document.querySelectorAll('.dropdown-menu').forEach(el => {
-        el.classList.remove('show');
+        // We only want to close menus that are NOT the one we just clicked
+        if(el.id !== `menu-${source}-${pid}`) {
+            el.classList.remove('show');
+        }
     });
 
-    // Toggle the specific menu for this context (feed/profile/other)
+    // 2. Toggle the specific menu we clicked
     const menu = document.getElementById(`menu-${source}-${pid}`);
-    if(menu) menu.classList.toggle('show');
+    if(menu) {
+        menu.classList.toggle('show');
+    }
 }
 
 // 2. Global listener to close menus when clicking anywhere else
