@@ -402,14 +402,34 @@
         </main>
 
         <main id="section-radar" class="content-area hidden">
-            <div class="radar-view">
-                <div class="mono" style="margin-bottom: 20px; color: var(--accent);">SCANNING CAMPUS...</div>
-                <div class="radar-circle">
-                    <div class="radar-sweep"></div>
+    
+            <div id="radar-permission-warning" class="hidden" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 60vh; text-align: center;">
+                <div style="width: 80px; height: 80px; background: rgba(255, 85, 85, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 20px;">
+                    <i class="fa-solid fa-location-slash" style="font-size: 2rem; color: #ff5555;"></i>
                 </div>
+                <h3 class="mono" style="margin-bottom: 10px;">LOCATION REQUIRED</h3>
+                <p style="color: var(--text-secondary); max-width: 280px; margin-bottom: 25px; line-height: 1.5;">
+                    To see students nearby, CampusPoint needs access to your GPS location.
+                </p>
+                <button class="action-btn" onclick="retryGPS()" style="width: auto; padding: 12px 30px;">
+                    <i class="fa-solid fa-location-crosshairs"></i> Allow Location
+                </button>
+                <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 15px; opacity: 0.7;">
+                    If the button doesn't work, please enable Location in your browser settings.
+                </p>
             </div>
-            <h3 class="mono" style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 15px;">NEARBY STUDENTS</h3>
-            <div id="user-list"></div>
+
+            <div id="radar-content">
+                <div class="radar-view">
+                    <div class="mono" style="margin-bottom: 20px; color: var(--accent);">SCANNING CAMPUS...</div>
+                    <div class="radar-circle">
+                        <div class="radar-sweep"></div>
+                    </div>
+                </div>
+                <h3 class="mono" style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 15px;">NEARBY STUDENTS</h3>
+                <div id="user-list"></div>
+            </div>
+
         </main>
 
         <main id="section-profile" class="content-area hidden">
@@ -639,6 +659,55 @@ let selectedHobbies = new Set();
         }
     }
 
+    // --- NEW GPS HANDLING LOGIC ---
+
+function requestGPS() {
+    // 1. Show Radar, Hide Warning initially (optimistic UI)
+    document.getElementById('radar-content').classList.remove('hidden');
+    document.getElementById('radar-permission-warning').classList.add('hidden');
+
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                // SUCCESS
+                const lat = position.coords.latitude;
+                const lng = position.coords.longitude;
+                myLocation = { lat, lng };
+
+                // Update DB with location
+                db.collection('users').doc(currentUser.uid).update({
+                    location: { lat, lng },
+                    lastActive: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                loadNearbyUsers();
+            },
+            (error) => {
+                // ERROR / DENIED
+                console.warn("GPS Denied or Error", error);
+                
+                // Hide Radar Content
+                document.getElementById('radar-content').classList.add('hidden');
+                
+                // Show Warning
+                document.getElementById('radar-permission-warning').classList.remove('hidden');
+                document.getElementById('radar-permission-warning').style.display = 'flex'; // Force flex for centering
+                
+                // Still load users, but they won't have distance data calculated correctly
+                // (Optional: You might want to not load list at all if strict)
+                loadNearbyUsers(); 
+            }, 
+            { enableHighAccuracy: true, timeout: 10000 }
+        );
+    } else {
+        alert("Geolocation is not supported by this browser.");
+    }
+}
+
+function retryGPS() {
+    requestGPS();
+}
+
     // --- AUTH & FLOW ---
     function googleLogin() {
         const provider = new firebase.auth.GoogleAuthProvider();
@@ -757,25 +826,7 @@ followingEl.parentElement.onclick = () => openFollowList('following', currentUse
         document.getElementById('main-nav').classList.remove('hidden');
 
         // GPS Logic
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    const lat = position.coords.latitude;
-                    const lng = position.coords.longitude;
-                    myLocation = { lat, lng };
-                    db.collection('users').doc(currentUser.uid).update({
-                        location: { lat, lng },
-                        lastActive: firebase.firestore.FieldValue.serverTimestamp()
-                    });
-                    loadNearbyUsers();
-                },
-                (error) => {
-                    alert("Please enable GPS for Radar.");
-                    db.collection('users').doc(currentUser.uid).update({ lastActive: firebase.firestore.FieldValue.serverTimestamp() });
-                    loadNearbyUsers(); 
-                }, { enableHighAccuracy: true }
-            );
-        }
+        requestGPS();
 
         startFeedListener();
         loadProfilePosts();
