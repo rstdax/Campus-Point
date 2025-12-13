@@ -1242,7 +1242,7 @@ function showSystemNotification(title, body, chatId) {
 function getHobbyDetails(hobby) {
     // A stable, unique color for each hobby, visible on both themes.
     const colorMap = {
-        "Coding": "#FF5555", "Music": "#FFD700", "Travel": "#4DABF8",
+        "Coding": "#FF5555", "Music": "#D35400", "Travel": "#4DABF8",
         "Gaming": "#9B59B6", "Reading": "#2ECC71", "Fitness": "#E67E22",
         "Photography": "#F39C12", "Art": "#E91E63", "Startups": "#3498DB",
         "AI": "#1ABC9C", "Foodie": "#D35400", "Movies": "#AF7AC5",
@@ -1529,7 +1529,9 @@ followingEl.parentElement.onclick = () => openFollowList('following', currentUse
     }
 
     // --- PROFILE & FOLLOW SYSTEM ---
-    function openUserProfile(uid) {
+    // --- REPLACE YOUR EXISTING openUserProfile FUNCTION WITH THIS ---
+
+function openUserProfile(uid) {
     if (uid === currentUser.uid) {
         window.location.hash = 'profile';
         return;
@@ -1547,19 +1549,16 @@ followingEl.parentElement.onclick = () => openFollowList('following', currentUse
         // Academic Info
         document.getElementById('other-academic').innerText = `${u.academic.major} • ${u.academic.year} • ${u.academic.university}`;
 
-        // --- MODIFIED SECTION: CLICKABLE STATS ---
+        // Stats
         const otherFollowerEl = document.getElementById('other-stat-followers');
         otherFollowerEl.innerText = u.followersCount || 0;
-        // Make the whole box clickable
         otherFollowerEl.parentElement.style.cursor = "pointer";
         otherFollowerEl.parentElement.onclick = () => openFollowList('followers', uid, 'other-profile');
 
         const otherFollowingEl = document.getElementById('other-stat-following');
         otherFollowingEl.innerText = u.followingCount || 0;
-        // Make the whole box clickable
         otherFollowingEl.parentElement.style.cursor = "pointer";
         otherFollowingEl.parentElement.onclick = () => openFollowList('following', uid, 'other-profile');
-        // -----------------------------------------
 
         document.getElementById('other-bio').innerText = u.bio || "No bio.";
 
@@ -1571,15 +1570,25 @@ followingEl.parentElement.onclick = () => openFollowList('following', currentUse
             document.getElementById('other-goal-container').style.display = 'none';
         }
 
-        // Interests
+        // --- FIXED INTERESTS RENDERING WITH COLORS ---
         const intContainer = document.getElementById('other-interests');
         intContainer.innerHTML = '';
         (u.interests || []).forEach(hobby => {
             const span = document.createElement('div');
             span.className = 'interest-chip selected display-only';
+            
+            // 1. Get the unique color
+            const uniqueColor = getHobbyDetails(hobby);
+            
+            // 2. Apply the styles manually
+            span.style.backgroundColor = uniqueColor;
+            span.style.borderColor = uniqueColor;
+            span.style.color = 'white';
+            
             span.innerText = hobby;
             intContainer.appendChild(span);
         });
+        // ---------------------------------------------
 
         // Follow Button Check
         db.collection('users').doc(currentUser.uid).collection('following').doc(uid).get().then(fDoc => {
