@@ -425,7 +425,6 @@
     text-align: center;
     margin-bottom: 25px;
     line-height: 1.5;
-    max-width: 300px;
 }
 
 .install-buttons {
@@ -514,16 +513,49 @@
 <body>
 
     <div id="install-modal">
-    <div class="install-icon">
-        <i class="fa-solid fa-mobile-screen-button"></i>
+        <div class="install-icon">
+            <i class="fa-solid fa-mobile-screen-button"></i>
+        </div>
+        <div class="install-title">Install Campus Point</div>
+        <p class="install-desc">Add this app to your home screen for faster access, fullscreen view, and a better experience.</p>
+        <div class="install-buttons">
+            <button class="secondary-btn" onclick="hideInstallPrompt()" style="margin-top:0; flex:1;">Not Now</button>
+            <button class="action-btn" onclick="triggerInstall()" style="margin-top:0; flex:1;">Install App</button>
+        </div>
     </div>
-    <div class="install-title">Install Campus Point</div>
-    <p class="install-desc">Add this app to your home screen for faster access, fullscreen view, and a better experience.</p>
-    <div class="install-buttons">
-        <button class="secondary-btn" onclick="hideInstallPrompt()" style="margin-top:0; flex:1;">Not Now</button>
-        <button class="action-btn" onclick="triggerInstall()" style="margin-top:0; flex:1;">Install App</button>
+
+    <div id="share-modal" class="hidden" style="position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 5001; display: flex; justify-content: center; align-items: flex-end;">
+        <div id="share-card" style="background: var(--bg-card); width: 100%; max-width: 480px; border-radius: 20px 20px 0 0; box-shadow: 0 -10px 40px rgba(0,0,0,0.6); animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); overflow: hidden;">
+
+            <div style="width: 100%; height: 180px; overflow: hidden; margin-bottom: 20px;">
+                <img 
+                    src="https://ik.imagekit.io/rstofficial/heroimagecampuspoint.gif" 
+                    style="width: 100%; height: 100%; object-fit: cover; display: block;"
+                    alt="Friends connecting and collaborating GIF"
+                >
+            </div>
+            <div style="padding: 0 20px 25px; text-align: center;">
+                <div class="install-title" style="text-align: center;">Grow Your Network!</div>
+                <p class="install-desc" style="margin-top: 8px; text-align: center;">
+                    CampusPoint thrives on connection. Share this app with your classmates—because "friendship builds comfort".
+                </p>
+                <div class="install-buttons">
+                    <button class="secondary-btn" onclick="hideShareModal()" style="margin-top:0; flex:1;">Maybe Later</button>
+                    <button class="action-btn" id="share-button-trigger" style="margin-top:0; flex:1;">
+                        <i class="fa-solid fa-share-nodes"></i> Share App
+                    </button>
+                </div>
+            </div>
+            
+        </div>
     </div>
-</div>
+
+    <div id="boost-gif-modal" class="hidden" style="position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 6000; display: flex; justify-content: center; align-items: center;">
+        <div style="text-align: center;">
+            <img src="https://cdn.pixabay.com/animation/2025/06/04/04/25/04-25-36-422_512.gif" style="width: 150px; height: 150px; border-radius: 10px; opacity: 0.9;" alt="Boost Animation">
+            <p class="mono" style="color: var(--boost-color); font-weight: 700; font-size: 1.2rem; margin-top: 10px;">BOOSTED!</p>
+        </div>
+    </div>
 
     
     <div id="auth-overlay">
@@ -833,6 +865,18 @@ function hideInstallPrompt() {
     hideInstallModal();
 }
 
+// --- ANIMATION FUNCTION ---
+function showBoostAnimation() {
+    const modal = document.getElementById('boost-gif-modal');
+    // Show the modal instantly
+    modal.classList.remove('hidden');
+
+    // Hide it after 1000 milliseconds (1 second)
+    setTimeout(() => {
+        modal.classList.add('hidden');
+    }, 1000);
+}
+
 async function triggerInstall() {
     if (deferredPrompt) {
         deferredPrompt.prompt();
@@ -847,6 +891,43 @@ window.addEventListener('appinstalled', () => {
     installModal.style.display = 'none';
     console.log('PWA was installed');
 });
+
+// --- SHARE MODAL FUNCTIONS ---
+
+// The URL you want to share
+const SHARE_URL = "https://campuspoint.netlify.app";
+
+function showShareModal() {
+    document.getElementById('share-modal').classList.remove('hidden');
+}
+
+function hideShareModal() {
+    document.getElementById('share-modal').classList.add('hidden');
+}
+
+document.getElementById('share-button-trigger').onclick = async () => {
+    hideShareModal();
+    
+    // Check if the Web Share API is available (Best for mobile)
+    if (navigator.share) {
+        try {
+            await navigator.share({
+                title: 'Campus Point',
+                text: 'Connect with students on your campus for projects, discussions, and networking!',
+                url: SHARE_URL,
+            });
+            console.log('Share successful');
+        } catch (error) {
+            // This happens if the user cancels the share, which is fine
+            console.log('Error sharing:', error);
+        }
+    } else {
+        // Fallback for browsers that don't support navigator.share (e.g., Desktop browsers)
+        // Copy link to clipboard instead.
+        navigator.clipboard.writeText(SHARE_URL);
+        alert(`Link copied to clipboard! Share it with friends:\n${SHARE_URL}`);
+    }
+};
 
     // --- CONFIG ---
     const firebaseConfig = {
@@ -1196,6 +1277,7 @@ function retryGPS() {
                 // Update local data immediately so we don't need to refresh
                 globalProfileData = { ...globalProfileData, ...userData };
                 loadAppInterface(globalProfileData);
+                showShareModal();
             })
             .catch(e => alert(e.message));
     }
@@ -1852,10 +1934,32 @@ function reportPost(pid, reportedUid, reportedName) {
 
     function toggleBoost(pid) {
         const ref = db.collection('posts').doc(pid);
-        db.runTransaction(t => t.get(ref).then(doc => {
-            const boosts = doc.data().boosts || [];
-            t.update(ref, { boosts: boosts.includes(currentUser.uid) ? firebase.firestore.FieldValue.arrayRemove(currentUser.uid) : firebase.firestore.FieldValue.arrayUnion(currentUser.uid) });
-        }));
+
+        db.runTransaction(t => {
+            return t.get(ref).then(doc => {
+                const boosts = doc.data().boosts || [];
+                const isCurrentlyBoosted = boosts.includes(currentUser.uid);
+
+                t.update(ref, { 
+                    boosts: isCurrentlyBoosted 
+                        ? firebase.firestore.FieldValue.arrayRemove(currentUser.uid) 
+                        : firebase.firestore.FieldValue.arrayUnion(currentUser.uid) 
+                });
+                
+                // Return whether the post was boosted (true) or unboosted (false)
+                return !isCurrentlyBoosted;
+            });
+        }).then(wasBoosted => {
+            // SUCCESS: If the action was a BOOST (not an unboost), show the animation
+            if (wasBoosted) {
+                showBoostAnimation();
+            }
+            // If it was an unboost, we don't need a visible animation.
+            
+        }).catch(error => {
+            console.error("Boost transaction failed: ", error);
+            // Optional: Show an error toast here
+        });
     }
 
     function toggleDiscussion(pid) {
