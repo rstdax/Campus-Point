@@ -491,6 +491,21 @@
     from { opacity: 0; transform: translateY(-5px); }
     to { opacity: 1; transform: translateY(0); }
 }
+
+/* --- LOADING SPINNER --- */
+.loader-spinner {
+    width: 30px;
+    height: 30px;
+    border: 3px solid rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    border-top-color: var(--accent);
+    animation: spin 0.8s linear infinite;
+    margin-bottom: 20px;
+}
+
+@keyframes spin { 
+    to { transform: rotate(360deg); } 
+}
     </style>
 </head>
 <body>
@@ -517,7 +532,7 @@
             
             <p class="auth-subhead">Your campus network starts here.</p>
 
-            <button class="pinterest-google-btn" onclick="googleLogin()">
+            <button class="pinterest-google-btn hidden" onclick="googleLogin()">
                 <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/1024px-Google_%22G%22_logo.svg.png" style="width:20px; height:20px;">
                 Continue with Google
             </button>
@@ -912,26 +927,40 @@ let selectedHobbies = new Set();
 
     // --- INIT ---
     function initApp() {
-        try {
-            firebase.initializeApp(firebaseConfig);
-            db = firebase.firestore();
-            auth = firebase.auth();
-            
-            auth.onAuthStateChanged(user => {
-                if (user) {
-                    currentUser = user;
-                    document.getElementById('auth-overlay').classList.add('hidden');
-                    checkUserProfile(user);
-                } else {
-                    document.getElementById('auth-overlay').classList.remove('hidden');
-                    document.getElementById('main-nav').classList.add('hidden');
+    try {
+        firebase.initializeApp(firebaseConfig);
+        db = firebase.firestore();
+        auth = firebase.auth();
+        
+        auth.onAuthStateChanged(user => {
+            const loader = document.getElementById('auth-loader');
+            const btn = document.getElementById('google-btn');
+
+            if (user) {
+                // User Found: The whole overlay will be hidden by the logic below
+                currentUser = user;
+                document.getElementById('auth-overlay').classList.add('hidden');
+                checkUserProfile(user);
+            } else {
+                // No User Found: Stop loading, Show Button
+                if(loader) loader.style.display = 'none';
+                
+                if(btn) {
+                    btn.classList.remove('hidden');
+                    // Ensure it uses flexbox (because .hidden removes it)
+                    btn.style.display = 'flex'; 
                 }
-            });
-        } catch (e) {
-            console.error(e);
-            alert("Init Error");
-        }
+
+                // Ensure main overlay is visible
+                document.getElementById('auth-overlay').classList.remove('hidden');
+                document.getElementById('main-nav').classList.add('hidden');
+            }
+        });
+    } catch (e) {
+        console.error(e);
+        alert("Init Error");
     }
+}
 
     // --- NEW GPS HANDLING LOGIC ---
 // --- ADVANCED GPS HANDLING ---
