@@ -746,31 +746,34 @@
         </main>
 
         <main id="section-other-profile" class="content-area hidden">
-            <div style="text-align: center; padding: 20px 0;">
-                <div id="other-pic" style="width: 100px; height: 100px; border-radius: 50%; border: 2px solid var(--accent); margin: 0 auto 15px auto; background-size: cover;"></div>
-                <h2 id="other-name">User</h2>
-                <p id="other-academic" class="mono" style="color: var(--accent); font-size: 0.9rem; margin-bottom: 5px;"></p>
-                <div id="other-bio" class="bio-text"></div>
-                <div id="other-goal-container" style="display:none;">
-                    <div class="future-goal-display">
-                        <i class="fa-solid fa-rocket"></i> 5y Goal: <span id="other-goal"></span>
-                    </div>
-                </div>
-                <div id="other-interests" class="interests-container"></div>
-                
-                <div class="stats-row">
-                    <div class="stat-box"><h3 id="other-stat-followers" style="color:var(--accent)">0</h3><span class="mono" style="font-size:0.7rem">FOLLOWERS</span></div>
-                    <div class="stat-box"><h3 id="other-stat-following" style="color:var(--text-primary)">0</h3><span class="mono" style="font-size:0.7rem">FOLLOWING</span></div>
-                </div>
-
-                <div class="h-flex" style="justify-content: center; gap: 10px; margin-bottom: 20px;">
-                    <button id="btn-follow" class="action-btn" style="width:auto; margin-top:0;" onclick="toggleFollow()">Follow</button>
-                    <button class="secondary-btn2" style="margin-top:0;" onclick="startChat()">Message</button>
-                </div>
-                <h3 class="mono" style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 15px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">ACTIVITY</h3>
-        <div id="other-profile-feed"></div>
+    <div style="text-align: center; padding: 20px 0;">
+        <div id="other-pic" style="width: 100px; height: 100px; border-radius: 50%; border: 2px solid var(--accent); margin: 0 auto 15px auto; background-size: cover;"></div>
+        <h2 id="other-name">User</h2>
+        <p id="other-academic" class="mono" style="color: var(--accent); font-size: 0.9rem; margin-bottom: 5px;"></p>
+        
+        <div id="other-bio" class="bio-text"></div>
+        
+        <div id="other-goal-container" style="display:none;">
+            <div class="future-goal-display">
+                <i class="fa-solid fa-rocket"></i> 5y Goal: <span id="other-goal"></span>
             </div>
-        </main>
+        </div>
+        
+        <div id="other-interests" class="interests-container"></div>
+        
+        <div class="stats-row">
+            <div class="stat-box"><h3 id="other-stat-followers" style="color:var(--accent)">0</h3><span class="mono" style="font-size:0.7rem">FOLLOWERS</span></div>
+            <div class="stat-box"><h3 id="other-stat-following" style="color:var(--text-primary)">0</h3><span class="mono" style="font-size:0.7rem">FOLLOWING</span></div>
+        </div>
+
+        <div class="h-flex" style="justify-content: center; gap: 10px; margin-bottom: 20px;">
+            <button id="btn-follow" class="action-btn" style="width:auto; margin-top:0;" onclick="toggleFollow()">Follow</button>
+            <button class="secondary-btn2" style="margin-top:0;" onclick="startChat()">Message</button>
+        </div>
+    </div> 
+    <h3 class="mono" style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 15px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">ACTIVITY</h3>
+    <div id="other-profile-feed"></div>
+</main>
 
         <main id="section-follow-list" class="content-area hidden">
             <div class="h-flex" style="margin-bottom: 20px;">
