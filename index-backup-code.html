@@ -976,6 +976,82 @@ let selectedHobbies = new Set();
     }
 }
 
+// Add this anywhere in your script
+function requestNotificationPermission() {
+    if (!("Notification" in window)) {
+        console.log("This browser does not support desktop notification");
+    } else if (Notification.permission !== "denied") {
+        Notification.requestPermission().then(permission => {
+            if (permission === "granted") {
+                console.log("Notification permission granted!");
+            }
+        });
+    }
+}
+
+// Call this immediately when the app loads or inside initApp()
+requestNotificationPermission();
+
+function startNotificationListener() {
+    // Listen to chats where I am a participant
+    db.collection('chats')
+      .where('participants', 'array-contains', currentUser.uid)
+      .onSnapshot(snapshot => {
+          // Iterate through changes only (not all docs)
+          snapshot.docChanges().forEach(change => {
+              // We only care about 'modified' events (new messages in existing chats)
+              // or 'added' events (new chat started)
+              if (change.type === "modified" || change.type === "added") {
+                  const chatData = change.doc.data();
+                  const chatId = change.doc.id;
+
+                  // 1. Check if the message exists and wasn't sent by me
+                  if (chatData.lastSenderId && chatData.lastSenderId !== currentUser.uid) {
+                      
+                      // 2. Check time difference to avoid notifying for old messages on page load
+                      // (If message is older than 10 seconds, ignore it)
+                      const now = new Date();
+                      const msgTime = chatData.lastUpdated ? chatData.lastUpdated.toDate() : new Date(0);
+                      const diff = (now - msgTime) / 1000; 
+
+                      if (diff < 10) { 
+                          // 3. Get sender details
+                          const senderId = chatData.lastSenderId;
+                          const senderDetails = chatData.participantDetails[senderId];
+                          const senderName = senderDetails ? senderDetails.name : "Someone";
+                          
+                          // 4. Trigger the notification
+                          showSystemNotification(senderName, chatData.lastMessage, chatId);
+                      }
+                  }
+              }
+          });
+      });
+}
+
+function showSystemNotification(title, body, chatId) {
+    if (Notification.permission === "granted") {
+        const options = {
+            body: body,
+            icon: 'https://ik.imagekit.io/rstofficial/CAMPUS.png',
+            badge: 'https://ik.imagekit.io/rstofficial/CAMPUS.png', // Android specific (small icon)
+            vibrate: [200, 100, 200],
+            tag: chatId,
+            data: { url: `chat.html?chatId=${chatId}` } // Pass URL to Service Worker
+        };
+
+        // ANDROID FIX: Ask Service Worker to show it
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.ready.then(function(registration) {
+                registration.showNotification(`New message from ${title}`, options);
+            });
+        } else {
+            // Fallback for Desktop if SW fails
+            new Notification(`New message from ${title}`, options);
+        }
+    }
+}
+
     // --- NEW GPS HANDLING LOGIC ---
 // --- ADVANCED GPS HANDLING ---
 
@@ -1163,6 +1239,8 @@ if(userData.futureGoal) {
 } else {
     document.getElementById('profile-goal-container').style.display = 'none';
 }
+
+startNotificationListener(); 
 
 // 3. Show Interests
 const intContainer = document.getElementById('profile-interests');

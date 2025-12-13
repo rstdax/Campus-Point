@@ -514,16 +514,34 @@
 <body>
 
     <div id="install-modal">
-    <div class="install-icon">
-        <i class="fa-solid fa-mobile-screen-button"></i>
+        <div class="install-icon">
+            <i class="fa-solid fa-mobile-screen-button"></i>
+        </div>
+        <div class="install-title">Install Campus Point</div>
+        <p class="install-desc">Add this app to your home screen for faster access, fullscreen view, and a better experience.</p>
+        <div class="install-buttons">
+            <button class="secondary-btn" onclick="hideInstallPrompt()" style="margin-top:0; flex:1;">Not Now</button>
+            <button class="action-btn" onclick="triggerInstall()" style="margin-top:0; flex:1;">Install App</button>
+        </div>
     </div>
-    <div class="install-title">Install Campus Point</div>
-    <p class="install-desc">Add this app to your home screen for faster access, fullscreen view, and a better experience.</p>
-    <div class="install-buttons">
-        <button class="secondary-btn" onclick="hideInstallPrompt()" style="margin-top:0; flex:1;">Not Now</button>
-        <button class="action-btn" onclick="triggerInstall()" style="margin-top:0; flex:1;">Install App</button>
+
+    <div id="share-modal" class="hidden" style="position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 5001; display: flex; justify-content: center; align-items: flex-end;">
+        <div style="background: var(--bg-card); padding: 30px 20px 25px; width: 100%; max-width: 480px; border-radius: 20px 20px 0 0; box-shadow: 0 -10px 40px rgba(0,0,0,0.6); animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);">
+            <div class="install-icon" style="background: rgba(48, 79, 254, 0.1);">
+                <i class="fa-solid fa-handshake"></i>
+            </div>
+            <div class="install-title" style="text-align: center;">Grow Your Network!</div>
+            <p class="install-desc">
+                CampusPoint thrives on connection. Share this app with your classmates—because **friendship builds comfort**.
+            </p>
+            <div class="install-buttons">
+                <button class="secondary-btn" onclick="hideShareModal()" style="margin-top:0; flex:1;">Maybe Later</button>
+                <button class="action-btn" id="share-button-trigger" style="margin-top:0; flex:1;">
+                    <i class="fa-solid fa-share-nodes"></i> Share App
+                </button>
+            </div>
+        </div>
     </div>
-</div>
 
     
     <div id="auth-overlay">
@@ -847,6 +865,43 @@ window.addEventListener('appinstalled', () => {
     installModal.style.display = 'none';
     console.log('PWA was installed');
 });
+
+// --- SHARE MODAL FUNCTIONS ---
+
+// The URL you want to share
+const SHARE_URL = "https://campuspoint.netlify.app";
+
+function showShareModal() {
+    document.getElementById('share-modal').classList.remove('hidden');
+}
+
+function hideShareModal() {
+    document.getElementById('share-modal').classList.add('hidden');
+}
+
+document.getElementById('share-button-trigger').onclick = async () => {
+    hideShareModal();
+    
+    // Check if the Web Share API is available (Best for mobile)
+    if (navigator.share) {
+        try {
+            await navigator.share({
+                title: 'Campus Point',
+                text: 'Connect with students on your campus for projects, discussions, and networking!',
+                url: SHARE_URL,
+            });
+            console.log('Share successful');
+        } catch (error) {
+            // This happens if the user cancels the share, which is fine
+            console.log('Error sharing:', error);
+        }
+    } else {
+        // Fallback for browsers that don't support navigator.share (e.g., Desktop browsers)
+        // Copy link to clipboard instead.
+        navigator.clipboard.writeText(SHARE_URL);
+        alert(`Link copied to clipboard! Share it with friends:\n${SHARE_URL}`);
+    }
+};
 
     // --- CONFIG ---
     const firebaseConfig = {
@@ -1196,6 +1251,7 @@ function retryGPS() {
                 // Update local data immediately so we don't need to refresh
                 globalProfileData = { ...globalProfileData, ...userData };
                 loadAppInterface(globalProfileData);
+                showShareModal();
             })
             .catch(e => alert(e.message));
     }
