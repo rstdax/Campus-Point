@@ -138,6 +138,10 @@
     z-index: 9999; /* Ensure it's on top */
 }
 
+#auth-overlay.hidden {
+    display: none !important;
+}
+
 /* Center Content Area */
 .auth-content {
     flex: 1;
@@ -936,24 +940,33 @@ let selectedHobbies = new Set();
         auth.onAuthStateChanged(user => {
             const loader = document.getElementById('auth-loader');
             const btn = document.getElementById('google-btn');
+            const overlay = document.getElementById('auth-overlay');
 
             if (user) {
-                // User Found: The whole overlay will be hidden by the logic below
+                // --- USER LOGGED IN ---
                 currentUser = user;
-                document.getElementById('auth-overlay').classList.add('hidden');
+                
+                // 1. Hide the entire auth screen
+                overlay.classList.add('hidden');
+                
+                // 2. Load the app data
                 checkUserProfile(user);
             } else {
-                // No User Found: Stop loading, Show Button
+                // --- USER NOT LOGGED IN ---
+                
+                // 1. Make sure auth screen is visible
+                overlay.classList.remove('hidden');
+                
+                // 2. Hide the loading spinner
                 if(loader) loader.style.display = 'none';
                 
+                // 3. Show the Google button
                 if(btn) {
                     btn.classList.remove('hidden');
-                    // Ensure it uses flexbox (because .hidden removes it)
                     btn.style.display = 'flex'; 
                 }
-
-                // Ensure main overlay is visible
-                document.getElementById('auth-overlay').classList.remove('hidden');
+                
+                // 4. Hide the main app nav
                 document.getElementById('main-nav').classList.add('hidden');
             }
         });
