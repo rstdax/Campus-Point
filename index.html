@@ -1225,7 +1225,7 @@ followingEl.parentElement.onclick = () => openFollowList('following', currentUse
     return new Promise((resolve, reject) => {
         // 1. REDUCE RESOLUTION
         // Previously 1200. Changing to 800-1000 is great for mobile apps.
-        const maxWidth = 800; 
+        const maxWidth = 500; 
 
         const reader = new FileReader();
         reader.readAsDataURL(file);
