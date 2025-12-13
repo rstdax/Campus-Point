@@ -543,6 +543,13 @@
         </div>
     </div>
 
+    <div id="boost-gif-modal" class="hidden" style="position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 6000; display: flex; justify-content: center; align-items: center;">
+        <div style="text-align: center;">
+            <img src="https://cdn.pixabay.com/animation/2025/06/04/04/25/04-25-36-422_512.gif" style="width: 150px; height: 150px; border-radius: 10px; opacity: 0.9;" alt="Boost Animation">
+            <p class="mono" style="color: var(--boost-color); font-weight: 700; font-size: 1.2rem; margin-top: 10px;">BOOSTED!</p>
+        </div>
+    </div>
+
     
     <div id="auth-overlay">
     
@@ -849,6 +856,18 @@ function hideInstallModal() {
 // Rename your existing function to match the call above
 function hideInstallPrompt() {
     hideInstallModal();
+}
+
+// --- ANIMATION FUNCTION ---
+function showBoostAnimation() {
+    const modal = document.getElementById('boost-gif-modal');
+    // Show the modal instantly
+    modal.classList.remove('hidden');
+
+    // Hide it after 1000 milliseconds (1 second)
+    setTimeout(() => {
+        modal.classList.add('hidden');
+    }, 1000);
 }
 
 async function triggerInstall() {
@@ -1908,10 +1927,32 @@ function reportPost(pid, reportedUid, reportedName) {
 
     function toggleBoost(pid) {
         const ref = db.collection('posts').doc(pid);
-        db.runTransaction(t => t.get(ref).then(doc => {
-            const boosts = doc.data().boosts || [];
-            t.update(ref, { boosts: boosts.includes(currentUser.uid) ? firebase.firestore.FieldValue.arrayRemove(currentUser.uid) : firebase.firestore.FieldValue.arrayUnion(currentUser.uid) });
-        }));
+
+        db.runTransaction(t => {
+            return t.get(ref).then(doc => {
+                const boosts = doc.data().boosts || [];
+                const isCurrentlyBoosted = boosts.includes(currentUser.uid);
+
+                t.update(ref, { 
+                    boosts: isCurrentlyBoosted 
+                        ? firebase.firestore.FieldValue.arrayRemove(currentUser.uid) 
+                        : firebase.firestore.FieldValue.arrayUnion(currentUser.uid) 
+                });
+                
+                // Return whether the post was boosted (true) or unboosted (false)
+                return !isCurrentlyBoosted;
+            });
+        }).then(wasBoosted => {
+            // SUCCESS: If the action was a BOOST (not an unboost), show the animation
+            if (wasBoosted) {
+                showBoostAnimation();
+            }
+            // If it was an unboost, we don't need a visible animation.
+            
+        }).catch(error => {
+            console.error("Boost transaction failed: ", error);
+            // Optional: Show an error toast here
+        });
     }
 
     function toggleDiscussion(pid) {
