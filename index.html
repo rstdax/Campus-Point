@@ -1105,25 +1105,25 @@ followingEl.parentElement.onclick = () => openFollowList('following', currentUse
 }
 
     function loadOtherUserPosts(uid) {
-        db.collection('posts')
-            .where('uid', '==', uid)
-            .orderBy('timestamp', 'desc')
-            .get() // Use get() to fetch once
-            .then(snapshot => {
-                const container = document.getElementById('other-profile-feed');
-                container.innerHTML = '';
-                
-                if (snapshot.empty) {
-                    container.innerHTML = '<p style="text-align:center; color:#666; margin-top:20px;">No posts yet.</p>';
-                    return;
-                }
+    db.collection('posts')
+        .where('uid', '==', uid)
+        .orderBy('timestamp', 'desc')
+        .get()
+        .then(snapshot => {
+            const container = document.getElementById('other-profile-feed');
+            container.innerHTML = '';
+            
+            if (snapshot.empty) {
+                container.innerHTML = '<p style="text-align:center; color:#666; margin-top:20px;">No posts yet.</p>';
+                return;
+            }
 
-                snapshot.forEach(doc => {
-                    // Re-use your existing renderPost function
-                    container.appendChild(renderPost(doc));
-                });
+            // PASS 'other' HERE
+            snapshot.forEach(doc => {
+                container.appendChild(renderPost(doc, 'other'));
             });
-    }
+        });
+}
 
     function toggleFollow() {
         if(!viewingUserId) return;
@@ -1368,16 +1368,17 @@ followingEl.parentElement.onclick = () => openFollowList('following', currentUse
 
     // --- MENU FUNCTIONS ---
 
-// 1. Toggle the visibility of the dropdown
-function togglePostMenu(pid, event) {
-    if(event) event.stopPropagation(); // Prevent triggering other clicks
+// Updated toggle function to handle unique IDs based on source
+function togglePostMenu(pid, source, event) {
+    if(event) event.stopPropagation();
     
-    // Close all other open menus first
+    // Close all other open menus
     document.querySelectorAll('.dropdown-menu').forEach(el => {
-        if(el.id !== `menu-${pid}`) el.classList.remove('show');
+        el.classList.remove('show');
     });
 
-    const menu = document.getElementById(`menu-${pid}`);
+    // Toggle the specific menu for this context (feed/profile/other)
+    const menu = document.getElementById(`menu-${source}-${pid}`);
     if(menu) menu.classList.toggle('show');
 }
 
@@ -1431,43 +1432,50 @@ function reportPost(pid, reportedUid, reportedName) {
 }
 
     function startFeedListener() {
-        db.collection('posts').orderBy('timestamp', 'desc').limit(20).onSnapshot(snap => {
-            const container = document.getElementById('feed-container'); container.innerHTML = '';
-            snap.forEach(doc => container.appendChild(renderPost(doc)));
-        });
-    }
+    db.collection('posts').orderBy('timestamp', 'desc').limit(20).onSnapshot(snap => {
+        const container = document.getElementById('feed-container'); 
+        container.innerHTML = '';
+        // PASS 'feed' HERE
+        snap.forEach(doc => container.appendChild(renderPost(doc, 'feed')));
+    });
+}
 
     function loadProfilePosts() {
-        db.collection('posts').where('uid', '==', currentUser.uid).orderBy('timestamp', 'desc').onSnapshot(snap => {
-            const container = document.getElementById('profile-feed'); container.innerHTML = '';
-            document.getElementById('stat-posts').innerText = snap.size;
-            snap.forEach(doc => container.appendChild(renderPost(doc)));
-        });
-    }
+    db.collection('posts').where('uid', '==', currentUser.uid).orderBy('timestamp', 'desc').onSnapshot(snap => {
+        const container = document.getElementById('profile-feed'); 
+        container.innerHTML = '';
+        document.getElementById('stat-posts').innerText = snap.size;
+        // PASS 'profile' HERE
+        snap.forEach(doc => container.appendChild(renderPost(doc, 'profile')));
+    });
+}
 
-    function renderPost(doc) {
+    function renderPost(doc, source = 'feed') {
     const post = doc.data();
     const pid = doc.id;
+    
+    // Format Timestamp
     const time = post.timestamp ? new Date(post.timestamp.toDate()).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '';
+    
+    // Boost Logic
     const boosts = post.boosts || [];
     const isBoosted = boosts.includes(currentUser.uid);
     
-    // Check if the current user is the owner of the post
+    // Owner Check
     const isOwner = post.uid === currentUser.uid;
 
-    // Image Logic (using the class we made in the previous step)
+    // Image HTML (Using the new CSS class for aspect ratio)
     const imageHTML = post.imageUrl ? `<img src="${post.imageUrl}" class="feed-post-img" alt="Post Image">` : '';
 
-    // --- MENU LOGIC ---
-    // 1. Delete Button: Only visible if isOwner is true
+    // --- MENU BUTTONS ---
+    // 1. Delete Button: Only if isOwner is true
     const deleteBtn = isOwner ? `
         <div class="dropdown-item danger" onclick="deletePost('${pid}')">
             <i class="fa-solid fa-trash"></i> Delete Post
         </div>
     ` : '';
 
-    // 2. Report Button: Visible to everyone (or hide from owner if you prefer)
-    // We'll hide report button if it's your own post, because you don't report yourself.
+    // 2. Report Button: Only if isOwner is false
     const reportBtn = !isOwner ? `
         <div class="dropdown-item" onclick="reportPost('${pid}', '${post.uid}', '${post.userName}')">
             <i class="fa-solid fa-flag"></i> Report
@@ -1476,6 +1484,7 @@ function reportPost(pid, reportedUid, reportedName) {
 
     const el = document.createElement('div');
     el.className = 'post-card';
+    
     el.innerHTML = `
         <div class="h-flex" style="margin-bottom:10px; align-items: flex-start;">
             <div class="avatar" style="background-image: url('${post.userPhoto}'); cursor:pointer;" onclick="openUserProfile('${post.uid}')"></div>
@@ -1486,11 +1495,12 @@ function reportPost(pid, reportedUid, reportedName) {
             </div>
 
             <div class="post-header-right">
-                <i class="fa-solid fa-ellipsis-vertical menu-trigger" onclick="togglePostMenu('${pid}', event)"></i>
-                <div id="menu-${pid}" class="dropdown-menu">
+                <i class="fa-solid fa-ellipsis-vertical menu-trigger" onclick="togglePostMenu('${pid}', '${source}', event)"></i>
+                
+                <div id="menu-${source}-${pid}" class="dropdown-menu">
                     ${deleteBtn}
                     ${reportBtn}
-                    <div class="dropdown-item" onclick="togglePostMenu('${pid}', event)">
+                    <div class="dropdown-item" onclick="togglePostMenu('${pid}', '${source}', event)">
                         <i class="fa-solid fa-xmark"></i> Close
                     </div>
                 </div>
@@ -1509,6 +1519,7 @@ function reportPost(pid, reportedUid, reportedName) {
                 <i class="fa-regular fa-comment-dots"></i><span>Discussion</span>
             </div>
         </div>
+        
         <div class="discussion-area" id="discuss-${pid}">
             <div id="comments-${pid}" style="margin-bottom:10px;"></div>
             <div class="h-flex">
