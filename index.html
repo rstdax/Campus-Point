@@ -403,21 +403,31 @@
 
         <main id="section-radar" class="content-area hidden">
     
-            <div id="radar-permission-warning" class="hidden" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 60vh; text-align: center;">
-                <div style="width: 80px; height: 80px; background: rgba(255, 85, 85, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 20px;">
-                    <i class="fa-solid fa-location-slash" style="font-size: 2rem; color: #ff5555;"></i>
-                </div>
-                <h3 class="mono" style="margin-bottom: 10px;">LOCATION REQUIRED</h3>
-                <p style="color: var(--text-secondary); max-width: 280px; margin-bottom: 25px; line-height: 1.5;">
-                    To see students nearby, CampusPoint needs access to your GPS location.
-                </p>
-                <button class="action-btn" onclick="retryGPS()" style="width: auto; padding: 12px 30px;">
-                    <i class="fa-solid fa-location-crosshairs"></i> Allow Location
-                </button>
-                <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 15px; opacity: 0.7;">
-                    If the button doesn't work, please enable Location in your browser settings.
-                </p>
-            </div>
+            <div id="radar-permission-warning" class="hidden" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 60vh; text-align: center; padding: 20px;">
+    
+    <div style="width: 80px; height: 80px; background: rgba(255, 85, 85, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 20px;">
+        <i class="fa-solid fa-location-slash" style="font-size: 2rem; color: #ff5555;"></i>
+    </div>
+
+    <h3 class="mono" style="margin-bottom: 10px;">LOCATION REQUIRED</h3>
+    
+    <div id="gps-status-indicator" class="mono" style="font-size: 0.8rem; background: #333; padding: 4px 12px; border-radius: 4px; color: #aaa; margin-bottom: 15px;">
+        STATUS: CHECKING...
+    </div>
+
+    <p id="gps-msg" style="color: var(--text-secondary); max-width: 280px; margin-bottom: 25px; line-height: 1.5;">
+        To see students nearby, CampusPoint needs access to your GPS location.
+    </p>
+
+    <button id="btn-gps-retry" class="action-btn" onclick="retryGPS()" style="width: auto; padding: 12px 30px;">
+        <i class="fa-solid fa-location-crosshairs"></i> Allow Location
+    </button>
+    
+    <p id="gps-manual-instruction" class="hidden" style="font-size: 0.8rem; color: #ff5555; margin-top: 15px; border: 1px dashed #ff5555; padding: 10px; border-radius: 8px;">
+        <i class="fa-solid fa-lock"></i> <b>Permission Blocked</b><br>
+        Tap the <b>Lock Icon 🔒</b> or <b>Settings</b> in your browser address bar and hit "Reset Permission" or "Allow".
+    </p>
+</div>
 
             <div id="radar-content">
                 <div class="radar-view">
