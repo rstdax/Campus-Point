@@ -525,29 +525,30 @@
     
     <div id="auth-overlay">
     
-    <div class="auth-content">
-            <img src="https://ik.imagekit.io/rstofficial/shuttle.png" class="hero-illustration" style="width:120px; margin-bottom:15px;" alt="Logo">
-            
-            <h1 class="auth-headline">Connect.<br>Collaborate.<br>Thrive.</h1>
-            
-            <p class="auth-subhead">Your campus network starts here.</p>
+            <div class="auth-content">
+                <img src="https://ik.imagekit.io/rstofficial/shuttle.png" class="hero-illustration" style="width:120px; margin-bottom:15px;" alt="Logo">
+                
+                <h1 class="auth-headline">Connect.<br>Collaborate.<br>Thrive.</h1>
+                <p class="auth-subhead">Your campus network starts here.</p>
 
-            <button class="pinterest-google-btn hidden" onclick="googleLogin()">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/1024px-Google_%22G%22_logo.svg.png" style="width:20px; height:20px;">
-                Continue with Google
-            </button>
+                <div id="auth-loader" class="loader-spinner"></div>
 
-            <p id="auth-error" style="color: #ff5555; font-size: 0.8rem; height: 20px;"></p>
+                <button id="google-btn" class="pinterest-google-btn hidden" onclick="googleLogin()">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/1024px-Google_%22G%22_logo.svg.png" style="width:20px; height:20px;">
+                    Continue with Google
+                </button>
+
+                <p id="auth-error" style="color: #ff5555; font-size: 0.8rem; height: 20px;"></p>
+            </div>
+
+            <div class="auth-footer">
+                By continuing, you agree to Campus Point's 
+                <a href="#" onclick="alert('Terms of Service: Be kind and respectful.')">Terms of Service</a> 
+                and acknowledge you've read our 
+                <a href="#" onclick="alert('Privacy Policy: We respect your data.')">Privacy Policy</a>.
+            </div>
+
         </div>
-
-        <div class="auth-footer">
-            By continuing, you agree to Campus Point's 
-            <a href="#" onclick="alert('Terms of Service: Be kind and respectful.')">Terms of Service</a> 
-            and acknowledge you've read our 
-            <a href="#" onclick="alert('Privacy Policy: We respect your data.')">Privacy Policy</a>.
-        </div>
-
-    </div>
 
     <div class="app-container">
         
