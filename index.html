@@ -1238,6 +1238,20 @@ function showSystemNotification(title, body, chatId) {
     }
 }
 
+// Add this helper function to your script block
+function getHobbyDetails(hobby) {
+    // A stable, unique color for each hobby, visible on both themes.
+    const colorMap = {
+        "Coding": "#FF5555", "Music": "#FFD700", "Travel": "#4DABF8",
+        "Gaming": "#9B59B6", "Reading": "#2ECC71", "Fitness": "#E67E22",
+        "Photography": "#F39C12", "Art": "#E91E63", "Startups": "#3498DB",
+        "AI": "#1ABC9C", "Foodie": "#D35400", "Movies": "#AF7AC5",
+        "Sports": "#E74C3C", "Writing": "#00BCD4", "Dance": "#34495E",
+        "Nature": "#16A085", "Fashion": "#95A5A6", "Politics": "#7F8C8D"
+    };
+    return colorMap[hobby] || 'var(--text-secondary)';
+}
+
     // --- NEW GPS HANDLING LOGIC ---
 // --- ADVANCED GPS HANDLING ---
 
@@ -1249,7 +1263,7 @@ function requestGPS() {
     
     // Display the max range in the indicator area
     statusEl.innerHTML = `<i class="fa-solid fa-satellite-dish"></i> RANGE: <span style="color:#4dabf8">${MAX_RANGE / 1000} KM</span>`;
-    
+
     // 1. Check if Permissions API is supported
     if (navigator.permissions && navigator.permissions.query) {
         navigator.permissions.query({ name: 'geolocation' }).then(function(result) {
@@ -1393,18 +1407,46 @@ function retryGPS() {
             .catch(e => alert(e.message));
     }
 
-    function renderHobbiesSelector() {
+    // Find and replace this function in index.html
+function renderHobbiesSelector() {
     const container = document.getElementById('setup-interests');
     container.innerHTML = '';
     HOBBIES_LIST.forEach(hobby => {
         const chip = document.createElement('div');
+        const uniqueColor = getHobbyDetails(hobby); // Get unique color
+        
         chip.className = 'interest-chip';
-        if(selectedHobbies.has(hobby)) chip.classList.add('selected');
+        
+        // Apply color styles
+        chip.style.borderColor = uniqueColor;
+        chip.style.color = uniqueColor;
+        
+        if(selectedHobbies.has(hobby)) {
+            chip.classList.add('selected');
+            // Overwrite styles for selected state
+            chip.style.backgroundColor = uniqueColor;
+            chip.style.color = 'white';
+            chip.style.boxShadow = `0 0 10px ${uniqueColor}50`; // Semi-transparent glow
+        }
+        
         chip.innerText = hobby;
         chip.onclick = () => {
-            if(selectedHobbies.has(hobby)) selectedHobbies.delete(hobby);
-            else selectedHobbies.add(hobby);
-            chip.classList.toggle('selected');
+            if(selectedHobbies.has(hobby)) {
+                selectedHobbies.delete(hobby);
+                chip.classList.remove('selected');
+                // Restore unselected styles
+                chip.style.backgroundColor = 'var(--bg-card)';
+                chip.style.color = uniqueColor;
+                chip.style.boxShadow = 'none';
+            }
+            else {
+                selectedHobbies.add(hobby);
+                chip.classList.add('selected');
+                // Apply selected styles
+                chip.style.backgroundColor = uniqueColor;
+                chip.style.color = 'white';
+                chip.style.boxShadow = `0 0 10px ${uniqueColor}50`;
+            }
         };
         container.appendChild(chip);
     });
@@ -1442,6 +1484,14 @@ intContainer.innerHTML = '';
 (userData.interests || []).forEach(hobby => {
     const span = document.createElement('div');
     span.className = 'interest-chip selected display-only';
+    
+    // --- START NEW COLOR CODE ---
+    const uniqueColor = getHobbyDetails(hobby);
+    span.style.backgroundColor = uniqueColor;
+    span.style.borderColor = uniqueColor;
+    span.style.color = 'white';
+    // --- END NEW COLOR CODE ---
+    
     span.innerText = hobby;
     intContainer.appendChild(span);
 });
