@@ -220,7 +220,9 @@
             padding: 10px;
             margin-top: 10px;
             color: var(--text-sec);
+            display: none; /* Hidden by default */
         }
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
@@ -239,7 +241,7 @@
     </div>
 
     <div id="messages">
-        <div class="lazy-load-spinner hidden" id="lazy-spinner">
+        <div class="lazy-load-spinner" id="lazy-spinner">
             <i class="fa-solid fa-spinner fa-spin"></i> Loading previous messages...
         </div>
         <div class="empty-state" id="empty-state">No messages yet. Say hello! 👋</div>
@@ -247,7 +249,7 @@
     
     <div id="mention-suggestions"></div>
 
-    <div id="reply-indicator" class="h-flex">
+    <div id="reply-indicator" style="display: none;">
         <div id="reply-content" style="flex-grow: 1;">
             <div id="reply-sender-preview" style="font-weight: 600; font-size: 0.8rem; color: var(--accent);"></div>
             <div id="reply-text-preview"></div>
@@ -257,7 +259,7 @@
 
     <div class="input-area">
         <div class="input-wrapper">
-            <input type="text" id="msg-input" placeholder="Message..." autocomplete="off">
+            <input type="text" id="msg-input" placeholder="Message..." autocomplete="off" onkeypress="handleKeyPress(event)">
         </div>
         <button class="send-btn" onclick="sendGroupMsg()">
             <i class="fa-solid fa-paper-plane"></i>
@@ -280,16 +282,19 @@
     
     let groupName = new URLSearchParams(window.location.search).get('group');
     let currentUser;
-    let members = {}; // Stores {uid: {name, color}}
+    let members = {}; // Stores {uid: {name, color, photo}}
     let spamTimer = null;
     let lastMessageTimestamp = 0;
     let replyToMessageId = null;
     let lastVisible = null; // For lazy loading
     let isLoading = false; 
-    let initialLoadComplete = false; // NEW FLAG: to prevent initial history load interference
+    let initialLoadComplete = false;
+    let realTimeListener = null; // Store the real-time listener reference
+    let messageIds = new Set(); // Track displayed message IDs to prevent duplicates
 
     // Hashing function to get a unique color for a user ID
     function getUniqueColor(uid) {
+        if (!uid) return '#4D6BF8';
         let hash = 0;
         for (let i = 0; i < uid.length; i++) {
             hash = uid.charCodeAt(i) + ((hash << 5) - hash);
@@ -319,7 +324,8 @@
         currentUser = user;
         
         members[currentUser.uid] = { 
-            name: currentUser.displayName, 
+            name: currentUser.displayName || "User",
+            photo: currentUser.photoURL,
             color: getUniqueColor(currentUser.uid) 
         };
         
@@ -336,25 +342,30 @@
         document.getElementById('chat-title').innerText = `#${groupName} Lounge`;
         
         const groupRef = db.collection('groups').doc(groupName);
+        
+        // Initialize group if it doesn't exist
         await groupRef.set({
             name: groupName,
             lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
         }, { merge: true });
 
-        // Set up listener for members (must be before messages to get colors)
+        // Set up listener for members
         groupRef.collection('members').onSnapshot(snap => {
             snap.forEach(doc => {
                 const memberData = doc.data();
                 const uid = doc.id;
-                members[uid] = {
-                    name: memberData.name || "Anon",
-                    photo: memberData.photo, // Fetch photo from member data
-                    color: getUniqueColor(uid)
-                };
+                if (!members[uid]) {
+                    members[uid] = {
+                        name: memberData.name || "Anon",
+                        photo: memberData.photo,
+                        color: getUniqueColor(uid)
+                    };
+                }
             });
             document.getElementById('member-count').innerText = `${snap.size} members`;
         });
 
+        // Add current user to members
         groupRef.collection('members').doc(currentUser.uid).set({
             name: currentUser.displayName,
             photo: currentUser.photoURL,
@@ -364,40 +375,45 @@
         // Start real-time listener for NEW messages only
         startNewMessageListener();
         
-        // Start history load slightly delayed (to allow listener to pull fresh messages first)
-        setTimeout(() => {
-            loadMessages(false);
-        }, 500); // Wait 0.5 seconds
-
+        // Load initial messages (history)
+        loadMessages(false);
+        
+        // Add event listeners
         document.getElementById('messages').addEventListener('scroll', checkLazyLoad);
         document.getElementById('msg-input').addEventListener('input', checkMention);
+        
+        // Auto-focus input
+        setTimeout(() => {
+            document.getElementById('msg-input').focus();
+        }, 500);
     }
 
     // --- MESSAGE LOADING (LAZY LOAD) ---
-    const PAGE_SIZE = 15; 
+    const PAGE_SIZE = 20; 
 
     async function loadMessages(isLazyLoad = false) {
         const container = document.getElementById('messages');
         const spinner = document.getElementById('lazy-spinner');
+        const emptyState = document.getElementById('empty-state');
         
-        // NEW 1: If the initial load already completed, or if there's no history to load, exit.
+        // If lazy loading and we've reached the end or already loading
+        if (isLazyLoad && (!lastVisible || isLoading)) {
+            return;
+        }
+        
+        // If initial load already completed and this is not a lazy load
         if (!isLazyLoad && initialLoadComplete) {
             return;
         }
-        if (isLazyLoad && !lastVisible) {
-            spinner.innerHTML = "End of history.";
-            spinner.style.color = 'var(--accent)';
-            spinner.classList.remove('hidden');
-            return;
+        
+        // Set loading state
+        isLoading = true;
+        
+        // Show spinner only for lazy loading
+        if (isLazyLoad) {
+            spinner.style.display = 'block';
         }
 
-        // 2. Only show the spinner for lazy load attempts
-        if (isLazyLoad) {
-            spinner.classList.remove('hidden');
-            spinner.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Loading previous messages...`;
-            spinner.style.color = 'var(--text-sec)';
-        }
-        
         let query = db.collection('groups').doc(groupName).collection('messages')
             .orderBy('timestamp', 'desc')
             .limit(PAGE_SIZE);
@@ -409,88 +425,134 @@
         try {
             const snapshot = await query.get();
             
-            // Hide spinner once the network request is complete
-            spinner.classList.add('hidden');
+            // Hide spinner
+            spinner.style.display = 'none';
             
-            if (!isLazyLoad) initialLoadComplete = true; // Mark initial load as complete
-
             if (snapshot.empty) {
                 if (isLazyLoad) {
-                    spinner.innerHTML = "End of history.";
-                    spinner.style.color = 'var(--accent)';
-                    spinner.classList.remove('hidden'); 
-                    lastVisible = null; // Mark the end of history
+                    spinner.innerHTML = "No more messages";
+                    setTimeout(() => {
+                        spinner.style.display = 'none';
+                    }, 2000);
+                    lastVisible = null;
+                } else {
+                    emptyState.style.display = 'block';
                 }
-                
-                const messageCount = container.querySelectorAll('.msg-container').length;
-                document.getElementById('empty-state').style.display = (messageCount > 0) ? 'none' : 'block';
                 return;
             }
 
-            document.getElementById('empty-state').style.display = 'none';
-
+            // Hide empty state if showing messages
+            emptyState.style.display = 'none';
+            
+            // Store the last document for next lazy load
             lastVisible = snapshot.docs[snapshot.docs.length - 1];
+            
+            // Mark initial load as complete
+            if (!isLazyLoad) {
+                initialLoadComplete = true;
+            }
+            
             const messagesFragment = document.createDocumentFragment();
-            let firstMessageElement;
             let currentScrollHeight = container.scrollHeight;
 
+            // Process messages in reverse order (oldest first)
             snapshot.docs.reverse().forEach(doc => {
+                const messageId = doc.id;
+                
+                // Skip if message already exists (prevents duplicates)
+                if (messageIds.has(messageId)) {
+                    return;
+                }
+                
+                messageIds.add(messageId);
                 const el = renderGroupMsg(doc);
-                messagesFragment.appendChild(el);
-                if (!firstMessageElement) firstMessageElement = el;
+                
+                if (isLazyLoad) {
+                    // For lazy load, insert at the top
+                    messagesFragment.appendChild(el);
+                } else {
+                    // For initial load, insert at the top (since we're loading newest first)
+                    messagesFragment.appendChild(el);
+                }
             });
             
-            // Insert messages right after the spinner element
-            container.insertBefore(messagesFragment, spinner.nextSibling); 
-
-            // Scroll Logic
             if (isLazyLoad) {
-                // Scroll calculation for lazy load
-                let newScrollHeight = container.scrollHeight;
+                // Insert at the top of the messages container
+                container.insertBefore(messagesFragment, container.firstChild.nextSibling);
+                
+                // Maintain scroll position
+                const newScrollHeight = container.scrollHeight;
                 container.scrollTop = newScrollHeight - currentScrollHeight;
             } else {
-                // Initial load: scroll instantly to the bottom
-                container.scrollTop = container.scrollHeight;
+                // For initial load, append to the container
+                container.appendChild(messagesFragment);
+                
+                // Scroll to bottom after initial load
+                setTimeout(() => {
+                    container.scrollTop = container.scrollHeight;
+                }, 100);
             }
 
         } catch (error) {
             console.error("Error loading messages: ", error);
-            spinner.innerHTML = "Error loading messages.";
+            spinner.innerHTML = "Error loading messages";
             spinner.style.color = '#ff5555';
-            spinner.classList.remove('hidden');
+            spinner.style.display = 'block';
+        } finally {
+            isLoading = false;
         }
     }
 
     function checkLazyLoad() {
         const container = document.getElementById('messages');
         
-        // Load more when scroll is near the top AND we have more history AND we are not already loading
-        if (container.scrollTop < 50 && lastVisible && !isLoading) {
-            isLoading = true; // Set flag to prevent immediate re-trigger
-            
-            loadMessages(true).finally(() => {
-                isLoading = false; // Reset flag after loading finishes
-            });
+        // Only trigger lazy load when scrolled near the top
+        if (container.scrollTop < 100 && lastVisible && !isLoading) {
+            loadMessages(true);
         }
     }
 
     function startNewMessageListener() {
+        // Remove existing listener if any
+        if (realTimeListener) {
+            realTimeListener();
+        }
+        
         const container = document.getElementById('messages');
-        // Listen for new messages added since the initial load
-        db.collection('groups').doc(groupName).collection('messages')
-            .where('timestamp', '>', firebase.firestore.Timestamp.fromMillis(Date.now() - 5000)) 
-            .orderBy('timestamp', 'asc')
+        const emptyState = document.getElementById('empty-state');
+        
+        // Listen for new messages added
+        realTimeListener = db.collection('groups').doc(groupName).collection('messages')
+            .orderBy('timestamp', 'desc')
             .limit(1)
             .onSnapshot(snap => {
                 snap.docChanges().forEach(change => {
-                    if (change.type === 'added' && change.doc.data().timestamp.toMillis() > lastMessageTimestamp) {
-                        if (!document.getElementById(`msg-${change.doc.id}`)) {
-                            container.appendChild(renderGroupMsg(change.doc));
-                            container.scrollTop = container.scrollHeight; // Scroll down for new messages
+                    if (change.type === 'added') {
+                        const messageId = change.doc.id;
+                        
+                        // Skip if message already exists
+                        if (messageIds.has(messageId)) {
+                            return;
                         }
-                        lastMessageTimestamp = change.doc.data().timestamp.toMillis();
+                        
+                        messageIds.add(messageId);
+                        const el = renderGroupMsg(change.doc);
+                        
+                        // Hide empty state
+                        emptyState.style.display = 'none';
+                        
+                        // Append new message at the bottom
+                        container.appendChild(el);
+                        
+                        // Auto-scroll to bottom if user is near the bottom
+                        const isNearBottom = container.scrollHeight - container.clientHeight - container.scrollTop < 100;
+                        if (isNearBottom) {
+                            container.scrollTop = container.scrollHeight;
+                        }
                     }
                 });
+            }, error => {
+                console.error("Real-time listener error: ", error);
             });
     }
 
@@ -522,7 +584,7 @@
         const messageData = {
             text: text,
             senderId: currentUser.uid,
-            senderName: currentUser.displayName,
+            senderName: currentUser.displayName || "User",
             timestamp: firebase.firestore.FieldValue.serverTimestamp()
         };
 
@@ -531,7 +593,7 @@
             if (replyEl) {
                 messageData.replyTo = {
                     id: replyToMessageId,
-                    text: replyEl.querySelector('.msg-bubble').textContent.trim().substring(0, 100) + '...', 
+                    text: replyEl.querySelector('.msg-bubble').textContent.trim().substring(0, 100) + (replyEl.querySelector('.msg-bubble').textContent.trim().length > 100 ? '...' : ''), 
                     senderName: replyEl.querySelector('.msg-sender')?.textContent || 'Original User'
                 };
             }
@@ -543,7 +605,18 @@
                 cancelReply();
                 lastMessageTimestamp = now; 
             })
-            .catch(e => alert("Error sending message: " + e.message));
+            .catch(e => {
+                console.error("Error sending message: ", e);
+                alert("Error sending message: " + e.message);
+            });
+    }
+
+    // Handle Enter key press
+    function handleKeyPress(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendGroupMsg();
+        }
     }
 
     // --- UI RENDERING ---
@@ -551,21 +624,31 @@
         const d = doc.data();
         const isMine = d.senderId === currentUser.uid;
         const uid = d.senderId;
-        const member = members[uid] || { name: d.senderName || "Unknown", color: getUniqueColor(uid) };
+        const member = members[uid] || { 
+            name: d.senderName || "Unknown", 
+            color: getUniqueColor(uid),
+            photo: null
+        };
         
         let time = '';
         if(d.timestamp) {
-            const date = d.timestamp.toDate();
-            const timePart = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            const datePart = date.toLocaleDateString([], { month: 'numeric', day: 'numeric' });
-            time = `${timePart} | ${datePart}`;
+            try {
+                const date = d.timestamp.toDate();
+                const timePart = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                const datePart = date.toLocaleDateString([], { month: 'numeric', day: 'numeric' });
+                time = `${timePart} | ${datePart}`;
+            } catch (e) {
+                time = 'Just now';
+            }
         }
 
         const container = document.createElement('div');
         container.className = `msg-container ${isMine ? 'mine' : 'theirs'}`;
         container.id = `msg-${doc.id}`; 
-        container.setAttribute('data-sender-name', d.senderName); 
+        container.setAttribute('data-sender-name', d.senderName || "Unknown"); 
+        container.setAttribute('data-timestamp', d.timestamp ? d.timestamp.toMillis() : Date.now());
         
+        // Add swipe for reply functionality
         container.addEventListener('touchstart', handleTouchStart);
         container.addEventListener('touchmove', handleTouchMove);
         container.addEventListener('touchend', handleTouchEnd);
@@ -582,12 +665,19 @@
 
         const textWithMentions = d.text.replace(/@(\w+)/g, (match, username) => {
             const mentionedUid = Object.keys(members).find(key => members[key].name === username);
-            const mentionColor = mentionedUid ? members[mentionedUid].color : 'var(--text)';
+            const mentionColor = mentionedUid ? members[mentionedUid].color : 'var(--accent)';
             return `<span style="color:${mentionColor}; font-weight: 600;">${match}</span>`;
         });
 
+        // Add avatar click for mention
+        const avatarClick = member.photo ? 
+            `style="background-image: url('${member.photo}')"` : 
+            `style="background-color: ${member.color}; display: flex; align-items: center; justify-content: center; color: white;"`;
+        
         container.innerHTML = `
-            <div class="msg-avatar" style="background-image: url('${member.photo || ''}')" onclick="mentionUser('${d.senderName}')"></div>
+            <div class="msg-avatar" ${avatarClick} onclick="mentionUser('${member.name.replace(/'/g, "\\'")}')">
+                ${!member.photo ? member.name.charAt(0).toUpperCase() : ''}
+            </div>
             <div class="msg-content">
                 ${!isMine ? `<div class="msg-sender" style="color: ${member.color};">${member.name}</div>` : ''}
                 ${replyHTML}
@@ -603,12 +693,14 @@
     // --- REPLY FUNCTIONALITY ---
     function startReply(messageId) {
         const messageEl = document.getElementById(messageId);
+        if (!messageEl) return;
+        
         const senderName = messageEl.getAttribute('data-sender-name');
         const messageText = messageEl.querySelector('.msg-bubble').textContent.trim();
 
         replyToMessageId = messageId;
         document.getElementById('reply-sender-preview').innerText = `Replying to ${senderName}`;
-        document.getElementById('reply-text-preview').innerText = messageText;
+        document.getElementById('reply-text-preview').innerText = messageText.substring(0, 100) + (messageText.length > 100 ? '...' : '');
         document.getElementById('reply-indicator').style.display = 'flex';
         document.getElementById('msg-input').focus();
     }
@@ -630,12 +722,12 @@
     }
     
     // --- SWIPE FOR REPLY (Touch Implementation) ---
-    let initialX;
+    let initialX = null;
     let currentElement = null;
 
     function handleTouchStart(e) {
         initialX = e.touches[0].clientX;
-        currentElement = e.currentTarget.querySelector('.msg-bubble');
+        currentElement = e.currentTarget;
     }
 
     function handleTouchMove(e) {
@@ -644,8 +736,10 @@
         const currentX = e.touches[0].clientX;
         const diffX = currentX - initialX;
         
-        if (diffX > 0) {
-            currentElement.style.transform = `translateX(${Math.min(diffX, 50)}px)`;
+        // Only allow right swipe (positive diffX)
+        if (diffX > 0 && diffX < 100) {
+            const bubble = currentElement.querySelector('.msg-bubble');
+            bubble.style.transform = `translateX(${Math.min(diffX, 50)}px)`;
         }
     }
 
@@ -657,10 +751,15 @@
         const threshold = 50;
 
         if (diffX > threshold) {
-            startReply(currentElement.closest('.msg-container').id);
+            startReply(currentElement.id);
         }
 
-        currentElement.style.transform = 'translateX(0)';
+        // Reset transform
+        const bubble = currentElement.querySelector('.msg-bubble');
+        if (bubble) {
+            bubble.style.transform = 'translateX(0)';
+        }
+        
         initialX = null;
         currentElement = null;
     }
@@ -677,24 +776,26 @@
         
         mentionSuggestions.innerHTML = '';
         
-        if (lastAtIndex > -1) {
+        if (lastAtIndex > -1 && (lastAtIndex === 0 || text[lastAtIndex - 1] === ' ')) {
             const searchTerm = preText.substring(lastAtIndex + 1);
             
-            const memberList = Object.keys(members)
+            const matches = Object.keys(members)
                 .filter(uid => uid !== currentUser.uid)
-                .map(uid => members[uid].name);
-
-            const matches = memberList.filter(name => 
-                name.toLowerCase().startsWith(searchTerm.toLowerCase())
-            );
+                .map(uid => ({
+                    name: members[uid].name,
+                    uid: uid
+                }))
+                .filter(member => 
+                    member.name.toLowerCase().includes(searchTerm.toLowerCase())
+                );
             
             if (matches.length > 0) {
                 mentionSuggestions.style.display = 'block';
-                matches.forEach(name => {
+                matches.forEach(member => {
                     const item = document.createElement('div');
                     item.className = 'mention-item';
-                    item.innerText = name;
-                    item.onclick = () => selectMention(name, lastAtIndex, cursorPosition);
+                    item.innerHTML = `<strong>${member.name}</strong>`;
+                    item.onclick = () => selectMention(member.name, lastAtIndex, cursorPosition);
                     mentionSuggestions.appendChild(item);
                 });
                 return;
@@ -708,21 +809,29 @@
         const input = document.getElementById('msg-input');
         const currentText = input.value;
         
-        const newText = currentText.substring(0, lastAtIndex) + `@${name}` + currentText.substring(cursorPosition);
+        const newText = currentText.substring(0, lastAtIndex) + `@${name} ` + currentText.substring(cursorPosition);
         
         input.value = newText;
         document.getElementById('mention-suggestions').style.display = 'none';
         
-        const newCursorPos = lastAtIndex + 1 + name.length;
+        const newCursorPos = lastAtIndex + name.length + 2;
         input.setSelectionRange(newCursorPos, newCursorPos);
         input.focus();
     }
 
     function mentionUser(name) {
         const input = document.getElementById('msg-input');
-        input.value = input.value.trim() + ` @${name}`;
+        const currentValue = input.value.trim();
+        input.value = currentValue + (currentValue ? ' ' : '') + `@${name} `;
         input.focus();
     }
+    
+    // Clean up listeners when page unloads
+    window.addEventListener('beforeunload', () => {
+        if (realTimeListener) {
+            realTimeListener();
+        }
+    });
 </script>
 </body>
 </html>
