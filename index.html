@@ -111,6 +111,21 @@
             box-shadow: 0 4px 15px var(--accent-glow); margin-top: 10px;
         }
         .action-btn:disabled { opacity: 0.7; cursor: not-allowed; }
+
+        /* --- LOGIN HERO IMAGE STYLES --- */
+.hero-illustration {
+    width: 220px; /* Adjust size as needed */
+    height: auto;
+    margin-bottom: 10px;
+    /* Adds a cool glow matching your accent color */
+    filter: drop-shadow(0 0 30px rgba(77, 107, 248, 0.3)); 
+    animation: floatHero 4s ease-in-out infinite;
+}
+
+@keyframes floatHero {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-15px); }
+}
         
         .secondary-btn {
             background: transparent; color: var(--text-primary); border: 1px solid var(--border);
@@ -403,9 +418,18 @@
 </div>
 
     <div id="auth-overlay">
+        <img src="https://ik.imagekit.io/rstofficial/shuttle.png" class="hero-illustration" alt="Welcome Illustration">
+
         <h1 class="mono" style="font-size: 2.2rem; margin-bottom: 10px;">CAMPUS<span style="color:var(--accent)">POINT</span></h1>
-        <p style="color: var(--text-secondary); margin-bottom: 30px;">Connect. Collaborate. Thrive.</p>
-        <button class="auth-btn" onclick="googleLogin()" style="width: auto; padding: 15px 40px;"><i class="fa-brands fa-google"></i> SIGN IN WITH GOOGLE</button>
+        
+        <p style="color: var(--text-secondary); margin-bottom: 30px; text-align: center; max-width: 80%;">
+            Connect with students nearby.<br>Collaborate on goals. Thrive together.
+        </p>
+        
+        <button class="auth-btn" onclick="googleLogin()" style="width: auto; padding: 15px 40px; display:flex; align-items:center; gap:10px;">
+            <i class="fa-brands fa-google" style="font-size:1.2rem;"></i> CONTINUE WITH GOOGLE
+        </button>
+        
         <p id="auth-error" style="color: #ff5555; margin-top: 20px; font-size: 0.8rem;"></p>
     </div>
 
