@@ -511,16 +511,25 @@
 
 /* --- STORY TRAY STYLES --- */
 .stories-wrapper {
+    /* 1. Layout & Scroll */
     width: 100%;
     overflow-x: auto;
     overflow-y: hidden;
     white-space: nowrap;
-    padding: 10px 0 15px 0;
-    border-bottom: 1px solid var(--border);
-     /* Optional: distinct background */
     scrollbar-width: none; /* Firefox */
+    
+    /* 2. "Post Card" Styling */
+    background: var(--bg-card);
+    border: 1px solid var(--border); /* Full border all around */
+    border-radius: 12px;             /* Rounded corners like posts */
+    margin-bottom: 15px;             /* Space between stories and first post */
+    
+    /* 3. Internal Padding */
+    padding: 15px 0;                 /* Vertical spacing inside the card */
 }
-.stories-wrapper::-webkit-scrollbar { display: none; } /* Chrome/Safari */
+
+/* Hide scrollbar for Chrome/Safari */
+.stories-wrapper::-webkit-scrollbar { display: none; }
 
 .story-tray {
     display: inline-flex;
