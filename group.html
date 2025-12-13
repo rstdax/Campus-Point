@@ -285,6 +285,7 @@
         let lastMessageTimestamp = 0;
         let replyToMessageId = null;
         let lastVisible = null; // For lazy loading
+        let isLoading = false; // <-- Add this global variable above initGroupChat()
 
         // Hashing function to get a unique color for a user ID
         function getUniqueColor(uid) {
@@ -377,13 +378,18 @@
         }
 
         // --- MESSAGE LOADING (LAZY LOAD) ---
+        // --- MESSAGE LOADING (LAZY LOAD) ---
         const PAGE_SIZE = 15; // Number of messages to load per batch
 
         async function loadMessages(isLazyLoad = false) {
             const container = document.getElementById('messages');
             const spinner = document.getElementById('lazy-spinner');
-            spinner.classList.remove('hidden');
-
+            
+            // 1. Only show the spinner if we are doing a lazy load
+            if (isLazyLoad) {
+                spinner.classList.remove('hidden');
+            }
+            
             let query = db.collection('groups').doc(groupName).collection('messages')
                 .orderBy('timestamp', 'desc')
                 .limit(PAGE_SIZE);
@@ -394,13 +400,18 @@
 
             try {
                 const snapshot = await query.get();
+                
+                // 2. Hide spinner once data is fetched (relevant for lazy load)
                 spinner.classList.add('hidden');
                 
                 if (snapshot.empty) {
                     if (isLazyLoad) {
+                        // If this was a lazy load request and it returned nothing, we hit the end.
                         spinner.innerHTML = "End of history.";
                         spinner.style.color = 'var(--accent)';
+                        spinner.classList.remove('hidden'); // Keep "End of history" visible
                     }
+                    // If it's an initial load (and empty), show the empty state message.
                     document.getElementById('empty-state').style.display = container.children.length > 2 ? 'none' : 'block';
                     return;
                 }
@@ -418,10 +429,12 @@
                 });
                 
                 // Prepend to container for lazy load
-                container.prepend(messagesFragment);
+                // Note: The spinner element is children[0], so we insert after it.
+                container.insertBefore(messagesFragment, container.children[1]); 
 
-                // Scroll to the first new message for lazy load only
+                // Scroll logic
                 if (isLazyLoad && firstMessageElement) {
+                    // Lazy load: Scroll to maintain position
                     container.scrollTop = firstMessageElement.offsetTop - 50;
                 } else if (!isLazyLoad) {
                     // Initial load: scroll to bottom
@@ -431,14 +444,18 @@
             } catch (error) {
                 console.error("Error loading messages: ", error);
                 spinner.innerHTML = "Error loading messages.";
+                spinner.classList.remove('hidden');
             }
         }
 
         function checkLazyLoad() {
             const container = document.getElementById('messages');
-            // Load more when scroll is near the top
-            if (container.scrollTop < 50 && lastVisible) {
-                loadMessages(true);
+            // Load more when scroll is near the top AND we are not already loading
+            if (container.scrollTop < 50 && lastVisible && !isLoading) {
+                isLoading = true; // Set flag to prevent immediate re-trigger
+                loadMessages(true).finally(() => {
+                    isLoading = false; // Reset flag after loading finishes (success or fail)
+                });
             }
         }
 

@@ -705,6 +705,16 @@
 
 </main>
 
+
+<main id="section-groups" class="content-area hidden">
+            <h2 class="mono" style="margin-bottom: 20px;">GROUP CHATS</h2>
+            <p style="color:var(--text-secondary); font-size:0.9rem; margin-bottom:30px;">Find people passionate about the same things.</p>
+            
+            <div id="group-list-container">
+                <p style="text-align:center; color:var(--text-secondary)">Loading available groups...</p>
+            </div>
+        </main>
+
         <main id="section-profile" class="content-area hidden">
             <div style="text-align: center; padding: 20px 0;">
                 <img id="profile-pic" src="" style="width: 100px; height: 100px; border-radius: 50%; border: 2px solid var(--accent); margin-bottom: 15px;">
@@ -774,6 +784,7 @@
         <nav class="bottom-nav hidden" id="main-nav">
             <div class="nav-item active" onclick="switchTab('feed', this)"><i class="fa-solid fa-house"></i></div>
             <div class="nav-item" onclick="switchTab('radar', this)"><i class="fa-regular fa-compass"></i></div>
+            <div class="nav-item" onclick="switchTab('groups', this)"><i class="fa-solid fa-users"></i></div>
             <div class="nav-item" onclick="switchTab('chat-list', this)"><i class="fa-regular fa-comments"></i></div>
             <div class="nav-item" onclick="switchTab('profile', this)"><i class="fa-regular fa-user"></i></div>
         </nav>
@@ -876,6 +887,71 @@ function showBoostAnimation() {
         modal.classList.add('hidden');
     }, 1000);
 }
+
+// --- GROUP CHAT LOBBY LOGIC (index.html) ---
+
+function loadGroupLobby() {
+    const container = document.getElementById('group-list-container');
+    container.innerHTML = '';
+    
+    // Use the HOBBIES_LIST array to create rooms
+    HOBBIES_LIST.forEach(hobby => {
+        const iconClass = getHobbyIcon(hobby); 
+        
+        container.innerHTML += `
+            <div class="chat-item" onclick="checkGroupJoin('${hobby}')" style="cursor:pointer;">
+                <div class="avatar" style="background:var(--bg-input); font-size:1.3rem; color:var(--accent); display:flex; align-items:center; justify-content:center;">
+                    <i class="fa-solid ${iconClass}"></i>
+                </div>
+                <div>
+                    <div style="font-weight:600;">#${hobby} Lounge</div>
+                    <div style="font-size:0.8rem; color:var(--text-secondary);">Live group chat for ${hobby} enthusiasts.</div>
+                </div>
+                <button class="secondary-btn" style="margin-top:0; margin-left:auto; padding: 6px 12px; font-weight:600; border-color:var(--accent); color:var(--accent);">Join</button>
+            </div>
+        `;
+    });
+}
+
+function getHobbyIcon(hobby) {
+    // Simple icon mapping for visual appeal
+    const map = {
+        "Coding": "fa-code", "Music": "fa-music", "Travel": "fa-plane-departure", 
+        "Gaming": "fa-gamepad", "Reading": "fa-book", "Fitness": "fa-dumbbell",
+        "Photography": "fa-camera-retro", "Art": "fa-palette", "Startups": "fa-lightbulb",
+        "AI": "fa-robot", "Foodie": "fa-utensils", "Movies": "fa-clapperboard",
+        "Sports": "fa-basketball", "Writing": "fa-pen-nib", "Dance": "fa-person-dancing",
+        "Nature": "fa-leaf", "Fashion": "fa-shirt", "Politics": "fa-gavel"
+    };
+    return map[hobby] || "fa-hashtag";
+}
+
+function checkGroupJoin(groupName) {
+    const confirmation = confirm(`Joining #${groupName} Lounge:
+
+Agreement:
+1. Be respectful to all members.
+2. No spamming, excessive links, or abuse.
+3. Excessive violations WILL result in a permanent ban.
+
+Do you agree to these terms and wish to enter?`);
+
+    if (confirmation) {
+        // Redirect to the new group chat file
+        window.location.href = `group.html?group=${groupName}`;
+    }
+}
+
+// Call the loadGroupLobby in the loadAppInterface
+// Find loadAppInterface and add:
+/*
+function loadAppInterface(userData) {
+    // ... existing code ...
+    startNotificationListener(); 
+    loadGroupLobby(); // <--- ADD THIS
+    // ... existing code ...
+}
+*/
 
 async function triggerInstall() {
     if (deferredPrompt) {
@@ -1323,6 +1399,7 @@ if(userData.futureGoal) {
 }
 
 startNotificationListener(); 
+loadGroupLobby();
 
 // 3. Show Interests
 const intContainer = document.getElementById('profile-interests');
