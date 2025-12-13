@@ -130,6 +130,31 @@
             border-radius: 12px; padding: 18px; margin-bottom: 15px;
         }
         
+        /* --- FEED IMAGE STYLES --- */
+.feed-post-img {
+    width: 100%;
+    display: block;
+    margin-top: 10px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    
+    /* 1. KEY: Crop content that exceeds dimensions without stretching */
+    object-fit: cover; 
+    
+    /* 2. Default to natural height so square/standard images look normal */
+    height: auto;
+
+    /* 3. "Max 4:3 ratio in portrait" 
+       On a mobile screen (~400px width), a 550px height acts as a 3:4 limit. 
+       Anything taller gets cropped. */
+    max-height: 550px; 
+
+    /* 4. "Lowest size 16:9 ratio"
+       On a mobile screen, 225px is roughly the 16:9 height.
+       This forces thin panoramas to be taller and cropped to fill the space. */
+    min-height: 225px; 
+}
+
         .chat-item { display: flex; align-items: center; cursor: pointer; }
         .chat-item:hover { border-color: var(--accent); }
 
@@ -1302,8 +1327,8 @@ followingEl.parentElement.onclick = () => openFollowList('following', currentUse
         const boosts = post.boosts || [];
         const isBoosted = boosts.includes(currentUser.uid);
         
-        // Show Image if exists
-        const imageHTML = post.imageUrl ? `<img src="${post.imageUrl}" style="width:100%; border-radius:8px; margin-top:10px; border:1px solid var(--border);">` : '';
+        // Uses the new .feed-post-img class for smart cropping
+        const imageHTML = post.imageUrl ? `<img src="${post.imageUrl}" class="feed-post-img" alt="Post Image">` : '';
 
         const el = document.createElement('div');
         el.className = 'post-card';
