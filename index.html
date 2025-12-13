@@ -1222,41 +1222,50 @@ followingEl.parentElement.onclick = () => openFollowList('following', currentUse
 
     // New Compression Function
     function compressImage(file) {
-        return new Promise((resolve, reject) => {
-            const maxWidth = 1200; // Social media standard width
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = function(event) {
-                const img = new Image();
-                img.src = event.target.result;
-                img.onload = function() {
-                    const elem = document.createElement('canvas');
-                    let width = img.width;
-                    let height = img.height;
+    return new Promise((resolve, reject) => {
+        // 1. REDUCE RESOLUTION
+        // Previously 1200. Changing to 800-1000 is great for mobile apps.
+        const maxWidth = 800; 
 
-                    // Resize logic
-                    if (width > maxWidth) {
-                        height *= maxWidth / width;
-                        width = maxWidth;
-                    }
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = function(event) {
+            const img = new Image();
+            img.src = event.target.result;
+            img.onload = function() {
+                const elem = document.createElement('canvas');
+                let width = img.width;
+                let height = img.height;
 
-                    elem.width = width;
-                    elem.height = height;
-                    const ctx = elem.getContext('2d');
-                    ctx.drawImage(img, 0, 0, width, height);
-                    
-                    // Compress to JPEG at 80% quality
-                    ctx.canvas.toBlob((blob) => {
-                        const compressedFile = new File([blob], file.name, {
-                            type: 'image/jpeg',
-                            lastModified: Date.now()
-                        });
-                        resolve(compressedFile);
-                    }, 'image/jpeg', 0.8);
+                // Resize logic
+                if (width > maxWidth) {
+                    height *= maxWidth / width;
+                    width = maxWidth;
                 }
+
+                elem.width = width;
+                elem.height = height;
+                const ctx = elem.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                
+                // 2. REDUCE JPEG QUALITY
+                // The last number (0.5) is the quality (0 to 1).
+                // 0.8 = High Quality, Large Size
+                // 0.5 = Medium Quality, Small Size (Recommended for fast feeds)
+                // 0.3 = Low Quality, Very Small Size
+                ctx.canvas.toBlob((blob) => {
+                    const compressedFile = new File([blob], file.name, {
+                        type: 'image/jpeg',
+                        lastModified: Date.now()
+                    });
+                    resolve(compressedFile);
+                }, 'image/jpeg', 0.5); 
             }
-        });
-    }
+            img.onerror = (err) => reject(err);
+        }
+        reader.onerror = (err) => reject(err);
+    });
+}
 
     async function uploadToImageKit(file) {
         try {
