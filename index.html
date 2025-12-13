@@ -1031,23 +1031,24 @@ function startNotificationListener() {
 
 function showSystemNotification(title, body, chatId) {
     if (Notification.permission === "granted") {
-        // Create the notification
         const options = {
             body: body,
-            icon: 'https://ik.imagekit.io/rstofficial/CAMPUS.png', // Your app icon
-            badge: 'https://ik.imagekit.io/rstofficial/CAMPUS.png', // Android small icon
+            icon: 'https://ik.imagekit.io/rstofficial/CAMPUS.png',
+            badge: 'https://ik.imagekit.io/rstofficial/CAMPUS.png', // Android specific (small icon)
             vibrate: [200, 100, 200],
-            tag: chatId // Prevents spamming the same notification
+            tag: chatId,
+            data: { url: `chat.html?chatId=${chatId}` } // Pass URL to Service Worker
         };
 
-        const notification = new Notification(`New message from ${title}`, options);
-
-        // Handle click
-        notification.onclick = function(event) {
-            event.preventDefault(); // Prevent the browser from focusing the tab immediately
-            window.location.href = `chat.html?chatId=${chatId}`;
-            notification.close();
-        };
+        // ANDROID FIX: Ask Service Worker to show it
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.ready.then(function(registration) {
+                registration.showNotification(`New message from ${title}`, options);
+            });
+        } else {
+            // Fallback for Desktop if SW fails
+            new Notification(`New message from ${title}`, options);
+        }
     }
 }
 
