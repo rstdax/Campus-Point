@@ -94,6 +94,21 @@
         }
         .hidden { display: none !important; }
 
+        /* --- LOGIN HERO IMAGE STYLES --- */
+.hero-illustration {
+    width: 220px; /* Adjust size as needed */
+    height: auto;
+    margin-bottom: 10px;
+    /* Adds a cool glow matching your accent color */
+    filter: drop-shadow(0 0 30px rgba(77, 107, 248, 0.3)); 
+    animation: floatHero 4s ease-in-out infinite;
+}
+
+@keyframes floatHero {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-15px); }
+}
+
         /* --- Forms & Inputs --- */
         .nexus-input {
             width: 100%; background: var(--bg-input); border: 1px solid var(--border);
@@ -325,6 +340,67 @@
     width: 100%;
     gap: 15px;
 }
+
+/* --- POST MENU STYLES --- */
+.post-header-right {
+    position: relative; 
+    margin-left: auto; /* Pushes menu to the far right */
+}
+
+.menu-trigger {
+    padding: 5px 10px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 1.1rem;
+}
+
+.dropdown-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    width: 160px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    display: none; /* Hidden by default */
+    z-index: 100;
+    overflow: hidden;
+}
+
+.dropdown-menu.show {
+    display: block;
+    animation: fadeIn 0.2s ease;
+}
+
+.dropdown-item {
+    padding: 12px 15px;
+    font-size: 0.85rem;
+    color: var(--text-primary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: background 0.2s;
+    border-bottom: 1px solid var(--border);
+}
+
+.dropdown-item:last-child {
+    border-bottom: none;
+}
+
+.dropdown-item:hover {
+    background: var(--bg-input);
+}
+
+.dropdown-item.danger {
+    color: #ff5555;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
     </style>
 </head>
 <body>
@@ -342,9 +418,18 @@
 </div>
 
     <div id="auth-overlay">
+        <img src="https://ik.imagekit.io/rstofficial/shuttle.png" class="hero-illustration" alt="Welcome Illustration">
+
         <h1 class="mono" style="font-size: 2.2rem; margin-bottom: 10px;">CAMPUS<span style="color:var(--accent)">POINT</span></h1>
-        <p style="color: var(--text-secondary); margin-bottom: 30px;">Connect. Collaborate. Thrive.</p>
-        <button class="auth-btn" onclick="googleLogin()" style="width: auto; padding: 15px 40px;"><i class="fa-brands fa-google"></i> SIGN IN WITH GOOGLE</button>
+        
+        <p style="color: var(--text-secondary); margin-bottom: 30px; text-align: center; max-width: 80%;">
+            Connect with students nearby.<br>Collaborate on goals. Thrive together.
+        </p>
+        
+        <button class="auth-btn" onclick="googleLogin()" style="width: auto; padding: 15px 40px; display:flex; align-items:center; gap:10px;">
+            <i class="fa-brands fa-google" style="font-size:1.2rem;"></i> CONTINUE WITH GOOGLE
+        </button>
+        
         <p id="auth-error" style="color: #ff5555; margin-top: 20px; font-size: 0.8rem;"></p>
     </div>
 
@@ -1044,25 +1129,25 @@ followingEl.parentElement.onclick = () => openFollowList('following', currentUse
 }
 
     function loadOtherUserPosts(uid) {
-        db.collection('posts')
-            .where('uid', '==', uid)
-            .orderBy('timestamp', 'desc')
-            .get() // Use get() to fetch once
-            .then(snapshot => {
-                const container = document.getElementById('other-profile-feed');
-                container.innerHTML = '';
-                
-                if (snapshot.empty) {
-                    container.innerHTML = '<p style="text-align:center; color:#666; margin-top:20px;">No posts yet.</p>';
-                    return;
-                }
+    db.collection('posts')
+        .where('uid', '==', uid)
+        .orderBy('timestamp', 'desc')
+        .get()
+        .then(snapshot => {
+            const container = document.getElementById('other-profile-feed');
+            container.innerHTML = '';
+            
+            if (snapshot.empty) {
+                container.innerHTML = '<p style="text-align:center; color:#666; margin-top:20px;">No posts yet.</p>';
+                return;
+            }
 
-                snapshot.forEach(doc => {
-                    // Re-use your existing renderPost function
-                    container.appendChild(renderPost(doc));
-                });
+            // PASS 'other' HERE
+            snapshot.forEach(doc => {
+                container.appendChild(renderPost(doc, 'other'));
             });
-    }
+        });
+}
 
     function toggleFollow() {
         if(!viewingUserId) return;
@@ -1161,41 +1246,50 @@ followingEl.parentElement.onclick = () => openFollowList('following', currentUse
 
     // New Compression Function
     function compressImage(file) {
-        return new Promise((resolve, reject) => {
-            const maxWidth = 1200; // Social media standard width
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = function(event) {
-                const img = new Image();
-                img.src = event.target.result;
-                img.onload = function() {
-                    const elem = document.createElement('canvas');
-                    let width = img.width;
-                    let height = img.height;
+    return new Promise((resolve, reject) => {
+        // 1. REDUCE RESOLUTION
+        // Previously 1200. Changing to 800-1000 is great for mobile apps.
+        const maxWidth = 500; 
 
-                    // Resize logic
-                    if (width > maxWidth) {
-                        height *= maxWidth / width;
-                        width = maxWidth;
-                    }
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = function(event) {
+            const img = new Image();
+            img.src = event.target.result;
+            img.onload = function() {
+                const elem = document.createElement('canvas');
+                let width = img.width;
+                let height = img.height;
 
-                    elem.width = width;
-                    elem.height = height;
-                    const ctx = elem.getContext('2d');
-                    ctx.drawImage(img, 0, 0, width, height);
-                    
-                    // Compress to JPEG at 80% quality
-                    ctx.canvas.toBlob((blob) => {
-                        const compressedFile = new File([blob], file.name, {
-                            type: 'image/jpeg',
-                            lastModified: Date.now()
-                        });
-                        resolve(compressedFile);
-                    }, 'image/jpeg', 0.8);
+                // Resize logic
+                if (width > maxWidth) {
+                    height *= maxWidth / width;
+                    width = maxWidth;
                 }
+
+                elem.width = width;
+                elem.height = height;
+                const ctx = elem.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                
+                // 2. REDUCE JPEG QUALITY
+                // The last number (0.5) is the quality (0 to 1).
+                // 0.8 = High Quality, Large Size
+                // 0.5 = Medium Quality, Small Size (Recommended for fast feeds)
+                // 0.3 = Low Quality, Very Small Size
+                ctx.canvas.toBlob((blob) => {
+                    const compressedFile = new File([blob], file.name, {
+                        type: 'image/jpeg',
+                        lastModified: Date.now()
+                    });
+                    resolve(compressedFile);
+                }, 'image/jpeg', 0.5); 
             }
-        });
-    }
+            img.onerror = (err) => reject(err);
+        }
+        reader.onerror = (err) => reject(err);
+    });
+}
 
     async function uploadToImageKit(file) {
         try {
@@ -1305,63 +1399,178 @@ followingEl.parentElement.onclick = () => openFollowList('following', currentUse
         });
     }
 
-    function startFeedListener() {
-        db.collection('posts').orderBy('timestamp', 'desc').limit(20).onSnapshot(snap => {
-            const container = document.getElementById('feed-container'); container.innerHTML = '';
-            snap.forEach(doc => container.appendChild(renderPost(doc)));
+    // --- MENU FUNCTIONS ---
+
+// Updated toggle function to handle unique IDs based on source
+function togglePostMenu(pid, source, event) {
+    // Check if event exists before trying to use it
+    if(event && event.stopPropagation) {
+        event.stopPropagation();
+    }
+    
+    // 1. Close all OTHER open menus first
+    document.querySelectorAll('.dropdown-menu').forEach(el => {
+        // We only want to close menus that are NOT the one we just clicked
+        if(el.id !== `menu-${source}-${pid}`) {
+            el.classList.remove('show');
+        }
+    });
+
+    // 2. Toggle the specific menu we clicked
+    const menu = document.getElementById(`menu-${source}-${pid}`);
+    if(menu) {
+        menu.classList.toggle('show');
+    }
+}
+
+// 2. Global listener to close menus when clicking anywhere else
+window.onclick = function(event) {
+    if (!event.target.matches('.menu-trigger')) {
+        document.querySelectorAll('.dropdown-menu').forEach(el => {
+            el.classList.remove('show');
         });
     }
+}
+
+// --- DELETE FUNCTION ---
+function deletePost(pid) {
+    if(!confirm("Are you sure you want to delete this post? This cannot be undone.")) return;
+
+    // 1. Delete from Firestore
+    db.collection('posts').doc(pid).delete().then(() => {
+        // UI will update automatically because of onSnapshot in startFeedListener
+        alert("Post deleted successfully.");
+    }).catch((error) => {
+        console.error("Error removing document: ", error);
+        alert("Error deleting post.");
+    });
+}
+
+// --- REPORT FUNCTION ---
+function reportPost(pid, reportedUid, reportedName) {
+    const reason = prompt("Why are you reporting this post? (e.g., Spam, Abusive, Fake News)");
+    
+    if(!reason) return; // User cancelled
+
+    db.collection('reports').add({
+        postId: pid,
+        reportedUserUid: reportedUid,
+        reportedUserName: reportedName,
+        reporterUid: currentUser.uid,
+        reporterName: currentUser.displayName,
+        reason: reason,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+        status: "pending"
+    }).then(() => {
+        alert("Report submitted. We will review this post shortly.");
+        // Optional: Hide the menu
+        const menu = document.getElementById(`menu-${pid}`);
+        if(menu) menu.classList.remove('show');
+    }).catch(err => {
+        console.error(err);
+        alert("Failed to submit report.");
+    });
+}
+
+    function startFeedListener() {
+    db.collection('posts').orderBy('timestamp', 'desc').limit(20).onSnapshot(snap => {
+        const container = document.getElementById('feed-container'); 
+        container.innerHTML = '';
+        // PASS 'feed' HERE
+        snap.forEach(doc => container.appendChild(renderPost(doc, 'feed')));
+    });
+}
 
     function loadProfilePosts() {
-        db.collection('posts').where('uid', '==', currentUser.uid).orderBy('timestamp', 'desc').onSnapshot(snap => {
-            const container = document.getElementById('profile-feed'); container.innerHTML = '';
-            document.getElementById('stat-posts').innerText = snap.size;
-            snap.forEach(doc => container.appendChild(renderPost(doc)));
-        });
-    }
+    db.collection('posts').where('uid', '==', currentUser.uid).orderBy('timestamp', 'desc').onSnapshot(snap => {
+        const container = document.getElementById('profile-feed'); 
+        container.innerHTML = '';
+        document.getElementById('stat-posts').innerText = snap.size;
+        // PASS 'profile' HERE
+        snap.forEach(doc => container.appendChild(renderPost(doc, 'profile')));
+    });
+}
 
-    function renderPost(doc) {
-        const post = doc.data();
-        const pid = doc.id;
-        const time = post.timestamp ? new Date(post.timestamp.toDate()).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '';
-        const boosts = post.boosts || [];
-        const isBoosted = boosts.includes(currentUser.uid);
-        
-        // Uses the new .feed-post-img class for smart cropping
-        const imageHTML = post.imageUrl ? `<img src="${post.imageUrl}" class="feed-post-img" alt="Post Image">` : '';
+    function renderPost(doc, source = 'feed') {
+    const post = doc.data();
+    const pid = doc.id;
+    
+    // Format Timestamp
+    const time = post.timestamp ? new Date(post.timestamp.toDate()).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '';
+    
+    // Boost Logic
+    const boosts = post.boosts || [];
+    const isBoosted = boosts.includes(currentUser.uid);
+    
+    // Owner Check
+    const isOwner = post.uid === currentUser.uid;
 
-        const el = document.createElement('div');
-        el.className = 'post-card';
-        el.innerHTML = `
-            <div class="h-flex" style="margin-bottom:10px;">
-                <div class="avatar" style="background-image: url('${post.userPhoto}'); cursor:pointer;" onclick="openUserProfile('${post.uid}')"></div>
-                <div style="flex:1" onclick="openUserProfile('${post.uid}')">
-                    <div style="font-weight:600; font-size:0.95rem; cursor:pointer;">${post.userName}</div>
-                    <div style="font-size:0.75rem; color:var(--text-secondary)">${time}</div>
-                </div>
-                <div class="goal-tag mono">${post.goal}</div>
-            </div>
-            <p style="font-size:0.95rem; line-height:1.5;">${post.text}</p>
-            ${imageHTML}
+    // Image HTML (Using the new CSS class for aspect ratio)
+    const imageHTML = post.imageUrl ? `<img src="${post.imageUrl}" class="feed-post-img" alt="Post Image">` : '';
+
+    // --- MENU BUTTONS ---
+    // 1. Delete Button: Only if isOwner is true
+    const deleteBtn = isOwner ? `
+        <div class="dropdown-item danger" onclick="deletePost('${pid}')">
+            <i class="fa-solid fa-trash"></i> Delete Post
+        </div>
+    ` : '';
+
+    // 2. Report Button: Only if isOwner is false
+    const reportBtn = !isOwner ? `
+        <div class="dropdown-item" onclick="reportPost('${pid}', '${post.uid}', '${post.userName}')">
+            <i class="fa-solid fa-flag"></i> Report
+        </div>
+    ` : '';
+
+    const el = document.createElement('div');
+    el.className = 'post-card';
+    
+    el.innerHTML = `
+        <div class="h-flex" style="margin-bottom:10px; align-items: flex-start;">
+            <div class="avatar" style="background-image: url('${post.userPhoto}'); cursor:pointer;" onclick="openUserProfile('${post.uid}')"></div>
             
-            <div class="post-actions">
-                <div class="action-item ${isBoosted ? 'boosted' : ''}" onclick="toggleBoost('${pid}')">
-                    <i class="fa-solid fa-bolt"></i><span>Boost (${boosts.length})</span>
-                </div>
-                <div class="action-item" onclick="toggleDiscussion('${pid}')">
-                    <i class="fa-regular fa-comment-dots"></i><span>Discussion</span>
+            <div style="flex:1" onclick="openUserProfile('${post.uid}')">
+                <div style="font-weight:600; font-size:0.95rem; cursor:pointer;">${post.userName}</div>
+                <div style="font-size:0.75rem; color:var(--text-secondary)">${time}</div>
+            </div>
+
+            <div class="post-header-right">
+                <i class="fa-solid fa-ellipsis-vertical menu-trigger" onclick="togglePostMenu('${pid}', '${source}', event)"></i>
+                
+                <div id="menu-${source}-${pid}" class="dropdown-menu">
+                    ${deleteBtn}
+                    ${reportBtn}
+                    <div class="dropdown-item" onclick="togglePostMenu('${pid}', '${source}', event)">
+                        <i class="fa-solid fa-xmark"></i> Close
+                    </div>
                 </div>
             </div>
-            <div class="discussion-area" id="discuss-${pid}">
-                <div id="comments-${pid}" style="margin-bottom:10px;"></div>
-                <div class="h-flex">
-                    <input type="text" id="input-${pid}" class="nexus-input" style="margin-bottom:0; font-size:0.85rem; padding:8px;" placeholder="Comment...">
-                    <button onclick="postComment('${pid}')" style="background:var(--accent); color:white; border:none; padding:8px 15px; border-radius:6px; margin-left:8px;"><i class="fa-solid fa-paper-plane"></i></button>
-                </div>
+        </div>
+
+        <div class="goal-tag mono" style="margin-bottom:10px; display:inline-block;">${post.goal}</div>
+        <p style="font-size:0.95rem; line-height:1.5;">${post.text}</p>
+        ${imageHTML}
+        
+        <div class="post-actions">
+            <div class="action-item ${isBoosted ? 'boosted' : ''}" onclick="toggleBoost('${pid}')">
+                <i class="fa-solid fa-bolt"></i><span>Boost (${boosts.length})</span>
             </div>
-        `;
-        return el;
-    }
+            <div class="action-item" onclick="toggleDiscussion('${pid}')">
+                <i class="fa-regular fa-comment-dots"></i><span>Discussion</span>
+            </div>
+        </div>
+        
+        <div class="discussion-area" id="discuss-${pid}">
+            <div id="comments-${pid}" style="margin-bottom:10px;"></div>
+            <div class="h-flex">
+                <input type="text" id="input-${pid}" class="nexus-input" style="margin-bottom:0; font-size:0.85rem; padding:8px;" placeholder="Comment...">
+                <button onclick="postComment('${pid}')" style="background:var(--accent); color:white; border:none; padding:8px 15px; border-radius:6px; margin-left:8px;"><i class="fa-solid fa-paper-plane"></i></button>
+            </div>
+        </div>
+    `;
+    return el;
+}
 
     // MODIFIED CREATE POST TO HANDLE IMAGE & COMPRESSION
     async function createPost() {
