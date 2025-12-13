@@ -1244,6 +1244,12 @@ function showSystemNotification(title, body, chatId) {
 let gpsWatcher = null; // Store permission listener
 
 function requestGPS() {
+    const MAX_RANGE = 5000;
+    const statusEl = document.getElementById('gps-status-indicator');
+    
+    // Display the max range in the indicator area
+    statusEl.innerHTML = `<i class="fa-solid fa-satellite-dish"></i> RANGE: <span style="color:#4dabf8">${MAX_RANGE / 1000} KM</span>`;
+    
     // 1. Check if Permissions API is supported
     if (navigator.permissions && navigator.permissions.query) {
         navigator.permissions.query({ name: 'geolocation' }).then(function(result) {
@@ -1756,66 +1762,93 @@ followingEl.parentElement.onclick = () => openFollowList('following', currentUse
         return R * c;
     }
 
-    function loadNearbyUsers() {
-        const list = document.getElementById('user-list');
-        const radarCircle = document.querySelector('.radar-circle');
-        const MAX_RANGE = 5000;
+    // --- POSTS & RADAR (With Blips) ---
+// Find this function and replace it:
 
-        db.collection('users').orderBy('lastActive', 'desc').limit(20).onSnapshot(snap => {
-            list.innerHTML = '';
-            const oldBlips = radarCircle.querySelectorAll('.radar-blip, .blip-tooltip');
-            oldBlips.forEach(el => el.remove());
+function loadNearbyUsers() {
+    const list = document.getElementById('user-list');
+    const radarCircle = document.querySelector('.radar-circle');
+    const MAX_RANGE = 5000; // 5000 meters (5 km)
+    
+    // Display the range prominently (in the GPS status indicator area)
+    const statusEl = document.getElementById('gps-status-indicator');
+    statusEl.innerHTML = `<i class="fa-solid fa-satellite-dish"></i> RANGE: <span style="color:#4dabf8">${MAX_RANGE / 1000} KM</span>`;
 
-            if(snap.empty) { list.innerHTML = '<p class="mono" style="color:var(--text-secondary); text-align:center;">No signals.</p>'; return; }
-
-            let usersWithDistance = [];
-            snap.forEach(doc => {
-                const u = doc.data();
-                if(u.uid !== currentUser.uid) {
-                    let dist = null;
-                    if(myLocation && u.location) dist = getDistanceFromLatLonInMeters(myLocation.lat, myLocation.lng, u.location.lat, u.location.lng);
-                    if (dist === null || dist <= MAX_RANGE) usersWithDistance.push({ ...u, distance: dist });
+    db.collection('users').orderBy('lastActive', 'desc').limit(20).onSnapshot(snap => {
+        list.innerHTML = '';
+        const oldBlips = radarCircle.querySelectorAll('.radar-blip, .blip-tooltip');
+        oldBlips.forEach(el => el.remove());
+        
+        let usersWithDistance = [];
+        snap.forEach(doc => {
+            const u = doc.data();
+            if(u.uid !== currentUser.uid) {
+                let dist = null;
+                // Only calculate distance if myLocation and user location exist
+                if(myLocation && u.location) {
+                    dist = getDistanceFromLatLonInMeters(myLocation.lat, myLocation.lng, u.location.lat, u.location.lng);
                 }
-            });
-
-            usersWithDistance.sort((a, b) => (a.distance || 9999) - (b.distance || 9999));
-
-            usersWithDistance.forEach(u => {
-                let distText = u.distance ? `${Math.round(u.distance)}m` : 'Unknown';
-                list.innerHTML += `
-                    <div class="user-list-item" onclick="openUserProfile('${u.uid}')">
-                        <div class="avatar" style="background-image: url('${u.photoURL || ''}')"></div>
-                        <div style="flex:1;">
-                            <div class="h-flex" style="justify-content:space-between;">
-                                <div style="font-weight:600;">${u.displayName}</div>
-                                <div class="mono" style="font-size:0.7rem; color:var(--accent);">${distText}</div>
-                            </div>
-                            <div style="font-size:0.8rem; color:var(--text-secondary);">${u.academic?.major || 'Student'}</div>
-                        </div>
-                    </div>
-                `;
-
-                if(u.distance !== null) {
-                    const blip = document.createElement('div');
-                    blip.className = 'radar-blip';
-                    const percentFromCenter = (u.distance / MAX_RANGE) * 45; 
-                    const randomAngle = Math.random() * 2 * Math.PI;
-                    const top = 50 + (percentFromCenter * Math.sin(randomAngle));
-                    const left = 50 + (percentFromCenter * Math.cos(randomAngle));
-                    blip.style.top = top + '%'; blip.style.left = left + '%';
-                    blip.onclick = (e) => { e.stopPropagation(); openUserProfile(u.uid); };
-                    const tooltip = document.createElement('div');
-                    tooltip.className = 'blip-tooltip';
-                    tooltip.innerText = u.displayName.split(' ')[0];
-                    tooltip.style.top = top + '%';
-                    tooltip.style.left = left + '%';
-                    
-                    radarCircle.appendChild(tooltip);
-                    radarCircle.appendChild(blip);
+                
+                // IMPORTANT: Filter out users immediately if distance is unknown or outside MAX_RANGE
+                if (dist !== null && dist <= MAX_RANGE) {
+                    usersWithDistance.push({ ...u, distance: dist });
                 }
-            });
+            }
         });
-    }
+
+        if(usersWithDistance.length === 0) { 
+            list.innerHTML = '<p class="mono" style="color:var(--text-secondary); text-align:center;">No students found within range.</p>'; 
+            return; 
+        }
+
+        usersWithDistance.sort((a, b) => a.distance - b.distance);
+
+        usersWithDistance.forEach(u => {
+            let distText = `${Math.round(u.distance)}m`;
+            
+            // --- 1. Populate the User List (List View) ---
+            list.innerHTML += `
+                <div class="user-list-item" onclick="openUserProfile('${u.uid}')">
+                    <div class="avatar" style="background-image: url('${u.photoURL || ''}')"></div>
+                    <div style="flex:1;">
+                        <div class="h-flex" style="justify-content:space-between;">
+                            <div style="font-weight:600;">${u.displayName}</div>
+                            <div class="mono" style="font-size:0.7rem; color:var(--accent);">${distText}</div>
+                        </div>
+                        <div style="font-size:0.8rem; color:var(--text-secondary);">${u.academic?.major || 'Student'}</div>
+                    </div>
+                </div>
+            `;
+
+            // --- 2. Populate the Radar View (Blips) ---
+            if(u.distance !== null) {
+                const blip = document.createElement('div');
+                blip.className = 'radar-blip';
+                
+                // Calculate position based on distance: map 0m to 0% and MAX_RANGE to 45% radial distance
+                // We use 45% to keep the blip inside the radar circle boundary.
+                const percentFromCenter = (u.distance / MAX_RANGE) * 45; 
+                
+                // Keep random angle to distribute blips realistically
+                const randomAngle = Math.random() * 2 * Math.PI;
+                const top = 50 + (percentFromCenter * Math.sin(randomAngle));
+                const left = 50 + (percentFromCenter * Math.cos(randomAngle));
+                
+                blip.style.top = top + '%'; blip.style.left = left + '%';
+                blip.onclick = (e) => { e.stopPropagation(); openUserProfile(u.uid); };
+                
+                const tooltip = document.createElement('div');
+                tooltip.className = 'blip-tooltip';
+                tooltip.innerText = u.displayName.split(' ')[0] + ` (${distText})`;
+                tooltip.style.top = top + '%';
+                tooltip.style.left = left + '%';
+                
+                radarCircle.appendChild(tooltip);
+                radarCircle.appendChild(blip);
+            }
+        });
+    });
+}
 
     // --- MENU FUNCTIONS ---
 

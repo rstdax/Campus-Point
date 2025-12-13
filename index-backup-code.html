@@ -894,36 +894,65 @@ function loadGroupLobby() {
     const container = document.getElementById('group-list-container');
     container.innerHTML = '';
     
-    // Use the HOBBIES_LIST array to create rooms
+    // Use the HOBBIES_LIST array to create rooms (HOBBIES_LIST should be global in index.html)
     HOBBIES_LIST.forEach(hobby => {
-        const iconClass = getHobbyIcon(hobby); 
+        const details = getHobbyIcon(hobby); // Get both icon and color
         
         container.innerHTML += `
             <div class="chat-item" onclick="checkGroupJoin('${hobby}')" style="cursor:pointer;">
-                <div class="avatar" style="background:var(--bg-input); font-size:1.3rem; color:var(--accent); display:flex; align-items:center; justify-content:center;">
-                    <i class="fa-solid ${iconClass}"></i>
+                <div class="avatar" style="
+                    background: ${details.color}15; 
+                    font-size:1.3rem; 
+                    color: ${details.color}; 
+                    display:flex; 
+                    align-items:center; 
+                    justify-content:center;
+                    border: 1px solid ${details.color}40;
+                ">
+                    <i class="fa-solid ${details.icon}"></i>
                 </div>
                 <div>
                     <div style="font-weight:600;">#${hobby} Lounge</div>
                     <div style="font-size:0.8rem; color:var(--text-secondary);">Live group chat for ${hobby} enthusiasts.</div>
                 </div>
-                <button class="secondary-btn" style="margin-top:0; margin-left:auto; padding: 6px 12px; font-weight:600; border-color:var(--accent); color:var(--accent);">Join</button>
+                <button class="secondary-btn" style="
+                    margin-top:0; 
+                    margin-left:auto; 
+                    padding: 6px 12px; 
+                    font-weight:600; 
+                    border-color: ${details.color}; 
+                    color: ${details.color};
+                ">Join</button>
             </div>
         `;
     });
 }
 
 function getHobbyIcon(hobby) {
-    // Simple icon mapping for visual appeal
+    // Map hobby to a specific Font Awesome class and a unique Hex color code.
     const map = {
-        "Coding": "fa-code", "Music": "fa-music", "Travel": "fa-plane-departure", 
-        "Gaming": "fa-gamepad", "Reading": "fa-book", "Fitness": "fa-dumbbell",
-        "Photography": "fa-camera-retro", "Art": "fa-palette", "Startups": "fa-lightbulb",
-        "AI": "fa-robot", "Foodie": "fa-utensils", "Movies": "fa-clapperboard",
-        "Sports": "fa-basketball", "Writing": "fa-pen-nib", "Dance": "fa-person-dancing",
-        "Nature": "fa-leaf", "Fashion": "fa-shirt", "Politics": "fa-gavel"
+        "Coding": { icon: "fa-code", color: "#FF5555" },       // Bright Red/Pink (Tech/Logic)
+        "Music": { icon: "fa-compact-disc", color: "#FFD700" }, // Gold (Media/Creativity)
+        "Travel": { icon: "fa-plane-departure", color: "#4DABF8" }, // Accent Blue (Exploration)
+        "Gaming": { icon: "fa-gamepad", color: "#9B59B6" },    // Purple (Entertainment)
+        "Reading": { icon: "fa-book", color: "#2ECC71" },      // Emerald Green (Knowledge)
+        "Fitness": { icon: "fa-dumbbell", color: "#E67E22" },  // Orange (Energy/Health)
+        "Photography": { icon: "fa-camera-retro", color: "#F39C12" }, // Yellow/Orange (Art)
+        "Art": { icon: "fa-palette", color: "#E91E63" },       // Rose Pink (Visual Creation)
+        "Startups": { icon: "fa-lightbulb", color: "#3498DB" },  // Bright Blue (Ideas)
+        "AI": { icon: "fa-robot", color: "#1ABC9C" },          // Cyan/Teal (Future Tech)
+        "Foodie": { icon: "fa-utensils", color: "#95A5A6" },   // Gray/Silver (Lifestyle)
+        "Movies": { icon: "fa-clapperboard", color: "#D35400" }, // Dark Orange/Brown (Cinema)
+        "Sports": { icon: "fa-basketball", color: "#E74C3C" }, // Coral Red (Activity)
+        "Writing": { icon: "fa-pen-nib", color: "#9B59B6" },   // Purple (Intellectual)
+        "Dance": { icon: "fa-compact-disc", color: "#00BCD4" }, // Turquoise/Cyan (Rhythm/Movement)
+        "Nature": { icon: "fa-leaf", color: "#16A085" },       // Dark Green (Environment)
+        "Fashion": { icon: "fa-shirt", color: "#AF7AC5" },     // Light Purple (Style)
+        "Politics": { icon: "fa-gavel", color: "#7F8C8D" }     // Dark Gray (Authority/Civic)
     };
-    return map[hobby] || "fa-hashtag";
+    
+    // Return the color and icon, or a fallback.
+    return map[hobby] || { icon: "fa-hashtag", color: "#888888" };
 }
 
 function checkGroupJoin(groupName) {
