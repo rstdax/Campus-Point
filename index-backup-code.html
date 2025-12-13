@@ -94,21 +94,6 @@
         }
         .hidden { display: none !important; }
 
-        /* --- LOGIN HERO IMAGE STYLES --- */
-.hero-illustration {
-    width: 220px; /* Adjust size as needed */
-    height: auto;
-    margin-bottom: 10px;
-    /* Adds a cool glow matching your accent color */
-    filter: drop-shadow(0 0 30px rgba(77, 107, 248, 0.3)); 
-    animation: floatHero 4s ease-in-out infinite;
-}
-
-@keyframes floatHero {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-15px); }
-}
-
         /* --- Forms & Inputs --- */
         .nexus-input {
             width: 100%; background: var(--bg-input); border: 1px solid var(--border);
@@ -126,6 +111,114 @@
             box-shadow: 0 4px 15px var(--accent-glow); margin-top: 10px;
         }
         .action-btn:disabled { opacity: 0.7; cursor: not-allowed; }
+
+        /* --- LOGIN HERO IMAGE STYLES --- */
+.hero-illustration {
+    width: 100%; /* Adjust size as needed */
+    height: auto;
+    margin-bottom: 10px;
+    /* Adds a cool glow matching your accent color */ 
+    animation: floatHero 4s ease-in-out infinite;
+}
+
+@keyframes floatHero {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-15px); }
+}
+
+/* --- PINTEREST-STYLE AUTH SCREEN --- */
+#auth-overlay {
+    background-color: #000000 !important; /* Pitch black background */
+    padding: 40px 25px;
+    display: flex !important;
+    flex-direction: column;
+    justify-content: space-between; /* Pushes footer to bottom */
+    align-items: center;
+    z-index: 9999; /* Ensure it's on top */
+}
+
+#auth-overlay.hidden {
+    display: none !important;
+}
+
+/* Center Content Area */
+.auth-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    max-width: 360px; /* Mobile width */
+}
+
+/* Logo Area */
+.auth-logo-icon {
+    font-size: 3rem;
+    color: var(--accent);
+    margin-bottom: 20px;
+}
+
+/* Headline: "Create a life you love" style */
+.auth-headline {
+    font-size: 2rem;
+    font-weight: 600;
+    color: #ffffff;
+    text-align: center;
+    line-height: 1.2;
+    margin-bottom: 10px;
+    letter-spacing: -0.5px;
+}
+
+.auth-subhead {
+    font-size: 1rem;
+    color: var(--text-secondary);
+    margin-bottom: 40px;
+    text-align: center;
+}
+
+/* Pinterest-style Google Button (Dark with outline) */
+.pinterest-google-btn {
+    width: 100%;
+    background-color: transparent;
+    border: 1px solid #3f3f3f;
+    border-radius: 50px; /* Full pill shape */
+    padding: 14px 20px;
+    color: #ffffff;
+    font-size: 1rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+    margin-bottom: 20px;
+}
+
+.pinterest-google-btn:active {
+    background-color: #1a1a1a;
+    transform: scale(0.98);
+    border-color: #666;
+}
+
+/* Bottom Legal Text */
+.auth-footer {
+    width: 100%;
+    max-width: 300px;
+    text-align: center;
+    font-size: 0.75rem;
+    color: #777;
+    line-height: 1.5;
+    padding-bottom: 10px;
+}
+
+.auth-footer a {
+    color: #fff;
+    text-decoration: none;
+    font-weight: 500;
+}
         
         .secondary-btn {
             background: transparent; color: var(--text-primary); border: 1px solid var(--border);
@@ -401,6 +494,21 @@
     from { opacity: 0; transform: translateY(-5px); }
     to { opacity: 1; transform: translateY(0); }
 }
+
+/* --- LOADING SPINNER --- */
+.loader-spinner {
+    width: 30px;
+    height: 30px;
+    border: 3px solid rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    border-top-color: var(--accent);
+    animation: spin 0.8s linear infinite;
+    margin-bottom: 20px;
+}
+
+@keyframes spin { 
+    to { transform: rotate(360deg); } 
+}
     </style>
 </head>
 <body>
@@ -417,21 +525,33 @@
     </div>
 </div>
 
+    
     <div id="auth-overlay">
-        <img src="https://ik.imagekit.io/rstofficial/shuttle.png" class="hero-illustration" alt="Welcome Illustration">
+    
+            <div class="auth-content">
+                <img src="https://ik.imagekit.io/rstofficial/heroimagecampuspoint.gif" class="hero-illustration" style="width:100%; margin-bottom:15px;" alt="Logo">
+                
+                <h1 class="auth-headline">Connect.<br>Collaborate.<br>Thrive.</h1>
+                <p class="auth-subhead">Your campus network starts here.</p>
 
-        <h1 class="mono" style="font-size: 2.2rem; margin-bottom: 10px;">CAMPUS<span style="color:var(--accent)">POINT</span></h1>
-        
-        <p style="color: var(--text-secondary); margin-bottom: 30px; text-align: center; max-width: 80%;">
-            Connect with students nearby.<br>Collaborate on goals. Thrive together.
-        </p>
-        
-        <button class="auth-btn" onclick="googleLogin()" style="width: auto; padding: 15px 40px; display:flex; align-items:center; gap:10px;">
-            <i class="fa-brands fa-google" style="font-size:1.2rem;"></i> CONTINUE WITH GOOGLE
-        </button>
-        
-        <p id="auth-error" style="color: #ff5555; margin-top: 20px; font-size: 0.8rem;"></p>
-    </div>
+                <div id="auth-loader" class="loader-spinner"></div>
+
+                <button id="google-btn" class="pinterest-google-btn hidden" onclick="googleLogin()">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/1024px-Google_%22G%22_logo.svg.png" style="width:20px; height:20px;">
+                    Continue with Google
+                </button>
+
+                <p id="auth-error" style="color: #ff5555; font-size: 0.8rem; height: 20px;"></p>
+            </div>
+
+            <div class="auth-footer">
+                By continuing, you agree to Campus Point's 
+                <a href="#" onclick="alert('Terms of Service: Be kind and respectful.')">Terms of Service</a> 
+                and acknowledge you've read our 
+                <a href="#" onclick="alert('Privacy Policy: We respect your data.')">Privacy Policy</a>.
+            </div>
+
+        </div>
 
     <div class="app-container">
         
@@ -811,26 +931,50 @@ let selectedHobbies = new Set();
 
     // --- INIT ---
     function initApp() {
-        try {
-            firebase.initializeApp(firebaseConfig);
-            db = firebase.firestore();
-            auth = firebase.auth();
-            
-            auth.onAuthStateChanged(user => {
-                if (user) {
-                    currentUser = user;
-                    document.getElementById('auth-overlay').classList.add('hidden');
+    try {
+        firebase.initializeApp(firebaseConfig);
+        db = firebase.firestore();
+        auth = firebase.auth();
+        
+        auth.onAuthStateChanged(user => {
+            const loader = document.getElementById('auth-loader');
+            const btn = document.getElementById('google-btn');
+            const overlay = document.getElementById('auth-overlay');
+
+            if (user) {
+                // --- USER LOGGED IN ---
+                currentUser = user;
+                
+                // WAIT 2 SECONDS (2000ms) before transitioning
+                setTimeout(() => {
+                    // 1. Hide the auth screen
+                    overlay.classList.add('hidden');
+                    
+                    // 2. Load the app data
                     checkUserProfile(user);
-                } else {
-                    document.getElementById('auth-overlay').classList.remove('hidden');
-                    document.getElementById('main-nav').classList.add('hidden');
+                }, 2000);
+
+            } else {
+                // --- USER NOT LOGGED IN ---
+                // Show the login button immediately if no user is found
+                
+                overlay.classList.remove('hidden');
+                
+                if(loader) loader.style.display = 'none';
+                
+                if(btn) {
+                    btn.classList.remove('hidden');
+                    btn.style.display = 'flex'; 
                 }
-            });
-        } catch (e) {
-            console.error(e);
-            alert("Init Error");
-        }
+                
+                document.getElementById('main-nav').classList.add('hidden');
+            }
+        });
+    } catch (e) {
+        console.error(e);
+        alert("Init Error");
     }
+}
 
     // --- NEW GPS HANDLING LOGIC ---
 // --- ADVANCED GPS HANDLING ---
@@ -1046,6 +1190,14 @@ followingEl.parentElement.onclick = () => openFollowList('following', currentUse
 
         // GPS Logic
         requestGPS();
+        // 2. Set up a loop to update every 5 minutes (300,000 milliseconds)
+        // This keeps location fresh without killing battery or Quota
+        if (window.gpsInterval) clearInterval(window.gpsInterval); // Clear existing if any
+        
+        window.gpsInterval = setInterval(() => {
+            console.log("Auto-updating GPS location...");
+            attemptGeoFetch(); 
+        }, 300000); // 300000ms = 5 minutes
 
         startFeedListener();
         loadProfilePosts();

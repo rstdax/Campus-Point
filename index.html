@@ -1190,6 +1190,14 @@ followingEl.parentElement.onclick = () => openFollowList('following', currentUse
 
         // GPS Logic
         requestGPS();
+        // 2. Set up a loop to update every 5 minutes (300,000 milliseconds)
+        // This keeps location fresh without killing battery or Quota
+        if (window.gpsInterval) clearInterval(window.gpsInterval); // Clear existing if any
+        
+        window.gpsInterval = setInterval(() => {
+            console.log("Auto-updating GPS location...");
+            attemptGeoFetch(); 
+        }, 300000); // 300000ms = 5 minutes
 
         startFeedListener();
         loadProfilePosts();
