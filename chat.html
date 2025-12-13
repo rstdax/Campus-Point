@@ -264,7 +264,9 @@
             });
             
             db.collection('chats').doc(chatId).update({
-                lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                lastUpdated: firebase.firestore.FieldValue.serverTimestamp(),
+                lastMessage: text,           // <--- ADD THIS
+                lastSenderId: currentUser.uid // <--- ADD THIS
             });
 
             input.value = '';
