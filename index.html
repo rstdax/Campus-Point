@@ -656,6 +656,62 @@
     object-fit: contain; /* Show full image */
 }
 
+/* --- CUSTOM STORY OPTIONS MODAL --- */
+#story-options-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6); /* Dimmed background */
+    z-index: 10000;
+    display: none; /* Hidden by default */
+    align-items: flex-end; /* Align to bottom */
+    justify-content: center;
+}
+
+#story-options-modal.flex {
+    display: flex !important;
+}
+
+.story-options-sheet {
+    background: var(--bg-card);
+    width: 100%;
+    max-width: 480px;
+    border-radius: 20px 20px 0 0;
+    border-top: 1px solid var(--border);
+    padding: 10px 0;
+    animation: slideUp 0.2s ease-out;
+}
+
+/* The buttons inside the sheet */
+.story-opt-btn {
+    width: 100%;
+    padding: 18px 25px;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-primary);
+    font-size: 1rem;
+    text-align: left;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    font-family: 'Inter', sans-serif;
+}
+
+.story-opt-btn:active {
+    background: var(--bg-input);
+}
+
+.story-opt-btn:last-child {
+    border-bottom: none;
+}
+
+.story-opt-btn i {
+    font-size: 1.2rem;
+    width: 25px;
+    text-align: center;
+}
+
     </style>
 </head>
 <body>
@@ -697,6 +753,22 @@
             
         </div>
     </div>
+
+    <div id="story-options-modal" onclick="hideStoryOptions()">
+    <div class="story-options-sheet" onclick="event.stopPropagation()">
+        
+        <div style="width: 40px; height: 5px; background: var(--border); margin: 10px auto 15px auto; border-radius: 10px;"></div>
+        
+        <button class="story-opt-btn" onclick="triggerViewStory()">
+            <i class="fa-regular fa-eye"></i> View Your Story
+        </button>
+        
+        <button class="story-opt-btn" onclick="triggerAddStory()">
+            <i class="fa-solid fa-circle-plus"></i> Add to Story
+        </button>
+
+    </div>
+</div>
 
     <div id="boost-gif-modal" class="hidden" style="position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 6000; display: flex; justify-content: center; align-items: center;">
         <div style="text-align: center;">
@@ -1801,18 +1873,31 @@ function renderStoryTray() {
 
 // --- 3. UPLOAD STORY ---
 function handleMyStoryClick(hasStory) {
-    if(hasStory) {
-        // If I have stories, ask if I want to View or Add New
-        const action = confirm("View your story or Add a new one?\nOk = View\nCancel = Add New");
-        if(action) {
-            openStoryViewer(currentUser.uid);
-        } else {
-            document.getElementById('story-file-input').click();
-        }
+    if (hasStory) {
+        // Show the custom modal instead of confirm()
+        const modal = document.getElementById('story-options-modal');
+        modal.classList.add('flex'); // Uses flex to align to bottom
     } else {
-        // No story, trigger upload directly
-        document.getElementById('story-file-input').click();
+        // No story yet? Go straight to upload
+        triggerAddStory();
     }
+}
+
+// --- NEW HELPER FUNCTIONS ---
+
+function hideStoryOptions() {
+    const modal = document.getElementById('story-options-modal');
+    modal.classList.remove('flex');
+}
+
+function triggerViewStory() {
+    hideStoryOptions();
+    openStoryViewer(currentUser.uid);
+}
+
+function triggerAddStory() {
+    hideStoryOptions();
+    document.getElementById('story-file-input').click();
 }
 
 async function handleStoryFileSelect() {
