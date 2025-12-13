@@ -647,6 +647,58 @@ let selectedHobbies = new Set();
     let viewingUserId = null;
     let lastProfileTab = 'profile'; // Remembers where to go back to
 
+    // --- 1. NEW ROUTER SYSTEM ---
+    
+    // This function handles the actual UI changes based on the URL hash
+    function router() {
+        // Get the hash (remove the #) or default to 'feed'
+        const hash = window.location.hash.slice(1) || 'feed';
+        
+        // Hide all sections
+        document.querySelectorAll('.content-area').forEach(el => el.classList.add('hidden'));
+        
+        // Remove active class from all nav items
+        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+
+        // Handle specific screens
+        const activeSection = document.getElementById('section-' + hash);
+        
+        if (activeSection) {
+            // Show the section matching the hash
+            activeSection.classList.remove('hidden');
+            
+            // Highlight the corresponding Bottom Nav item (if it exists)
+            // We match based on the onclick attribute containing the hash name
+            const navBtn = document.querySelector(`.nav-item[onclick*="'${hash}'"]`);
+            if (navBtn) navBtn.classList.add('active');
+        } else {
+            // Fallback: If hash doesn't match any ID, go to feed
+            window.location.hash = 'feed';
+        }
+
+        // Special handling for Floating Action Button (Only show on feed)
+        const fab = document.querySelector('.floating-fab');
+        if (fab) {
+            fab.style.display = (hash === 'feed') ? 'flex' : 'none';
+        }
+    }
+
+    // --- 2. MODIFIED SWITCHTAB ---
+    // Instead of changing UI directly, this now just updates the URL.
+    // The 'hashchange' listener below will detect this and fire the router().
+    function switchTab(id) {
+        window.location.hash = id;
+    }
+
+    // --- 3. LISTEN FOR BACK BUTTON & LOAD ---
+    // This detects when user clicks Back button or allows the app
+    window.addEventListener('hashchange', router);
+    window.addEventListener('load', () => {
+        // If no hash exists on load, set it to feed
+        if(!window.location.hash) window.location.hash = 'feed';
+        router();
+    });
+
     // --- INIT ---
     function initApp() {
         try {
@@ -895,7 +947,7 @@ followingEl.parentElement.onclick = () => openFollowList('following', currentUse
     // --- PROFILE & FOLLOW SYSTEM ---
     function openUserProfile(uid) {
     if (uid === currentUser.uid) {
-        switchTab('profile', document.querySelectorAll('.nav-item')[3]);
+        window.location.hash = 'profile';
         return;
     }
     viewingUserId = uid;
@@ -962,7 +1014,7 @@ followingEl.parentElement.onclick = () => openFollowList('following', currentUse
         // Load their posts
         loadOtherUserPosts(uid);
 
-        switchTab('other-profile', null);
+        window.location.hash = 'other-profile';
     });
 }
 
@@ -1364,14 +1416,6 @@ followingEl.parentElement.onclick = () => openFollowList('following', currentUse
         });
     }
 
-    function switchTab(id, btn) {
-        document.querySelectorAll('.content-area').forEach(el => el.classList.add('hidden'));
-        document.getElementById('section-' + id).classList.remove('hidden');
-        if(btn && id !== 'setup') {
-            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-            if(btn.classList.contains('nav-item')) btn.classList.add('active');
-        }
-    }
     
     function editProfile() {
         document.getElementById('setup-name').value = globalProfileData.displayName || "";
@@ -1403,7 +1447,7 @@ renderHobbiesSelector();
     // --- FOLLOWER/FOLLOWING LIST LOGIC ---
 
 function openFollowList(type, uid, fromTab) {
-    lastProfileTab = fromTab; // Remember if we came from 'profile' or 'other-profile'
+
     
     // Set Title
     const title = type === 'followers' ? 'FOLLOWERS' : 'FOLLOWING';
@@ -1414,7 +1458,7 @@ function openFollowList(type, uid, fromTab) {
     container.innerHTML = '<p style="text-align:center; color:var(--text-secondary); margin-top:20px;">Loading...</p>';
     
     // Switch View
-    switchTab('follow-list', null);
+    window.location.hash = 'follow-list';
 
     // Fetch the IDs first
     db.collection('users').doc(uid).collection(type).limit(50).get().then(async (snapshot) => {
@@ -1445,8 +1489,8 @@ function openFollowList(type, uid, fromTab) {
 }
 
 function closeFollowList() {
-    // Go back to the previous profile view
-    switchTab(lastProfileTab, document.querySelector(`.nav-item[onclick*="${lastProfileTab === 'profile' ? 'profile' : ''}"]`));
+    // This acts exactly like hitting the physical back button on Android
+    window.history.back();
 }
 
 // Reusable render function (matches your Radar style)

@@ -2,7 +2,8 @@
 <html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
+    
     <title>Chat | Campus Point</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -31,20 +32,33 @@
         
         * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
         
-        /* FIX 2: Use fixed position inset:0 instead of height:100vh */
+        /* FIX 2: Better height handling for PWA */
+        html { height: 100%; }
+        
         body { 
             font-family:'Inter',sans-serif; background:var(--bg-main); color:var(--text); 
-            position: fixed; inset: 0; /* Pins to all 4 corners */
-            height: 100dvh; /* Dynamic viewport height */
-            display:flex; flex-direction:column; overflow:hidden; 
+            
+            /* Use dvh for dynamic viewport height (accounts for browser bars) */
+            height: 100dvh;
+            /* Fallback for older browsers */
+            height: 100%;
+            
+            position: fixed; 
+            inset: 0; 
+            width: 100%;
+            
+            display:flex; 
+            flex-direction:column; 
+            overflow:hidden; 
         }
         
         /* --- HEADER --- */
         .chat-header {
             height: 60px; padding: 0 15px; display: flex; align-items: center; gap: 12px;
             background: var(--bg-card); border-bottom: 1px solid var(--border);
-            flex-shrink: 0; /* Prevents shrinking */
+            flex-shrink: 0; 
             z-index: 10;
+            padding-top: env(safe-area-inset-top); /* Status bar protection */
         }
         .back-btn { 
             width: 35px; height: 35px; display: flex; align-items: center; justify-content: center;
@@ -60,12 +74,14 @@
 
         /* --- MESSAGES --- */
         #messages {
-            flex: 1; /* Takes all remaining space */
+            flex: 1; 
+            /* FIX 3: min-height: 0 prevents flex item from overflowing parent */
+            min-height: 0; 
+            
             overflow-y: auto; padding: 20px 15px; 
             display: flex; flex-direction: column; gap: 8px;
             background-image: radial-gradient(var(--border) 1px, transparent 1px);
             background-size: 20px 20px;
-            /* Smooth scrolling */
             scroll-behavior: smooth;
             -webkit-overflow-scrolling: touch; 
         }
@@ -102,9 +118,12 @@
             background: var(--bg-card); border-top: 1px solid var(--border);
             display: flex; gap: 10px; align-items: center;
             padding: 10px 15px;
-            /* FIX 3: Ensure padding accounts for iPhone Home Bar */
-            padding-bottom: max(10px, env(safe-area-inset-bottom));
-            flex-shrink: 0; /* Prevents shrinking */
+            
+            /* FIX 4: Robust padding for Home Bar/Gestures */
+            padding-bottom: calc(10px + env(safe-area-inset-bottom));
+            
+            flex-shrink: 0; 
+            z-index: 20;
         }
         
         .input-wrapper {
@@ -115,7 +134,7 @@
         
         input { 
             flex: 1; height: 45px; border: none; background: transparent; 
-            color: var(--text); outline: none; font-family: 'Inter'; font-size: 1rem; /* 16px prevents zoom on iOS */
+            color: var(--text); outline: none; font-family: 'Inter'; font-size: 1rem; 
         }
         
         .send-btn {
@@ -254,6 +273,16 @@
 
         document.getElementById('msg-input').addEventListener('keypress', function (e) {
             if (e.key === 'Enter') sendMsg();
+        });
+
+        // FIX 5: Ensure keyboard interactions scroll to bottom smoothly
+        const inputField = document.getElementById('msg-input');
+        inputField.addEventListener('focus', () => {
+            setTimeout(() => {
+                const messages = document.getElementById('messages');
+                messages.scrollTop = messages.scrollHeight;
+                window.scrollTo(0, document.body.scrollHeight);
+            }, 300);
         });
     </script>
 </body>
