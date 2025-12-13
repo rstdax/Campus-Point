@@ -746,31 +746,34 @@
         </main>
 
         <main id="section-other-profile" class="content-area hidden">
-            <div style="text-align: center; padding: 20px 0;">
-                <div id="other-pic" style="width: 100px; height: 100px; border-radius: 50%; border: 2px solid var(--accent); margin: 0 auto 15px auto; background-size: cover;"></div>
-                <h2 id="other-name">User</h2>
-                <p id="other-academic" class="mono" style="color: var(--accent); font-size: 0.9rem; margin-bottom: 5px;"></p>
-                <div id="other-bio" class="bio-text"></div>
-                <div id="other-goal-container" style="display:none;">
-                    <div class="future-goal-display">
-                        <i class="fa-solid fa-rocket"></i> 5y Goal: <span id="other-goal"></span>
-                    </div>
-                </div>
-                <div id="other-interests" class="interests-container"></div>
-                
-                <div class="stats-row">
-                    <div class="stat-box"><h3 id="other-stat-followers" style="color:var(--accent)">0</h3><span class="mono" style="font-size:0.7rem">FOLLOWERS</span></div>
-                    <div class="stat-box"><h3 id="other-stat-following" style="color:var(--text-primary)">0</h3><span class="mono" style="font-size:0.7rem">FOLLOWING</span></div>
-                </div>
-
-                <div class="h-flex" style="justify-content: center; gap: 10px; margin-bottom: 20px;">
-                    <button id="btn-follow" class="action-btn" style="width:auto; margin-top:0;" onclick="toggleFollow()">Follow</button>
-                    <button class="secondary-btn2" style="margin-top:0;" onclick="startChat()">Message</button>
-                </div>
-                <h3 class="mono" style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 15px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">ACTIVITY</h3>
-        <div id="other-profile-feed"></div>
+    <div style="text-align: center; padding: 20px 0;">
+        <div id="other-pic" style="width: 100px; height: 100px; border-radius: 50%; border: 2px solid var(--accent); margin: 0 auto 15px auto; background-size: cover;"></div>
+        <h2 id="other-name">User</h2>
+        <p id="other-academic" class="mono" style="color: var(--accent); font-size: 0.9rem; margin-bottom: 5px;"></p>
+        
+        <div id="other-bio" class="bio-text"></div>
+        
+        <div id="other-goal-container" style="display:none;">
+            <div class="future-goal-display">
+                <i class="fa-solid fa-rocket"></i> 5y Goal: <span id="other-goal"></span>
             </div>
-        </main>
+        </div>
+        
+        <div id="other-interests" class="interests-container"></div>
+        
+        <div class="stats-row">
+            <div class="stat-box"><h3 id="other-stat-followers" style="color:var(--accent)">0</h3><span class="mono" style="font-size:0.7rem">FOLLOWERS</span></div>
+            <div class="stat-box"><h3 id="other-stat-following" style="color:var(--text-primary)">0</h3><span class="mono" style="font-size:0.7rem">FOLLOWING</span></div>
+        </div>
+
+        <div class="h-flex" style="justify-content: center; gap: 10px; margin-bottom: 20px;">
+            <button id="btn-follow" class="action-btn" style="width:auto; margin-top:0;" onclick="toggleFollow()">Follow</button>
+            <button class="secondary-btn2" style="margin-top:0;" onclick="startChat()">Message</button>
+        </div>
+    </div> 
+    <h3 class="mono" style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 15px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">ACTIVITY</h3>
+    <div id="other-profile-feed"></div>
+</main>
 
         <main id="section-follow-list" class="content-area hidden">
             <div class="h-flex" style="margin-bottom: 20px;">
@@ -1238,12 +1241,32 @@ function showSystemNotification(title, body, chatId) {
     }
 }
 
+// Add this helper function to your script block
+function getHobbyDetails(hobby) {
+    // A stable, unique color for each hobby, visible on both themes.
+    const colorMap = {
+        "Coding": "#FF5555", "Music": "#D35400", "Travel": "#4DABF8",
+        "Gaming": "#9B59B6", "Reading": "#2ECC71", "Fitness": "#E67E22",
+        "Photography": "#F39C12", "Art": "#E91E63", "Startups": "#3498DB",
+        "AI": "#1ABC9C", "Foodie": "#D35400", "Movies": "#AF7AC5",
+        "Sports": "#E74C3C", "Writing": "#00BCD4", "Dance": "#34495E",
+        "Nature": "#16A085", "Fashion": "#95A5A6", "Politics": "#7F8C8D"
+    };
+    return colorMap[hobby] || 'var(--text-secondary)';
+}
+
     // --- NEW GPS HANDLING LOGIC ---
 // --- ADVANCED GPS HANDLING ---
 
 let gpsWatcher = null; // Store permission listener
 
 function requestGPS() {
+    const MAX_RANGE = 5000;
+    const statusEl = document.getElementById('gps-status-indicator');
+    
+    // Display the max range in the indicator area
+    statusEl.innerHTML = `<i class="fa-solid fa-satellite-dish"></i> RANGE: <span style="color:#4dabf8">${MAX_RANGE / 1000} KM</span>`;
+
     // 1. Check if Permissions API is supported
     if (navigator.permissions && navigator.permissions.query) {
         navigator.permissions.query({ name: 'geolocation' }).then(function(result) {
@@ -1387,18 +1410,46 @@ function retryGPS() {
             .catch(e => alert(e.message));
     }
 
-    function renderHobbiesSelector() {
+    // Find and replace this function in index.html
+function renderHobbiesSelector() {
     const container = document.getElementById('setup-interests');
     container.innerHTML = '';
     HOBBIES_LIST.forEach(hobby => {
         const chip = document.createElement('div');
+        const uniqueColor = getHobbyDetails(hobby); // Get unique color
+        
         chip.className = 'interest-chip';
-        if(selectedHobbies.has(hobby)) chip.classList.add('selected');
+        
+        // Apply color styles
+        chip.style.borderColor = uniqueColor;
+        chip.style.color = uniqueColor;
+        
+        if(selectedHobbies.has(hobby)) {
+            chip.classList.add('selected');
+            // Overwrite styles for selected state
+            chip.style.backgroundColor = uniqueColor;
+            chip.style.color = 'white';
+            chip.style.boxShadow = `0 0 10px ${uniqueColor}50`; // Semi-transparent glow
+        }
+        
         chip.innerText = hobby;
         chip.onclick = () => {
-            if(selectedHobbies.has(hobby)) selectedHobbies.delete(hobby);
-            else selectedHobbies.add(hobby);
-            chip.classList.toggle('selected');
+            if(selectedHobbies.has(hobby)) {
+                selectedHobbies.delete(hobby);
+                chip.classList.remove('selected');
+                // Restore unselected styles
+                chip.style.backgroundColor = 'var(--bg-card)';
+                chip.style.color = uniqueColor;
+                chip.style.boxShadow = 'none';
+            }
+            else {
+                selectedHobbies.add(hobby);
+                chip.classList.add('selected');
+                // Apply selected styles
+                chip.style.backgroundColor = uniqueColor;
+                chip.style.color = 'white';
+                chip.style.boxShadow = `0 0 10px ${uniqueColor}50`;
+            }
         };
         container.appendChild(chip);
     });
@@ -1436,6 +1487,14 @@ intContainer.innerHTML = '';
 (userData.interests || []).forEach(hobby => {
     const span = document.createElement('div');
     span.className = 'interest-chip selected display-only';
+    
+    // --- START NEW COLOR CODE ---
+    const uniqueColor = getHobbyDetails(hobby);
+    span.style.backgroundColor = uniqueColor;
+    span.style.borderColor = uniqueColor;
+    span.style.color = 'white';
+    // --- END NEW COLOR CODE ---
+    
     span.innerText = hobby;
     intContainer.appendChild(span);
 });
@@ -1473,7 +1532,9 @@ followingEl.parentElement.onclick = () => openFollowList('following', currentUse
     }
 
     // --- PROFILE & FOLLOW SYSTEM ---
-    function openUserProfile(uid) {
+    // --- REPLACE YOUR EXISTING openUserProfile FUNCTION WITH THIS ---
+
+function openUserProfile(uid) {
     if (uid === currentUser.uid) {
         window.location.hash = 'profile';
         return;
@@ -1491,19 +1552,16 @@ followingEl.parentElement.onclick = () => openFollowList('following', currentUse
         // Academic Info
         document.getElementById('other-academic').innerText = `${u.academic.major} • ${u.academic.year} • ${u.academic.university}`;
 
-        // --- MODIFIED SECTION: CLICKABLE STATS ---
+        // Stats
         const otherFollowerEl = document.getElementById('other-stat-followers');
         otherFollowerEl.innerText = u.followersCount || 0;
-        // Make the whole box clickable
         otherFollowerEl.parentElement.style.cursor = "pointer";
         otherFollowerEl.parentElement.onclick = () => openFollowList('followers', uid, 'other-profile');
 
         const otherFollowingEl = document.getElementById('other-stat-following');
         otherFollowingEl.innerText = u.followingCount || 0;
-        // Make the whole box clickable
         otherFollowingEl.parentElement.style.cursor = "pointer";
         otherFollowingEl.parentElement.onclick = () => openFollowList('following', uid, 'other-profile');
-        // -----------------------------------------
 
         document.getElementById('other-bio').innerText = u.bio || "No bio.";
 
@@ -1515,15 +1573,25 @@ followingEl.parentElement.onclick = () => openFollowList('following', currentUse
             document.getElementById('other-goal-container').style.display = 'none';
         }
 
-        // Interests
+        // --- FIXED INTERESTS RENDERING WITH COLORS ---
         const intContainer = document.getElementById('other-interests');
         intContainer.innerHTML = '';
         (u.interests || []).forEach(hobby => {
             const span = document.createElement('div');
             span.className = 'interest-chip selected display-only';
+            
+            // 1. Get the unique color
+            const uniqueColor = getHobbyDetails(hobby);
+            
+            // 2. Apply the styles manually
+            span.style.backgroundColor = uniqueColor;
+            span.style.borderColor = uniqueColor;
+            span.style.color = 'white';
+            
             span.innerText = hobby;
             intContainer.appendChild(span);
         });
+        // ---------------------------------------------
 
         // Follow Button Check
         db.collection('users').doc(currentUser.uid).collection('following').doc(uid).get().then(fDoc => {
@@ -1756,66 +1824,93 @@ followingEl.parentElement.onclick = () => openFollowList('following', currentUse
         return R * c;
     }
 
-    function loadNearbyUsers() {
-        const list = document.getElementById('user-list');
-        const radarCircle = document.querySelector('.radar-circle');
-        const MAX_RANGE = 5000;
+    // --- POSTS & RADAR (With Blips) ---
+// Find this function and replace it:
 
-        db.collection('users').orderBy('lastActive', 'desc').limit(20).onSnapshot(snap => {
-            list.innerHTML = '';
-            const oldBlips = radarCircle.querySelectorAll('.radar-blip, .blip-tooltip');
-            oldBlips.forEach(el => el.remove());
+function loadNearbyUsers() {
+    const list = document.getElementById('user-list');
+    const radarCircle = document.querySelector('.radar-circle');
+    const MAX_RANGE = 5000; // 5000 meters (5 km)
+    
+    // Display the range prominently (in the GPS status indicator area)
+    const statusEl = document.getElementById('gps-status-indicator');
+    statusEl.innerHTML = `<i class="fa-solid fa-satellite-dish"></i> RANGE: <span style="color:#4dabf8">${MAX_RANGE / 1000} KM</span>`;
 
-            if(snap.empty) { list.innerHTML = '<p class="mono" style="color:var(--text-secondary); text-align:center;">No signals.</p>'; return; }
-
-            let usersWithDistance = [];
-            snap.forEach(doc => {
-                const u = doc.data();
-                if(u.uid !== currentUser.uid) {
-                    let dist = null;
-                    if(myLocation && u.location) dist = getDistanceFromLatLonInMeters(myLocation.lat, myLocation.lng, u.location.lat, u.location.lng);
-                    if (dist === null || dist <= MAX_RANGE) usersWithDistance.push({ ...u, distance: dist });
+    db.collection('users').orderBy('lastActive', 'desc').limit(20).onSnapshot(snap => {
+        list.innerHTML = '';
+        const oldBlips = radarCircle.querySelectorAll('.radar-blip, .blip-tooltip');
+        oldBlips.forEach(el => el.remove());
+        
+        let usersWithDistance = [];
+        snap.forEach(doc => {
+            const u = doc.data();
+            if(u.uid !== currentUser.uid) {
+                let dist = null;
+                // Only calculate distance if myLocation and user location exist
+                if(myLocation && u.location) {
+                    dist = getDistanceFromLatLonInMeters(myLocation.lat, myLocation.lng, u.location.lat, u.location.lng);
                 }
-            });
-
-            usersWithDistance.sort((a, b) => (a.distance || 9999) - (b.distance || 9999));
-
-            usersWithDistance.forEach(u => {
-                let distText = u.distance ? `${Math.round(u.distance)}m` : 'Unknown';
-                list.innerHTML += `
-                    <div class="user-list-item" onclick="openUserProfile('${u.uid}')">
-                        <div class="avatar" style="background-image: url('${u.photoURL || ''}')"></div>
-                        <div style="flex:1;">
-                            <div class="h-flex" style="justify-content:space-between;">
-                                <div style="font-weight:600;">${u.displayName}</div>
-                                <div class="mono" style="font-size:0.7rem; color:var(--accent);">${distText}</div>
-                            </div>
-                            <div style="font-size:0.8rem; color:var(--text-secondary);">${u.academic?.major || 'Student'}</div>
-                        </div>
-                    </div>
-                `;
-
-                if(u.distance !== null) {
-                    const blip = document.createElement('div');
-                    blip.className = 'radar-blip';
-                    const percentFromCenter = (u.distance / MAX_RANGE) * 45; 
-                    const randomAngle = Math.random() * 2 * Math.PI;
-                    const top = 50 + (percentFromCenter * Math.sin(randomAngle));
-                    const left = 50 + (percentFromCenter * Math.cos(randomAngle));
-                    blip.style.top = top + '%'; blip.style.left = left + '%';
-                    blip.onclick = (e) => { e.stopPropagation(); openUserProfile(u.uid); };
-                    const tooltip = document.createElement('div');
-                    tooltip.className = 'blip-tooltip';
-                    tooltip.innerText = u.displayName.split(' ')[0];
-                    tooltip.style.top = top + '%';
-                    tooltip.style.left = left + '%';
-                    
-                    radarCircle.appendChild(tooltip);
-                    radarCircle.appendChild(blip);
+                
+                // IMPORTANT: Filter out users immediately if distance is unknown or outside MAX_RANGE
+                if (dist !== null && dist <= MAX_RANGE) {
+                    usersWithDistance.push({ ...u, distance: dist });
                 }
-            });
+            }
         });
-    }
+
+        if(usersWithDistance.length === 0) { 
+            list.innerHTML = '<p class="mono" style="color:var(--text-secondary); text-align:center;">No students found within range.</p>'; 
+            return; 
+        }
+
+        usersWithDistance.sort((a, b) => a.distance - b.distance);
+
+        usersWithDistance.forEach(u => {
+            let distText = `${Math.round(u.distance)}m`;
+            
+            // --- 1. Populate the User List (List View) ---
+            list.innerHTML += `
+                <div class="user-list-item" onclick="openUserProfile('${u.uid}')">
+                    <div class="avatar" style="background-image: url('${u.photoURL || ''}')"></div>
+                    <div style="flex:1;">
+                        <div class="h-flex" style="justify-content:space-between;">
+                            <div style="font-weight:600;">${u.displayName}</div>
+                            <div class="mono" style="font-size:0.7rem; color:var(--accent);">${distText}</div>
+                        </div>
+                        <div style="font-size:0.8rem; color:var(--text-secondary);">${u.academic?.major || 'Student'}</div>
+                    </div>
+                </div>
+            `;
+
+            // --- 2. Populate the Radar View (Blips) ---
+            if(u.distance !== null) {
+                const blip = document.createElement('div');
+                blip.className = 'radar-blip';
+                
+                // Calculate position based on distance: map 0m to 0% and MAX_RANGE to 45% radial distance
+                // We use 45% to keep the blip inside the radar circle boundary.
+                const percentFromCenter = (u.distance / MAX_RANGE) * 45; 
+                
+                // Keep random angle to distribute blips realistically
+                const randomAngle = Math.random() * 2 * Math.PI;
+                const top = 50 + (percentFromCenter * Math.sin(randomAngle));
+                const left = 50 + (percentFromCenter * Math.cos(randomAngle));
+                
+                blip.style.top = top + '%'; blip.style.left = left + '%';
+                blip.onclick = (e) => { e.stopPropagation(); openUserProfile(u.uid); };
+                
+                const tooltip = document.createElement('div');
+                tooltip.className = 'blip-tooltip';
+                tooltip.innerText = u.displayName.split(' ')[0] + ` (${distText})`;
+                tooltip.style.top = top + '%';
+                tooltip.style.left = left + '%';
+                
+                radarCircle.appendChild(tooltip);
+                radarCircle.appendChild(blip);
+            }
+        });
+    });
+}
 
     // --- MENU FUNCTIONS ---
 

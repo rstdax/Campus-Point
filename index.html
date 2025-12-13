@@ -508,6 +508,154 @@
 @keyframes spin { 
     to { transform: rotate(360deg); } 
 }
+
+/* --- STORY TRAY STYLES --- */
+.stories-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    white-space: nowrap;
+    padding: 10px 0 15px 0;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-card); /* Optional: distinct background */
+    scrollbar-width: none; /* Firefox */
+}
+.stories-wrapper::-webkit-scrollbar { display: none; } /* Chrome/Safari */
+
+.story-tray {
+    display: inline-flex;
+    padding: 0 15px;
+    gap: 15px;
+}
+
+.story-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    width: 70px;
+}
+
+/* The Gradient Ring Container */
+.story-ring-container {
+    width: 68px;
+    height: 68px;
+    border-radius: 50%;
+    padding: 2px; /* Thickness of the gap */
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Unseen Story Gradient (Instagram colors) */
+.story-ring-container.unseen {
+    background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+}
+
+/* Seen Story (Gray) */
+.story-ring-container.seen {
+    background: #555;
+}
+
+/* No Story (Transparent/Border only) */
+.story-ring-container.none {
+    background: transparent;
+    border: 1px solid var(--border);
+    padding: 0;
+}
+
+/* The actual profile picture */
+.story-avatar {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background-size: cover;
+    background-position: center;
+    border: 2px solid var(--bg-card); /* Gap color matching background */
+}
+
+/* The "Add" (+) badge for current user */
+.add-story-badge {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 20px;
+    height: 20px;
+    background: var(--accent);
+    border: 2px solid var(--bg-card);
+    border-radius: 50%;
+    color: white;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.story-username {
+    font-size: 0.75rem;
+    margin-top: 5px;
+    width: 100%;
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text-primary);
+}
+
+/* --- FULL SCREEN STORY VIEWER --- */
+#story-viewer-modal {
+    position: fixed;
+    inset: 0;
+    background: #000;
+    z-index: 9999;
+    display: none;
+    flex-direction: column;
+}
+
+/* Progress Bars at top */
+.story-progress-container {
+    display: flex;
+    gap: 5px;
+    padding: 10px 10px;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 10;
+}
+.story-progress-bar {
+    height: 3px;
+    background: rgba(255,255,255,0.3);
+    flex: 1;
+    border-radius: 2px;
+    overflow: hidden;
+}
+.story-progress-fill {
+    height: 100%;
+    background: #fff;
+    width: 0%; 
+    /* transition: width 5s linear; <-- Will be handled via JS */
+}
+
+.story-header-overlay {
+    position: absolute;
+    top: 25px;
+    left: 15px;
+    right: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 10;
+    color: white;
+}
+
+.story-image-view {
+    width: 100%;
+    height: 100%;
+    object-fit: contain; /* Show full image */
+}
+
     </style>
 </head>
 <body>
@@ -628,8 +776,37 @@
         </main>
 
         <main id="section-feed" class="content-area hidden">
+            <div class="stories-wrapper">
+        <div id="stories-tray" class="story-tray">
+            </div>
+    </div>
             <div id="feed-container"></div>
         </main>
+
+        <input type="file" id="story-file-input" accept="image/*" style="display:none;" onchange="handleStoryFileSelect()">
+
+
+<div id="story-viewer-modal">
+    <div id="story-progress-bars" class="story-progress-container"></div>
+    
+    <div class="story-header-overlay">
+        <div class="h-flex">
+            <div id="sv-avatar" class="avatar" style="border:none; width:32px; height:32px;"></div>
+            <div id="sv-name" style="font-weight:600; font-size:0.9rem; text-shadow: 0 1px 3px rgba(0,0,0,0.5);">User</div>
+            <div id="sv-time" style="font-size:0.8rem; opacity:0.8; margin-left:10px; text-shadow: 0 1px 3px rgba(0,0,0,0.5);">1h</div>
+        </div>
+        <i class="fa-solid fa-xmark" onclick="closeStoryViewer()" style="font-size:1.5rem; cursor:pointer; text-shadow: 0 1px 3px rgba(0,0,0,0.5);"></i>
+    </div>
+
+    <img id="sv-image" src="" class="story-image-view">
+    
+    <div style="position:absolute; top:0; bottom:0; left:0; width:30%; z-index:5;" onclick="prevStory()"></div>
+    <div style="position:absolute; top:0; bottom:0; right:0; width:30%; z-index:5;" onclick="nextStory()"></div>
+
+    <div id="sv-delete-btn" onclick="deleteCurrentStory()" style="position:absolute; bottom:20px; right:20px; color:white; z-index:10; display:none; cursor:pointer;">
+        <i class="fa-solid fa-trash"></i>
+    </div>
+</div>
 
         <main id="section-chat-list" class="content-area hidden">
             <h2 class="mono" style="margin-bottom:20px;">MESSAGES</h2>
@@ -1480,6 +1657,7 @@ if(userData.futureGoal) {
 
 startNotificationListener(); 
 loadGroupLobby();
+startStoryListener();
 
 // 3. Show Interests
 const intContainer = document.getElementById('profile-interests');
@@ -1530,6 +1708,295 @@ followingEl.parentElement.onclick = () => openFollowList('following', currentUse
         
         switchTab('feed', document.querySelector('.nav-item'));
     }
+
+
+    /* --- STORY SYSTEM VARIABLES --- */
+let activeStories = {}; // Objects grouped by UID: { uid: [story1, story2] }
+let currentViewerStories = []; // Array of stories being viewed currently
+let currentStoryIndex = 0;
+let storyTimer = null;
+let currentStoryUid = null; // UID of the user whose stories we are watching
+
+// --- 1. LISTEN TO STORIES ---
+function startStoryListener() {
+    const now = Date.now();
+    // Query stories that expire in the future
+    db.collection('stories')
+      .where('expiresAt', '>', now) 
+      .orderBy('expiresAt', 'asc') // This is needed for the > query
+      .onSnapshot(snapshot => {
+          
+          activeStories = {}; // Reset local cache
+          
+          snapshot.forEach(doc => {
+              const s = doc.data();
+              s.id = doc.id;
+              
+              if(!activeStories[s.uid]) {
+                  activeStories[s.uid] = [];
+              }
+              activeStories[s.uid].push(s);
+          });
+
+          renderStoryTray();
+      });
+}
+
+// --- 2. RENDER THE TRAY ---
+function renderStoryTray() {
+    const tray = document.getElementById('stories-tray');
+    tray.innerHTML = '';
+
+    // A. Render "My Story" (First Item)
+    const myStories = activeStories[currentUser.uid] || [];
+    const hasMyStory = myStories.length > 0;
+    
+    let myRingClass = 'none';
+    if (hasMyStory) {
+        // Check if I have unseen stories (logic: usually own stories are always "seen" visually, 
+        // but let's make it colored if active to show it exists)
+        myRingClass = 'seen'; 
+    }
+
+    // HTML for My Story
+    tray.innerHTML += `
+        <div class="story-item" onclick="handleMyStoryClick(${hasMyStory})">
+            <div class="story-ring-container ${myRingClass}">
+                <div class="story-avatar" style="background-image: url('${currentUser.photoURL}')"></div>
+                ${!hasMyStory ? '<div class="add-story-badge"><i class="fa-solid fa-plus"></i></div>' : ''}
+            </div>
+            <div class="story-username">Your Story</div>
+        </div>
+    `;
+
+    // B. Render Other Users
+    Object.keys(activeStories).forEach(uid => {
+        if(uid === currentUser.uid) return; // Skip me (handled above)
+
+        const userStories = activeStories[uid];
+        const lastStory = userStories[userStories.length - 1]; // Use details from last story
+        
+        // Determine if seen
+        // Simple logic: Check if currentUser ID is in 'viewers' array of the *last* story
+        // For a perfect Instagram clone, check ALL stories, but this is good for MVP
+        let isUnseen = false;
+        userStories.forEach(s => {
+            if(!s.viewers || !s.viewers.includes(currentUser.uid)) {
+                isUnseen = true;
+            }
+        });
+
+        const ringClass = isUnseen ? 'unseen' : 'seen';
+
+        tray.innerHTML += `
+            <div class="story-item" onclick="openStoryViewer('${uid}')">
+                <div class="story-ring-container ${ringClass}">
+                    <div class="story-avatar" style="background-image: url('${lastStory.userPhoto}')"></div>
+                </div>
+                <div class="story-username">${lastStory.userName.split(' ')[0]}</div>
+            </div>
+        `;
+    });
+}
+
+// --- 3. UPLOAD STORY ---
+function handleMyStoryClick(hasStory) {
+    if(hasStory) {
+        // If I have stories, ask if I want to View or Add New
+        const action = confirm("View your story or Add a new one?\nOk = View\nCancel = Add New");
+        if(action) {
+            openStoryViewer(currentUser.uid);
+        } else {
+            document.getElementById('story-file-input').click();
+        }
+    } else {
+        // No story, trigger upload directly
+        document.getElementById('story-file-input').click();
+    }
+}
+
+async function handleStoryFileSelect() {
+    const fileInput = document.getElementById('story-file-input');
+    const file = fileInput.files[0];
+    if(!file) return;
+
+    // Show visual feedback
+    const tray = document.getElementById('stories-tray');
+    const originalContent = tray.innerHTML; // Hacky backup
+    
+    // Quick alert or UI update
+    alert("Uploading story... Please wait.");
+
+    try {
+        // 1. Compress (Use your existing function)
+        const compressed = await compressImage(file);
+        
+        // 2. Upload (Use your existing function)
+        const url = await uploadToImageKit(compressed);
+        
+        if(!url) throw new Error("Upload failed");
+
+        // 3. Save to Firestore
+        const expiresAt = Date.now() + (24 * 60 * 60 * 1000); // 24 Hours from now
+
+        await db.collection('stories').add({
+            uid: currentUser.uid,
+            userName: currentUser.displayName,
+            userPhoto: currentUser.photoURL,
+            imageUrl: url,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+            expiresAt: expiresAt,
+            viewers: [] // Init empty viewers
+        });
+
+        alert("Story added!");
+
+    } catch(err) {
+        console.error(err);
+        alert("Failed to upload story.");
+    }
+
+    fileInput.value = ""; // Clear input
+}
+
+// --- 4. VIEW STORY VIEWER ---
+function openStoryViewer(uid) {
+    currentStoryUid = uid;
+    currentViewerStories = activeStories[uid];
+    
+    if(!currentViewerStories || currentViewerStories.length === 0) return;
+
+    // Find the first unseen story index
+    let startIndex = 0;
+    for(let i=0; i<currentViewerStories.length; i++) {
+        if(!currentViewerStories[i].viewers || !currentViewerStories[i].viewers.includes(currentUser.uid)) {
+            startIndex = i;
+            break;
+        }
+    }
+
+    currentStoryIndex = startIndex;
+    
+    document.getElementById('story-viewer-modal').style.display = 'flex';
+    showStoryAtIndex(currentStoryIndex);
+}
+
+function showStoryAtIndex(index) {
+    if(index >= currentViewerStories.length) {
+        closeStoryViewer();
+        return;
+    }
+    if(index < 0) {
+        // Could go to previous user here in advanced version
+        index = 0; 
+    }
+
+    currentStoryIndex = index;
+    const story = currentViewerStories[index];
+
+    // 1. Update UI
+    document.getElementById('sv-image').src = story.imageUrl;
+    document.getElementById('sv-avatar').style.backgroundImage = `url('${story.userPhoto}')`;
+    document.getElementById('sv-name').innerText = story.userName;
+    
+    // Time calc
+    const now = Date.now();
+    const created = story.timestamp ? story.timestamp.toDate().getTime() : now;
+    const diffMins = Math.floor((now - created) / 60000);
+    let timeText = diffMins + "m";
+    if(diffMins > 60) timeText = Math.floor(diffMins/60) + "h";
+    document.getElementById('sv-time').innerText = timeText;
+
+    // 2. Show Delete button if mine
+    const delBtn = document.getElementById('sv-delete-btn');
+    if(story.uid === currentUser.uid) {
+        delBtn.style.display = 'block';
+    } else {
+        delBtn.style.display = 'none';
+        // Mark as Seen in DB if not mine
+        markStoryAsSeen(story.id);
+    }
+
+    // 3. Render Progress Bars
+    renderProgressBars();
+
+    // 4. Start Timer (5 seconds)
+    resetStoryTimer();
+}
+
+function renderProgressBars() {
+    const container = document.getElementById('story-progress-bars');
+    container.innerHTML = '';
+    
+    currentViewerStories.forEach((s, idx) => {
+        const bar = document.createElement('div');
+        bar.className = 'story-progress-bar';
+        
+        const fill = document.createElement('div');
+        fill.className = 'story-progress-fill';
+        
+        if(idx < currentStoryIndex) {
+            fill.style.width = '100%'; // Already seen
+        } else if (idx === currentStoryIndex) {
+            // Animate current
+            fill.style.width = '0%';
+            setTimeout(() => { fill.style.width = '100%'; fill.style.transition = 'width 5s linear'; }, 50);
+        } else {
+            fill.style.width = '0%'; // Future
+        }
+        
+        bar.appendChild(fill);
+        container.appendChild(bar);
+    });
+}
+
+function resetStoryTimer() {
+    if(storyTimer) clearTimeout(storyTimer);
+    storyTimer = setTimeout(() => {
+        nextStory();
+    }, 5000); // 5 seconds per story
+}
+
+function nextStory() {
+    showStoryAtIndex(currentStoryIndex + 1);
+}
+
+function prevStory() {
+    showStoryAtIndex(currentStoryIndex - 1);
+}
+
+function closeStoryViewer() {
+    document.getElementById('story-viewer-modal').style.display = 'none';
+    if(storyTimer) clearTimeout(storyTimer);
+    // Refresh tray to update ring colors
+    renderStoryTray();
+}
+
+function markStoryAsSeen(storyId) {
+    // Optimistic check: don't write if already seen
+    // But for simplicity, arrayUnion handles uniqueness
+    db.collection('stories').doc(storyId).update({
+        viewers: firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
+    });
+}
+
+function deleteCurrentStory() {
+    const story = currentViewerStories[currentStoryIndex];
+    if(!story) return;
+    
+    if(confirm("Delete this story?")) {
+        db.collection('stories').doc(story.id).delete().then(() => {
+            alert("Deleted");
+            // Remove from local array immediately for UI smoothness
+            currentViewerStories.splice(currentStoryIndex, 1);
+            if(currentViewerStories.length === 0) {
+                closeStoryViewer();
+            } else {
+                showStoryAtIndex(currentStoryIndex); // Will show next or stay
+            }
+        });
+    }
+}
 
     // --- PROFILE & FOLLOW SYSTEM ---
     // --- REPLACE YOUR EXISTING openUserProfile FUNCTION WITH THIS ---
