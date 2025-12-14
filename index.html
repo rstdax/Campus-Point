@@ -1190,6 +1190,75 @@
 .font-cursive { font-family: 'cursive'; font-style: italic; }
 .font-serif { font-family: 'serif'; font-weight: bold; }
 
+/* --- STORY EDITOR EXTRA TOOLS --- */
+
+/* Font Picker Tray */
+.font-tray {
+    position: absolute;
+    bottom: 80px;
+    left: 0;
+    right: 0;
+    background: rgba(0,0,0,0.9);
+    padding: 15px;
+    display: none; /* Hidden by default */
+    gap: 15px;
+    overflow-x: auto;
+    z-index: 20;
+}
+
+.font-option {
+    color: white;
+    font-size: 1.2rem;
+    padding: 5px 15px;
+    border: 1px solid #444;
+    border-radius: 20px;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.font-option.selected {
+    background: var(--accent);
+    border-color: var(--accent);
+}
+
+/* Text Edit Modal (Dialog) */
+#text-edit-dialog, #mention-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    z-index: 12000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+}
+
+.edit-card {
+    background: var(--bg-card);
+    width: 90%;
+    max-width: 350px;
+    padding: 20px;
+    border-radius: 15px;
+    border: 1px solid var(--border);
+}
+
+/* User Search List */
+.search-results {
+    max-height: 200px;
+    overflow-y: auto;
+    margin-top: 10px;
+}
+
+.search-item {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+}
+
+.search-item:hover { background: var(--bg-input); }
+
 
     </style>
 </head>
@@ -1667,16 +1736,46 @@
         <span class="sticker-option" onclick="addSticker('📍')">📍</span>
         <span class="sticker-option" onclick="addSticker('👀')">👀</span>
         <span class="sticker-option" onclick="addSticker('💯')">💯</span>
-        <span class="sticker-option" onclick="addSticker('🚀')">🚀</span>
+    </div>
+
+    <div id="font-tray" class="font-tray">
+        <div class="font-option font-classic" onclick="applyFont('Inter')">Classic</div>
+        <div class="font-option font-mono" onclick="applyFont('JetBrains Mono')">Code</div>
+        <div class="font-option font-cursive" onclick="applyFont('cursive')">Style</div>
+        <div class="font-option font-serif" onclick="applyFont('serif')">Formal</div>
+        <div class="font-option" style="font-family: impact" onclick="applyFont('Impact')">Bold</div>
     </div>
 
     <div class="story-toolbar-bottom">
-        <button class="editor-btn" onclick="addStoryText()"><i class="fa-solid fa-font"></i></button>
+        <button class="editor-btn" onclick="addNewTextLayer()"><i class="fa-solid fa-font"></i></button>
+        <button class="editor-btn" onclick="toggleFonts()"><i class="fa-solid fa-text-height"></i></button>
         <button class="editor-btn" onclick="toggleStickers()"><i class="fa-regular fa-face-smile"></i></button>
+        <button class="editor-btn" onclick="openMentionDialog()"><i class="fa-solid fa-at"></i></button>
         
         <button class="action-btn" onclick="uploadStoryFromCanvas()" style="width: auto; padding: 10px 20px; margin: 0; font-size: 0.9rem;">
-            Your Story <i class="fa-solid fa-chevron-right"></i>
+            Post <i class="fa-solid fa-paper-plane"></i>
         </button>
+    </div>
+</div>
+
+<div id="text-edit-dialog">
+    <div class="edit-card">
+        <label>EDIT TEXT</label>
+        <textarea id="story-text-input" class="nexus-input" rows="3" style="font-size: 1.2rem;"></textarea>
+        <div class="h-flex" style="gap: 10px;">
+            <button class="secondary-btn" onclick="document.getElementById('text-edit-dialog').style.display='none'">Cancel</button>
+            <button class="action-btn" onclick="saveTextEdit()">Done</button>
+        </div>
+        <button class="secondary-btn" onclick="deleteActiveObject()" style="width:100%; border-color:#ff5555; color:#ff5555; margin-top:10px;">Delete Element</button>
+    </div>
+</div>
+
+<div id="mention-modal">
+    <div class="edit-card">
+        <label>MENTION A FRIEND</label>
+        <input type="text" id="mention-search" class="nexus-input" placeholder="Search name..." oninput="searchUsersForMention(this.value)">
+        <div id="mention-results" class="search-results"></div>
+        <button class="secondary-btn" onclick="document.getElementById('mention-modal').style.display='none'" style="width:100%; margin-top:10px;">Close</button>
     </div>
 </div>
 
@@ -2799,6 +2898,18 @@ function initStoryEditor(imageUrl) {
         backgroundColor: '#000'
     });
 
+    fabricCanvas.on('mouse:down', function(options) {
+        if (options.target) {
+            // Check if it is a text object
+            if (options.target.type === 'i-text') {
+                // Prevent default editing
+                options.target.editable = false; 
+                // Open custom dialog
+                openTextEditor(options.target);
+            }
+        }
+    });
+
     // 2. Load Image as Background (Fit to screen)
     fabric.Image.fromURL(imageUrl, function(img) {
         // Scale image to fit contained
@@ -2824,6 +2935,134 @@ function initStoryEditor(imageUrl) {
     // Listen for changes to save history
     fabricCanvas.on('object:modified', saveHistory);
     fabricCanvas.on('object:added', saveHistory);
+}
+
+// --- TEXT & FONT LOGIC ---
+
+let activeTextObject = null; // Track which text is being edited
+
+function addNewTextLayer() {
+    const text = new fabric.IText('Type here', {
+        left: fabricCanvas.width / 2,
+        top: fabricCanvas.height / 2,
+        fontFamily: 'Inter',
+        fill: '#ffffff',
+        fontSize: 40,
+        fontWeight: 'bold',
+        originX: 'center',
+        originY: 'center',
+        shadow: 'rgba(0,0,0,0.8) 2px 2px 5px',
+        editable: false // Disable built-in edit, use our dialog
+    });
+    fabricCanvas.add(text);
+    fabricCanvas.setActiveObject(text);
+    openTextEditor(text); // Open dialog immediately
+}
+
+function openTextEditor(obj) {
+    activeTextObject = obj;
+    document.getElementById('story-text-input').value = obj.text;
+    document.getElementById('text-edit-dialog').style.display = 'flex';
+}
+
+function saveTextEdit() {
+    if (activeTextObject) {
+        const val = document.getElementById('story-text-input').value;
+        activeTextObject.set({ text: val });
+        fabricCanvas.renderAll();
+        saveHistory();
+    }
+    document.getElementById('text-edit-dialog').style.display = 'none';
+}
+
+function deleteActiveObject() {
+    if (activeTextObject) {
+        fabricCanvas.remove(activeTextObject);
+        saveHistory();
+    }
+    document.getElementById('text-edit-dialog').style.display = 'none';
+}
+
+function toggleFonts() {
+    const tray = document.getElementById('font-tray');
+    // Hide sticker tray if open
+    document.getElementById('sticker-tray').style.display = 'none';
+    
+    tray.style.display = (tray.style.display === 'flex') ? 'none' : 'flex';
+}
+
+function applyFont(fontName) {
+    const activeObj = fabricCanvas.getActiveObject();
+    if (activeObj && activeObj.type === 'i-text') {
+        activeObj.set({ fontFamily: fontName });
+        fabricCanvas.renderAll();
+        saveHistory();
+    } else {
+        alert("Please select a text element first.");
+    }
+}
+
+// --- MENTION LOGIC ---
+
+function openMentionDialog() {
+    document.getElementById('mention-modal').style.display = 'flex';
+    document.getElementById('mention-search').value = '';
+    document.getElementById('mention-results').innerHTML = '';
+    document.getElementById('mention-search').focus();
+}
+
+function searchUsersForMention(query) {
+    const resDiv = document.getElementById('mention-results');
+    if(query.length < 2) {
+        resDiv.innerHTML = '';
+        return;
+    }
+
+    // Simple startAt search (Case sensitive in Firestore usually, but good enough for MVP)
+    db.collection('users')
+        .where('displayName', '>=', query)
+        .where('displayName', '<=', query + '\uf8ff')
+        .limit(5)
+        .get()
+        .then(snapshot => {
+            resDiv.innerHTML = '';
+            snapshot.forEach(doc => {
+                const u = doc.data();
+                resDiv.innerHTML += `
+                    <div class="search-item" onclick="addMentionToStory('${u.uid}', '${u.displayName}')">
+                        <div class="avatar" style="background-image: url('${u.photoURL}')"></div>
+                        <div>
+                            <div style="font-weight:600">${u.displayName}</div>
+                            <div style="font-size:0.8rem;color:#888">${u.academic.major}</div>
+                        </div>
+                    </div>
+                `;
+            });
+        });
+}
+
+function addMentionToStory(uid, name) {
+    document.getElementById('mention-modal').style.display = 'none';
+    
+    // Create text object with custom property 'mentionedUid'
+    const text = new fabric.IText(`@${name}`, {
+        left: fabricCanvas.width / 2,
+        top: fabricCanvas.height / 2,
+        fontFamily: 'Inter',
+        fill: '#FFD700', // Gold color for mentions
+        fontSize: 35,
+        fontWeight: 'bold',
+        originX: 'center',
+        originY: 'center',
+        shadow: 'rgba(0,0,0,0.8) 2px 2px 5px',
+        editable: false,
+        // CUSTOM DATA
+        mentionedUid: uid 
+    });
+
+    fabricCanvas.add(text);
+    fabricCanvas.setActiveObject(text);
+    saveHistory();
 }
 
 // --- TOOLS ---
@@ -2903,7 +3142,6 @@ function closeStoryEditor() {
 // --- FINAL UPLOAD ---
 
 function uploadStoryFromCanvas() {
-    // 1. Get Blob from Canvas
     document.getElementById('story-canvas').toBlob(async (blob) => {
         if (!blob) return alert("Canvas error");
 
@@ -2911,28 +3149,59 @@ function uploadStoryFromCanvas() {
         showUploadModal("Uploading Story...");
 
         try {
-            // 2. Compress (Safety)
+            // 1. Compress
             const file = new File([blob], "story.jpg", { type: "image/jpeg" });
             const compressed = await compressImage(file);
             
-            // 3. Upload to ImageKit
+            // 2. Upload
             const url = await uploadToImageKit(compressed);
             if(!url) throw new Error("Upload failed");
 
-            // 4. Save to Firestore
-            const expiresAt = Date.now() + (24 * 60 * 60 * 1000); 
-            const authorName = globalProfileData.displayName || currentUser.displayName;
-            const authorPhoto = globalProfileData.photoURL || currentUser.photoURL;
+            // 3. Scan for Mentions (Collect UIDs)
+            const objects = fabricCanvas.getObjects();
+            let mentionedUserIds = [];
+            
+            objects.forEach(obj => {
+                if (obj.mentionedUid) {
+                    mentionedUserIds.push(obj.mentionedUid);
+                }
+            });
+            // Remove duplicates
+            mentionedUserIds = [...new Set(mentionedUserIds)];
 
+            // 4. Save Story
+            const expiresAt = Date.now() + (24 * 60 * 60 * 1000); 
+            const myName = globalProfileData.displayName || currentUser.displayName;
+            
             await db.collection('stories').add({
                 uid: currentUser.uid,
-                userName: authorName,
-                userPhoto: authorPhoto,
+                userName: myName,
+                userPhoto: globalProfileData.photoURL || currentUser.photoURL,
                 imageUrl: url,
                 timestamp: firebase.firestore.FieldValue.serverTimestamp(),
                 expiresAt: expiresAt,
-                viewers: [] 
+                viewers: [],
+                mentions: mentionedUserIds // Save metadata if needed later
             });
+
+            // 5. Send Notifications
+            const notifBatch = db.batch();
+            const timestamp = firebase.firestore.FieldValue.serverTimestamp();
+
+            mentionedUserIds.forEach(targetUid => {
+                const ref = db.collection('users').doc(targetUid).collection('notifications').doc();
+                notifBatch.set(ref, {
+                    type: 'mention',
+                    fromUid: currentUser.uid,
+                    fromName: myName,
+                    fromPhoto: globalProfileData.photoURL || currentUser.photoURL,
+                    text: "mentioned you in their story.",
+                    timestamp: timestamp,
+                    read: false
+                });
+            });
+            
+            await notifBatch.commit();
 
             updateProgressBar(100);
             setTimeout(() => { hideUploadModal(); }, 500);
