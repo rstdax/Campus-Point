@@ -19,6 +19,8 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
     
 
 
@@ -756,6 +758,61 @@
     box-shadow: 0 4px 10px rgba(0,0,0,0.3);
 }
 
+/* --- CROPPER MODAL STYLES --- */
+#cropper-modal {
+    position: fixed;
+    inset: 0;
+    background: #000000;
+    z-index: 9999;
+    display: none; /* Hidden by default */
+    flex-direction: column;
+}
+
+.cropper-container-wrapper {
+    flex: 1;
+    background: #111;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+/* Ensure image fits max area */
+#cropper-target-img {
+    display: block;
+    max-width: 100%;
+}
+
+.cropper-toolbar {
+    height: 80px;
+    background: var(--bg-card);
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    padding: 0 20px;
+}
+
+.crop-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-primary);
+    font-size: 1.2rem;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.8rem;
+    cursor: pointer;
+}
+
+.crop-btn i { font-size: 1.4rem; }
+.crop-btn.save { color: var(--accent); }
+.crop-btn.cancel { color: #ff5555; }
+
+
     </style>
 </head>
 <body>
@@ -1096,6 +1153,28 @@
 
     </div>
 
+
+    <div id="cropper-modal">
+        <div class="cropper-container-wrapper">
+            <img id="cropper-target-img" src="">
+        </div>
+        
+        <div class="cropper-toolbar">
+            <button class="crop-btn cancel" onclick="cancelCrop()">
+                <i class="fa-solid fa-xmark"></i> Cancel
+            </button>
+            <button class="crop-btn" onclick="rotateImage(-90)">
+                <i class="fa-solid fa-rotate-left"></i> Rotate
+            </button>
+            <button class="crop-btn" onclick="rotateImage(90)">
+                <i class="fa-solid fa-rotate-right"></i> Rotate
+            </button>
+            <button class="crop-btn save" onclick="finishCrop()">
+                <i class="fa-solid fa-check"></i> Done
+            </button>
+        </div>
+    </div>
+
     <script>
 
 // --- IMPROVED PWA INSTALLATION LOGIC (Android & iOS) ---
@@ -1234,14 +1313,75 @@ function loadGroupLobby() {
 }
 
 function previewProfilePic() {
-    const file = document.getElementById('setup-file-input').files[0];
-    if(file) {
+    const fileInput = document.getElementById('setup-file-input');
+    const file = fileInput.files[0];
+    
+    if (file) {
         const reader = new FileReader();
         reader.onload = function(e) {
-            document.getElementById('setup-pic-preview').src = e.target.result;
+            // 1. Set the image source for the cropper
+            const imgElement = document.getElementById('cropper-target-img');
+            imgElement.src = e.target.result;
+            
+            // 2. Show the modal
+            document.getElementById('cropper-modal').style.display = 'flex';
+
+            // 3. Destroy previous cropper if exists (to prevent bugs)
+            if(cropper) {
+                cropper.destroy();
+            }
+
+            // 4. Initialize Cropper.js
+            cropper = new Cropper(imgElement, {
+                aspectRatio: 1, // Force Square for profile pics
+                viewMode: 1,    // Restrict crop box to image size
+                dragMode: 'move',
+                autoCropArea: 0.8,
+                background: false, // Dark background
+            });
         }
         reader.readAsDataURL(file);
     }
+}
+
+function rotateImage(deg) {
+    if(cropper) cropper.rotate(deg);
+}
+
+function cancelCrop() {
+    document.getElementById('cropper-modal').style.display = 'none';
+    document.getElementById('setup-file-input').value = ""; // Reset input
+    if(cropper) {
+        cropper.destroy();
+        cropper = null;
+    }
+}
+
+function finishCrop() {
+    if(!cropper) return;
+
+    // 1. Get the cropped canvas
+    const canvas = cropper.getCroppedCanvas({
+        width: 500,  // Resize to reasonable profile size
+        height: 500
+    });
+
+    // 2. Convert canvas to Blob/File
+    canvas.toBlob((blob) => {
+        // Create a new File object from the blob
+        finalCroppedFile = new File([blob], "profile-edited.jpg", { type: "image/jpeg" });
+
+        // 3. Update the Preview in the Setup Screen
+        document.getElementById('setup-pic-preview').src = URL.createObjectURL(finalCroppedFile);
+
+        // 4. Close Modal
+        document.getElementById('cropper-modal').style.display = 'none';
+        
+        // Cleanup
+        cropper.destroy();
+        cropper = null;
+
+    }, 'image/jpeg', 0.9);
 }
 
 function getHobbyIcon(hobby) {
@@ -1378,6 +1518,8 @@ let selectedHobbies = new Set();
     let myLocation = null;
     let viewingUserId = null;
     let lastProfileTab = 'profile'; // Remembers where to go back to
+    let cropper = null; 
+let finalCroppedFile = null; // Stores the edited file ready for upload
 
     // --- 1. NEW ROUTER SYSTEM ---
     
@@ -1709,16 +1851,17 @@ function retryGPS() {
         let finalPhotoURL = currentUser.photoURL; // Default to existing
 
         // Check if user selected a NEW file
-        if (fileInput.files.length > 0) {
+        if (finalCroppedFile) {
             saveBtn.innerText = "UPLOADING IMAGE...";
-            // 1. Compress
-            const compressed = await compressImage(fileInput.files[0]);
-            // 2. Upload to ImageKit
+            
+            // 1. Compress (optional, since we resized in cropper, but good for safety)
+            const compressed = await compressImage(finalCroppedFile);
+            
+            // 2. Upload
             const newUrl = await uploadToImageKit(compressed);
             
             if (newUrl) {
                 finalPhotoURL = newUrl;
-                // Optional: Update Firebase Auth Profile (so it persists across apps)
                 await currentUser.updateProfile({ photoURL: finalPhotoURL });
             }
         }
@@ -1745,6 +1888,8 @@ function retryGPS() {
         // Reset UI
         saveBtn.innerText = "SAVE PROFILE";
         saveBtn.disabled = false;
+
+        finalCroppedFile = null;
         
         // Clear file input
         fileInput.value = ""; 
