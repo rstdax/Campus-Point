@@ -991,6 +991,59 @@
     margin-top: 4px;
 }
 
+/* --- STORY VIEWS STYLES --- */
+#sv-views-btn {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    color: white;
+    z-index: 10;
+    cursor: pointer;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 8px 12px;
+    border-radius: 20px;
+    backdrop-filter: blur(4px);
+    display: none; /* Hidden by default */
+    font-size: 0.9rem;
+    align-items: center;
+    gap: 6px;
+}
+
+/* --- VIEWER LIST MODAL (Bottom Sheet) --- */
+#views-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 11000; /* Above story viewer */
+    display: none;
+    align-items: flex-end; /* Bottom sheet style */
+}
+
+.views-sheet {
+    background: var(--bg-card);
+    width: 100%;
+    height: 60vh; /* Takes up 60% of screen */
+    border-radius: 20px 20px 0 0;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    animation: slideUp 0.3s ease-out;
+}
+
+.views-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 15px;
+    margin-bottom: 10px;
+}
+
+.views-list {
+    flex: 1;
+    overflow-y: auto;
+}
+
 
     </style>
 </head>
@@ -1179,6 +1232,10 @@
     
     <div style="position:absolute; top:0; bottom:0; left:0; width:30%; z-index:5;" onclick="prevStory()"></div>
     <div style="position:absolute; top:0; bottom:0; right:0; width:30%; z-index:5;" onclick="nextStory()"></div>
+
+    <div id="sv-views-btn" onclick="openStoryViews()">
+        <i class="fa-solid fa-eye"></i> <span id="sv-views-count">0</span>
+    </div>
 
     <div id="sv-delete-btn" onclick="deleteCurrentStory()" style="position:absolute; bottom:20px; right:20px; color:white; z-index:10; display:none; cursor:pointer;">
         <i class="fa-solid fa-trash"></i>
@@ -1403,6 +1460,18 @@
         <div id="upload-subtext" class="upload-subtext">Compressing media</div>
         <div class="progress-track">
             <div id="upload-progress-bar" class="progress-bar"></div>
+        </div>
+    </div>
+</div>
+
+<div id="views-modal" onclick="closeStoryViews()">
+    <div class="views-sheet" onclick="event.stopPropagation()">
+        <div class="views-header">
+            <div class="mono" style="font-weight: 700;">Story Views</div>
+            <i class="fa-solid fa-xmark" onclick="closeStoryViews()" style="font-size: 1.2rem; cursor:pointer; color:var(--text-secondary);"></i>
+        </div>
+        <div id="views-list-content" class="views-list">
+            <div class="loader-spinner" style="margin: 30px auto;"></div>
         </div>
     </div>
 </div>
@@ -2565,28 +2634,16 @@ function showStoryAtIndex(index) {
     currentStoryIndex = index;
     const story = currentViewerStories[index];
 
-    // 1. Update UI & Add Click Listeners for Profile
+    // 1. Update UI
     document.getElementById('sv-image').src = story.imageUrl;
     
-    // --- AVATAR CLICK ---
     const avatarEl = document.getElementById('sv-avatar');
     avatarEl.style.backgroundImage = `url('${story.userPhoto}')`;
-    avatarEl.style.cursor = 'pointer';
-    avatarEl.onclick = (e) => {
-        e.stopPropagation(); // Don't skip story
-        closeStoryViewer();  // Close modal
-        openUserProfile(story.uid); // Go to profile
-    };
+    avatarEl.onclick = (e) => { e.stopPropagation(); closeStoryViewer(); openUserProfile(story.uid); };
 
-    // --- NAME CLICK ---
     const nameEl = document.getElementById('sv-name');
     nameEl.innerText = story.userName;
-    nameEl.style.cursor = 'pointer';
-    nameEl.onclick = (e) => {
-        e.stopPropagation();
-        closeStoryViewer();
-        openUserProfile(story.uid);
-    };
+    nameEl.onclick = (e) => { e.stopPropagation(); closeStoryViewer(); openUserProfile(story.uid); };
     
     // Time calc
     const now = Date.now();
@@ -2596,13 +2653,23 @@ function showStoryAtIndex(index) {
     if(diffMins > 60) timeText = Math.floor(diffMins/60) + "h";
     document.getElementById('sv-time').innerText = timeText;
 
-    // 2. Show Delete button if mine
+    // --- NEW: Views & Delete Logic ---
+    const viewsBtn = document.getElementById('sv-views-btn');
     const delBtn = document.getElementById('sv-delete-btn');
+
     if(story.uid === currentUser.uid) {
+        // IT IS MY STORY
         delBtn.style.display = 'block';
+        
+        // Show View Count
+        const viewCount = story.viewers ? story.viewers.length : 0;
+        document.getElementById('sv-views-count').innerText = viewCount;
+        viewsBtn.style.display = 'flex';
+        
     } else {
+        // OTHER USER STORY
         delBtn.style.display = 'none';
-        // Mark as Seen in DB if not mine
+        viewsBtn.style.display = 'none'; // Hide views for others
         markStoryAsSeen(story.id);
     }
 
@@ -2610,6 +2677,56 @@ function showStoryAtIndex(index) {
     renderProgressBars();
 
     // 4. Start Timer (5 seconds)
+    resetStoryTimer();
+}
+
+function openStoryViews(event) {
+    if(event) event.stopPropagation();
+
+    // 1. Pause the Story Timer so it doesn't skip while looking at list
+    if(storyTimer) clearTimeout(storyTimer);
+
+    // 2. Show Modal
+    const modal = document.getElementById('views-modal');
+    modal.style.display = 'flex';
+    
+    // 3. Get Current Story Viewers
+    const story = currentViewerStories[currentStoryIndex];
+    const viewerIds = story.viewers || [];
+    const container = document.getElementById('views-list-content');
+
+    if (viewerIds.length === 0) {
+        container.innerHTML = '<p style="text-align:center; color:var(--text-secondary); margin-top:30px;">No views yet.</p>';
+        return;
+    }
+
+    container.innerHTML = '<div class="loader-spinner" style="margin: 30px auto;"></div>';
+
+    // 4. Fetch User Profiles for each Viewer ID
+    // Note: In a large app, you'd use pagination or cache. 
+    // For this, we'll fetch them individually (Promises).
+    const promises = viewerIds.map(uid => db.collection('users').doc(uid).get());
+
+    Promise.all(promises).then(snapshots => {
+        container.innerHTML = '';
+        
+        snapshots.forEach(doc => {
+            if(doc.exists) {
+                const u = doc.data();
+                // Reuse your existing list item renderer!
+                container.innerHTML += renderUserListItem(u);
+            }
+        });
+    }).catch(err => {
+        console.error(err);
+        container.innerHTML = '<p style="text-align:center; color:#ff5555;">Error loading views.</p>';
+    });
+}
+
+function closeStoryViews() {
+    document.getElementById('views-modal').style.display = 'none';
+    
+    // Resume the story timer!
     resetStoryTimer();
 }
 
