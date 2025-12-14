@@ -1259,6 +1259,27 @@
 
 .search-item:hover { background: var(--bg-input); }
 
+/* --- NOTIFICATION POST PREVIEW --- */
+.notif-post-thumb {
+    width: 45px;
+    height: 45px;
+    border-radius: 6px;
+    margin-left: 10px;
+    object-fit: cover;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    flex-shrink: 0; /* Prevent shrinking on small screens */
+}
+
+/* Style for Text-Only Placeholder */
+.notif-post-thumb.placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    font-size: 1.2rem;
+}
+
 
     </style>
 </head>
@@ -3215,18 +3236,17 @@ function uploadStoryFromCanvas() {
 }
 
 // --- NOTIFICATION HELPER ---
-function sendAppNotification(targetUid, type, text, postId = null) {
-    if (!targetUid || targetUid === currentUser.uid) return; // Don't notify yourself
+function sendAppNotification(targetUid, type, text, postId = null, postThumb = null) {
+    if (!targetUid || targetUid === currentUser.uid) return;
 
     const myName = globalProfileData.displayName || currentUser.displayName;
     const myPhoto = globalProfileData.photoURL || currentUser.photoURL;
     const timestamp = firebase.firestore.FieldValue.serverTimestamp();
 
-    // Create a unique ID for 'likes' so spamming like/unlike doesn't create 100 notifications
-    // For comments, we leave ID auto-generated so every comment gets a notification
+    // Unique ID logic for likes to prevent spam
     let docId = null;
     if (type === 'like' && postId) {
-        docId = `${postId}_${currentUser.uid}`; // Unique ID: PostID + LikerID
+        docId = `${postId}_${currentUser.uid}`;
     }
 
     const notifData = {
@@ -3237,15 +3257,16 @@ function sendAppNotification(targetUid, type, text, postId = null) {
         text: text,
         timestamp: timestamp,
         read: false,
-        postId: postId // Save Post ID to potentially open the post later
+        postId: postId,
+        postThumb: postThumb // <--- SAVING THE IMAGE URL
     };
 
     const ref = db.collection('users').doc(targetUid).collection('notifications');
 
     if (docId) {
-        ref.doc(docId).set(notifData); // Overwrite existing like notification
+        ref.doc(docId).set(notifData);
     } else {
-        ref.add(notifData); // Add new notification (for comments)
+        ref.add(notifData);
     }
 }
 
@@ -3621,13 +3642,9 @@ function openUserProfile(uid) {
 }
 
 function openNotifications() {
-    // 1. Switch to the view
     switchTab('notifications');
-    
-    // 2. Hide the red badge locally immediately
     document.getElementById('notif-badge').style.display = 'none';
 
-    // 3. Load data
     const list = document.getElementById('notification-list');
     list.innerHTML = '<div class="loader-spinner" style="margin: 20px auto;"></div>';
 
@@ -3643,15 +3660,36 @@ function openNotifications() {
               return;
           }
 
-          const batch = db.batch(); // Batch to mark them as read
+          const batch = db.batch(); 
 
           snapshot.forEach(doc => {
               const n = doc.data();
               const time = n.timestamp ? new Date(n.timestamp.toDate()).toLocaleDateString() : '';
               
-              // Render Item
+              // --- PREVIEW LOGIC ---
+              let postPreviewHTML = '';
+              
+              if(n.postThumb) {
+                  // CASE 1: Post has an image -> Show Image
+                  postPreviewHTML = `<img src="${n.postThumb}" class="notif-post-thumb">`;
+              } 
+              else if (n.postId) {
+                  // CASE 2: Post exists but is Text-Only -> Show Icon Placeholder
+                  postPreviewHTML = `
+                      <div class="notif-post-thumb placeholder">
+                          <i class="fa-solid fa-align-left"></i>
+                      </div>
+                  `;
+              }
+              // CASE 3: Follow notification -> Show nothing (postPreviewHTML stays empty)
+
+              // Determine Click Action
+              // If it's a "Follow", go to Profile. If it's "Like/Comment", go to that specific Post.
+              // Note: You'll need to handle 'openPost(pid)' later, or just default to profile for now.
+              const clickAction = `openUserProfile('${n.fromUid}')`; 
+
               list.innerHTML += `
-                  <div class="notif-item" onclick="openUserProfile('${n.fromUid}')">
+                  <div class="notif-item" onclick="${clickAction}">
                       <div class="avatar" style="background-image: url('${n.fromPhoto}')"></div>
                       <div class="notif-content">
                           <div class="notif-text">
@@ -3659,16 +3697,15 @@ function openNotifications() {
                           </div>
                           <div class="notif-time">${time}</div>
                       </div>
+                      ${postPreviewHTML} 
                   </div>
               `;
 
-              // If unread, add to batch to mark as read
               if(n.read === false) {
                   batch.update(doc.ref, { read: true });
               }
           });
 
-          // Commit the "mark as read" batch
           batch.commit().catch(e => console.log("Error marking read", e));
       });
 }
@@ -4193,29 +4230,29 @@ function reportPost(pid, reportedUid, reportedName) {
             const data = doc.data();
             const boosts = data.boosts || [];
             const isCurrentlyBoosted = boosts.includes(currentUser.uid);
-            const postAuthorUid = data.uid; // Get the author ID
+            
+            // Extract needed data
+            const postAuthorUid = data.uid; 
+            const postImage = data.imageUrl || null; // <--- GET IMAGE
 
-            // Update Boost Array
             t.update(ref, { 
                 boosts: isCurrentlyBoosted 
                     ? firebase.firestore.FieldValue.arrayRemove(currentUser.uid) 
                     : firebase.firestore.FieldValue.arrayUnion(currentUser.uid) 
             });
             
-            // Return data to the .then() block
             return { 
                 wasBoosted: !isCurrentlyBoosted, 
-                authorUid: postAuthorUid 
+                authorUid: postAuthorUid,
+                image: postImage // <--- RETURN IMAGE
             };
         });
     }).then(result => {
-        // SUCCESS
         if (result.wasBoosted) {
             showBoostAnimation();
-            // --- NEW: Send Notification ---
-            sendAppNotification(result.authorUid, 'like', 'boosted your post.', pid);
+            // Pass the image URL to the notification helper
+            sendAppNotification(result.authorUid, 'like', 'boosted your post.', pid, result.image);
         }
-        
     }).catch(error => {
         console.error("Boost transaction failed: ", error);
     });
@@ -4231,26 +4268,24 @@ function reportPost(pid, reportedUid, reportedName) {
     const val = document.getElementById(`input-${pid}`).value;
     if(!val) return;
 
-    // 1. Fetch Post to get Author ID
     db.collection('posts').doc(pid).get().then(doc => {
         if(doc.exists) {
             const postData = doc.data();
             const authorUid = postData.uid;
+            const postImage = postData.imageUrl || null; // <--- GET IMAGE
 
-            // 2. Add Comment
             db.collection('posts').doc(pid).collection('comments').add({
                 text: val, 
                 userName: currentUser.displayName, 
                 uid: currentUser.uid, 
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             }).then(() => {
-                // 3. Clear Input
                 document.getElementById(`input-${pid}`).value = '';
                 
-                // --- NEW: Send Notification ---
-                // We truncate the comment if it's too long for the notification
                 const snippet = val.length > 20 ? val.substring(0, 20) + "..." : val;
-                sendAppNotification(authorUid, 'comment', `commented: "${snippet}"`, pid);
+                
+                // Pass the image URL to the notification helper
+                sendAppNotification(authorUid, 'comment', `commented: "${snippet}"`, pid, postImage);
             });
         }
     }).catch(err => console.error("Error posting comment:", err));
