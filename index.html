@@ -938,6 +938,59 @@
     color: var(--text-secondary);
 }
 
+/* --- NOTIFICATIONS STYLES --- */
+.header-icon-btn {
+    position: relative;
+    margin-right: 20px;
+    cursor: pointer;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.notif-badge {
+    position: absolute;
+    top: 0px;
+    right: -2px;
+    width: 9px;
+    height: 9px;
+    background: #ff5555;
+    border-radius: 50%;
+    display: none; /* Hidden by default */
+    border: 1px solid var(--bg-glass);
+}
+
+.notif-item {
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    background: var(--bg-card);
+}
+
+.notif-item:active {
+    background: var(--bg-input);
+}
+
+.notif-content {
+    margin-left: 12px;
+    flex: 1;
+}
+
+.notif-text {
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    line-height: 1.4;
+}
+
+.notif-time {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin-top: 4px;
+}
+
 
     </style>
 </head>
@@ -1037,6 +1090,11 @@
         <header class="header">
             <div class="brand mono" style="font-weight:700;">CAMPUS<span style="color:var(--accent)">POINT</span></div>
             <div class="h-flex">
+                <div class="header-icon-btn" onclick="openNotifications()">
+                    <i class="fa-regular fa-bell" style="font-size: 1.2rem;"></i>
+                    <div id="notif-badge" class="notif-badge"></div>
+                </div>
+
                 <i class="fa-solid fa-moon" id="theme-btn" onclick="toggleTheme()" style="margin-right: 20px; color: var(--text-secondary); cursor:pointer;"></i>
                 <img id="header-avatar" src="" style="width:28px; height:28px; border-radius:6px; display:none;">
             </div>
@@ -1199,6 +1257,16 @@
         <div id="user-list"></div>
     </div>
 
+</main>
+
+<main id="section-notifications" class="content-area hidden">
+    <div class="h-flex" style="margin-bottom: 20px;">
+        <i class="fa-solid fa-arrow-left" onclick="window.history.back()" style="font-size: 1.2rem; cursor: pointer; padding: 10px;"></i>
+        <div class="mono" style="font-weight: 700; font-size: 1.1rem; margin-left: 10px;">NOTIFICATIONS</div>
+    </div>
+    <div id="notification-list">
+        <p style="text-align:center; color:var(--text-secondary); margin-top:30px;">No new notifications.</p>
+    </div>
 </main>
 
 
@@ -1899,6 +1967,18 @@ function startNotificationListener() {
                   }
               }
           });
+      });
+
+      db.collection('users').doc(currentUser.uid).collection('notifications')
+      .where('read', '==', false)
+      .onSnapshot(snapshot => {
+          const badge = document.getElementById('notif-badge');
+          if(!snapshot.empty) {
+              badge.style.display = 'block';
+              // Optional: Play a sound here
+          } else {
+              badge.style.display = 'none';
+          }
       });
 }
 
@@ -2696,26 +2776,117 @@ function openUserProfile(uid) {
 }
 
     function toggleFollow() {
-        if(!viewingUserId) return;
-        const myRef = db.collection('users').doc(currentUser.uid);
-        const otherRef = db.collection('users').doc(viewingUserId);
-        
-        myRef.collection('following').doc(viewingUserId).get().then(doc => {
-            if(doc.exists) {
-                // Unfollow
-                myRef.collection('following').doc(viewingUserId).delete();
-                otherRef.collection('followers').doc(currentUser.uid).delete();
-                myRef.update({followingCount: firebase.firestore.FieldValue.increment(-1)});
-                otherRef.update({followersCount: firebase.firestore.FieldValue.increment(-1)});
-            } else {
-                // Follow
-                myRef.collection('following').doc(viewingUserId).set({timestamp: new Date()});
-                otherRef.collection('followers').doc(currentUser.uid).set({timestamp: new Date()});
-                myRef.update({followingCount: firebase.firestore.FieldValue.increment(1)});
-                otherRef.update({followersCount: firebase.firestore.FieldValue.increment(1)});
-            }
-        });
-    }
+    if(!viewingUserId) return;
+    
+    const myRef = db.collection('users').doc(currentUser.uid);
+    const otherRef = db.collection('users').doc(viewingUserId);
+    
+    myRef.collection('following').doc(viewingUserId).get().then(doc => {
+        if(doc.exists) {
+            // --- UNFOLLOW ---
+            myRef.collection('following').doc(viewingUserId).delete();
+            otherRef.collection('followers').doc(currentUser.uid).delete();
+            
+            myRef.update({followingCount: firebase.firestore.FieldValue.increment(-1)});
+            otherRef.update({followersCount: firebase.firestore.FieldValue.increment(-1)});
+            
+            // UI Update
+            const btn = document.getElementById('btn-follow');
+            btn.innerText = "Follow";
+            btn.style.background = "var(--accent)";
+            btn.style.border = "none";
+
+        } else {
+            // --- FOLLOW ---
+            const timestamp = firebase.firestore.FieldValue.serverTimestamp();
+
+            myRef.collection('following').doc(viewingUserId).set({timestamp: timestamp});
+            otherRef.collection('followers').doc(currentUser.uid).set({timestamp: timestamp});
+            
+            myRef.update({followingCount: firebase.firestore.FieldValue.increment(1)});
+            otherRef.update({followersCount: firebase.firestore.FieldValue.increment(1)});
+
+            // --- SEND NOTIFICATION ---
+            // We use .doc(currentUser.uid) so if you follow/unfollow multiple times, 
+            // it overwrites the same notification instead of spamming them.
+            
+            // Get my latest name/photo from global data to ensure accuracy
+            const myName = globalProfileData.displayName || currentUser.displayName;
+            const myPhoto = globalProfileData.photoURL || currentUser.photoURL;
+
+            db.collection('users').doc(viewingUserId).collection('notifications').doc(currentUser.uid).set({
+                type: 'follow',
+                fromUid: currentUser.uid,
+                fromName: myName, 
+                fromPhoto: myPhoto,
+                text: "started following you.",
+                timestamp: timestamp,
+                read: false
+            });
+
+            // UI Update
+            const btn = document.getElementById('btn-follow');
+            btn.innerText = "Unfollow";
+            btn.style.background = "var(--bg-card)";
+            btn.style.border = "1px solid var(--border)";
+        }
+    });
+}
+
+function openNotifications() {
+    // 1. Switch to the view
+    switchTab('notifications');
+    
+    // 2. Hide the red badge locally immediately
+    document.getElementById('notif-badge').style.display = 'none';
+
+    // 3. Load data
+    const list = document.getElementById('notification-list');
+    list.innerHTML = '<div class="loader-spinner" style="margin: 20px auto;"></div>';
+
+    db.collection('users').doc(currentUser.uid).collection('notifications')
+      .orderBy('timestamp', 'desc')
+      .limit(50)
+      .get()
+      .then(snapshot => {
+          list.innerHTML = '';
+          
+          if(snapshot.empty) {
+              list.innerHTML = '<p style="text-align:center; color:var(--text-secondary); margin-top:30px;">No notifications yet.</p>';
+              return;
+          }
+
+          const batch = db.batch(); // Batch to mark them as read
+
+          snapshot.forEach(doc => {
+              const n = doc.data();
+              const time = n.timestamp ? new Date(n.timestamp.toDate()).toLocaleDateString() : '';
+              
+              // Render Item
+              list.innerHTML += `
+                  <div class="notif-item" onclick="openUserProfile('${n.fromUid}')">
+                      <div class="avatar" style="background-image: url('${n.fromPhoto}')"></div>
+                      <div class="notif-content">
+                          <div class="notif-text">
+                              <strong>${n.fromName}</strong> ${n.text}
+                          </div>
+                          <div class="notif-time">${time}</div>
+                      </div>
+                  </div>
+              `;
+
+              // If unread, add to batch to mark as read
+              if(n.read === false) {
+                  batch.update(doc.ref, { read: true });
+              }
+          });
+
+          // Commit the "mark as read" batch
+          batch.commit().catch(e => console.log("Error marking read", e));
+      });
+}
+
+
 
     // --- CHAT SYSTEM ---
     function startChat() {
