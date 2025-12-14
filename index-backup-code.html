@@ -983,41 +983,52 @@
             <i class="fa-solid fa-pen"></i>
         </div>
 
-        <main id="section-setup" class="content-area hidden">
-    <h2 class="mono" style="margin-bottom: 10px;">PROFILE SETUP</h2>
-    <p style="color:var(--text-secondary); font-size:0.9rem; margin-bottom:30px;">Update your academic identity.</p>
+        <main id="section-setup" class="content-area hidden" style="padding-top: 0;">
     
-    <div class="edit-pic-wrapper" onclick="document.getElementById('setup-file-input').click()">
-        <img id="setup-pic-preview" src="" class="edit-pic-img">
-        <div class="edit-pic-badge">
-            <i class="fa-solid fa-pencil"></i>
-        </div>
+            <div class="profile-header-wrapper" style="margin-bottom: 50px;">
+            
+                <img id="setup-banner-preview" src="" class="banner-img">
+                
+                <button class="secondary-btn" onclick="openBannerModal()" style="position: absolute; bottom: 10px; right: 10px; width: auto; background: rgba(0,0,0,0.6); color: white; border: none; font-size: 0.8rem; padding: 5px 12px; z-index: 10; border-radius: 6px;">
+                    <i class="fa-solid fa-image"></i> Change Banner
+                </button>
+
+                <div class="edit-pic-wrapper profile-pic-overlap" onclick="document.getElementById('setup-file-input').click()" style="margin: 0;">
+                    <img id="setup-pic-preview" src="" class="edit-pic-img">
+                    <div class="edit-pic-badge">
+                        <i class="fa-solid fa-pencil"></i>
+                    </div>
+                </div>
+            </div>
+
+    <div style="padding: 0 20px 80px 20px;"> <h2 class="mono" style="text-align:center; margin-bottom: 20px;">EDIT PROFILE</h2>
+        
+        <input type="file" id="setup-file-input" accept="image/*" style="display:none;" onchange="previewProfilePic()">
+
+        <label>FULL NAME</label>
+        <input type="text" id="setup-name" class="nexus-input">
+        
+        <label>INSTITUTION</label>
+        <input type="text" id="setup-university" class="nexus-input">
+        
+        <label>MAJOR</label>
+        <input type="text" id="setup-major" class="nexus-input">
+        
+        <label>YEAR</label>
+        <input type="text" id="setup-year" class="nexus-input">
+
+        <label>BIO <span id="bio-count" style="float:right; font-size:0.7rem;">0/150</span></label>
+        <textarea id="setup-bio" class="nexus-input" rows="3" maxlength="150" oninput="updateBioCount()"></textarea>
+
+        <label>INTERESTS</label>
+        <div id="setup-interests" class="interests-container"></div>
+
+        <label>FUTURE VISION</label>
+        <input type="text" id="setup-goal" class="nexus-input">
+        
+        <button id="btn-save-profile" class="action-btn" onclick="completeSetup()">SAVE PROFILE</button>
+        <button class="secondary-btn" onclick="cancelSetup()" style="width:100%;">Cancel</button>
     </div>
-    <input type="file" id="setup-file-input" accept="image/*" style="display:none;" onchange="previewProfilePic()">
-
-    <label>FULL NAME</label>
-    <input type="text" id="setup-name" class="nexus-input" placeholder="Your Name">
-    <label>INSTITUTION / UNIVERSITY</label>
-    <input type="text" id="setup-university" class="nexus-input" placeholder="e.g. Nagaon University">
-    <label>MAJOR / STREAM</label>
-    <input type="text" id="setup-major" class="nexus-input" placeholder="e.g. Computer Science">
-    <div class="h-flex" style="gap: 15px;">
-        <div style="flex:1">
-            <label>YEAR / SEMESTER</label>
-            <input type="text" id="setup-year" class="nexus-input" placeholder="e.g. 3rd Sem">
-        </div>
-    </div>
-    <label>BIO <span id="bio-count" style="float:right; font-size:0.7rem;">0/150</span></label>
-    <textarea id="setup-bio" class="nexus-input" rows="3" maxlength="150" placeholder="Short description about yourself..." oninput="updateBioCount()"></textarea>
-
-    <label>INTERESTS (Tap to select)</label>
-    <div id="setup-interests" class="interests-container"></div>
-
-    <label>FUTURE VISION (In 5 Years)</label>
-    <input type="text" id="setup-goal" class="nexus-input" placeholder="e.g., A Senior Developer, Entrepreneur...">
-    
-    <button id="btn-save-profile" class="action-btn" onclick="completeSetup()">SAVE PROFILE</button>
-    <button class="secondary-btn" onclick="cancelSetup()" style="width:100%; border:none; color:var(--text-secondary)">Cancel</button>
 </main>
 
         <main id="section-feed" class="content-area hidden">
@@ -1137,9 +1148,13 @@
             </div>
         </main>
 
-        <main id="section-profile" class="content-area hidden">
-            <div style="text-align: center; padding: 20px 0;">
-                <img id="profile-pic" src="" style="width: 100px; height: 100px; border-radius: 50%; border: 2px solid var(--accent); margin-bottom: 15px;">
+        <main id="section-profile" class="content-area hidden" style="padding-top: 0;">
+            <div class="profile-header-wrapper">
+                <img id="profile-banner" src="" class="banner-img">
+                <img id="profile-pic" src="" class="profile-pic-overlap">
+            </div>
+
+            <div style="text-align: center; padding: 0 20px;">
                 <h2 id="profile-name">User</h2>
                 <p id="profile-academic" class="mono" style="color: var(--accent); font-size: 0.9rem; margin-bottom: 5px;"></p>
                 <p id="profile-uni" style="color: var(--text-secondary); font-size: 0.8rem; margin-bottom: 15px;"></p>
@@ -1167,9 +1182,12 @@
             <div id="profile-feed"></div>
         </main>
 
-        <main id="section-other-profile" class="content-area hidden">
+        <main id="section-other-profile" class="content-area hidden" style="padding-top: 0;">
+    <div class="profile-header-wrapper">
+        <img id="other-banner" src="" class="banner-img">
+        <div id="other-pic" class="profile-pic-overlap" style="background-size: cover; border-width: 4px; border-style: solid; border-color: var(--bg-main);"></div>
+    </div>
     <div style="text-align: center; padding: 20px 0;">
-        <div id="other-pic" style="width: 100px; height: 100px; border-radius: 50%; border: 2px solid var(--accent); margin: 0 auto 15px auto; background-size: cover;"></div>
         <h2 id="other-name">User</h2>
         <p id="other-academic" class="mono" style="color: var(--accent); font-size: 0.9rem; margin-bottom: 5px;"></p>
         
@@ -1238,7 +1256,33 @@
         </div>
     </div>
 
+    <div id="banner-modal">
+    <div class="h-flex" style="justify-content: space-between; margin-bottom: 10px;">
+        <h3 style="color: white;">Select Banner</h3>
+        <i class="fa-solid fa-xmark" onclick="closeBannerModal()" style="color: white; font-size: 1.5rem; cursor: pointer;"></i>
+    </div>
+    <div id="banner-grid-container" class="banner-grid">
+        </div>
+</div>
+
     <script>
+
+        // Pre-defined high quality banners (Unsplash)
+const BANNER_OPTIONS = [
+    "https://images.unsplash.com/photo-1674257751921-4ec8fc65e563?w=600&q=80", // Gradient Blue
+    "https://images.unsplash.com/photo-1557683316-973673baf926?w=600&q=80", // Gradient Dark
+    "https://plus.unsplash.com/premium_photo-1723924899327-48f529ba853b?w=600&q=80", // Night Sky
+    "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=600&q=80", // Tech/Globe
+    "https://images.unsplash.com/photo-1493246507139-91e8fad9978e?w=600&q=80", // Mountains
+    "https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?w=600&q=80", // Neon City
+    "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600&q=80", // Beach
+    "https://images.unsplash.com/photo-1571470804270-af65e8b3d106?w=600&q=80", // Code
+    "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=600&q=80", // Matrix/Cyber
+    "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=600&q=80"  // Library/Books
+];
+
+let selectedBannerUrl = BANNER_OPTIONS[0]; // Default
+const DEFAULT_BANNER = BANNER_OPTIONS[0];
 
 // --- IMPROVED PWA INSTALLATION LOGIC (Android & iOS) ---
 
@@ -1321,6 +1365,38 @@ function hideInstallModal() {
 // Rename your existing function to match the call above
 function hideInstallPrompt() {
     hideInstallModal();
+}
+
+function openBannerModal() {
+    const container = document.getElementById('banner-grid-container');
+    container.innerHTML = '';
+    
+    BANNER_OPTIONS.forEach(url => {
+        const img = document.createElement('img');
+        img.src = url;
+        img.className = 'banner-option';
+        if(url === selectedBannerUrl) img.classList.add('selected');
+        
+        img.onclick = () => {
+            selectedBannerUrl = url;
+            // Visual feedback
+            document.querySelectorAll('.banner-option').forEach(el => el.classList.remove('selected'));
+            img.classList.add('selected');
+            
+            // Update preview
+            document.getElementById('setup-banner-preview').src = url;
+            
+            // Close modal after short delay
+            setTimeout(closeBannerModal, 200);
+        };
+        container.appendChild(img);
+    });
+    
+    document.getElementById('banner-modal').style.display = 'flex';
+}
+
+function closeBannerModal() {
+    document.getElementById('banner-modal').style.display = 'none';
 }
 
 // --- ANIMATION FUNCTION ---
@@ -1934,6 +2010,7 @@ function retryGPS() {
             displayName: name, 
             email: currentUser.email, 
             photoURL: finalPhotoURL, // Save the new URL to Firestore
+            bannerUrl: selectedBannerUrl,
             academic: { university: uni, major: major, year: year },
             bio: bio,
             futureGoal: futureGoal,
@@ -2026,6 +2103,7 @@ function updateBioCount() {
         document.getElementById('profile-academic').innerText = `${userData.academic.major} • ${userData.academic.year}`;
         document.getElementById('profile-uni').innerText = userData.academic.university;
         document.getElementById('profile-bio').innerText = userData.bio || "";
+        document.getElementById('profile-banner').src = userData.bannerUrl || DEFAULT_BANNER;
 
         // 2. Show Goal
 if(userData.futureGoal) {
@@ -2406,6 +2484,7 @@ function openUserProfile(uid) {
 
     db.collection('users').doc(uid).onSnapshot(doc => {
         const u = doc.data();
+        document.getElementById('other-banner').src = u.bannerUrl || DEFAULT_BANNER;
         document.getElementById('other-pic').style.backgroundImage = `url('${u.photoURL}')`;
         document.getElementById('other-name').innerText = u.displayName;
 
@@ -3058,6 +3137,9 @@ function reportPost(pid, reportedUid, reportedName) {
 
     // NEW: Load current profile picture into the preview
     document.getElementById('setup-pic-preview').src = globalProfileData.photoURL || currentUser.photoURL;
+
+    selectedBannerUrl = globalProfileData.bannerUrl || DEFAULT_BANNER;
+    document.getElementById('setup-banner-preview').src = selectedBannerUrl;
 
     // Load saved hobbies
     selectedHobbies = new Set(globalProfileData.interests || []);

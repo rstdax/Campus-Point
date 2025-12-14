@@ -875,6 +875,69 @@
     transform: scale(1.02);
 }
 
+/* --- UPLOAD PROGRESS MODAL --- */
+#upload-progress-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.85);
+    z-index: 12000; /* Highest priority */
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(5px);
+}
+
+.upload-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    padding: 30px;
+    border-radius: 20px;
+    width: 80%;
+    max-width: 300px;
+    text-align: center;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+}
+
+.upload-spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid var(--bg-input);
+    border-top: 4px solid var(--accent);
+    border-radius: 50%;
+    margin: 0 auto 20px auto;
+    animation: spin 1s linear infinite;
+}
+
+.progress-track {
+    width: 100%;
+    height: 6px;
+    background: var(--bg-input);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-top: 15px;
+}
+
+.progress-bar {
+    height: 100%;
+    background: var(--accent);
+    width: 0%;
+    transition: width 0.3s ease;
+    box-shadow: 0 0 10px var(--accent-glow);
+}
+
+.upload-status-text {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    margin-bottom: 5px;
+}
+
+.upload-subtext {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
 
     </style>
 </head>
@@ -1265,6 +1328,17 @@
         </div>
 </div>
 
+<div id="upload-progress-modal">
+    <div class="upload-card">
+        <div class="upload-spinner"></div>
+        <div class="upload-status-text">UPLOADING...</div>
+        <div id="upload-subtext" class="upload-subtext">Compressing media</div>
+        <div class="progress-track">
+            <div id="upload-progress-bar" class="progress-bar"></div>
+        </div>
+    </div>
+</div>
+
     <script>
 
         // Pre-defined high quality banners (Unsplash)
@@ -1397,6 +1471,22 @@ function openBannerModal() {
 
 function closeBannerModal() {
     document.getElementById('banner-modal').style.display = 'none';
+}
+
+// --- UPLOAD MODAL HELPERS ---
+function showUploadModal(text) {
+    document.getElementById('upload-progress-modal').style.display = 'flex';
+    document.getElementById('upload-subtext').innerText = text || "Processing...";
+    updateProgressBar(10); // Start little bit
+}
+
+function hideUploadModal() {
+    document.getElementById('upload-progress-modal').style.display = 'none';
+    updateProgressBar(0); // Reset
+}
+
+function updateProgressBar(percent) {
+    document.getElementById('upload-progress-bar').style.width = percent + '%';
 }
 
 // --- ANIMATION FUNCTION ---
@@ -2291,24 +2381,26 @@ async function handleStoryFileSelect() {
     const file = fileInput.files[0];
     if(!file) return;
 
-    // Show visual feedback
-    const tray = document.getElementById('stories-tray');
-    const originalContent = tray.innerHTML; // Hacky backup
-    
-    // Quick alert or UI update
-    alert("Uploading story... Please wait.");
+    // 1. Show Custom Modal
+    showUploadModal("Compressing Story...");
 
     try {
-        // 1. Compress (Use your existing function)
+        // 2. Compress
         const compressed = await compressImage(file);
         
-        // 2. Upload (Use your existing function)
+        updateProgressBar(40);
+        document.getElementById('upload-subtext').innerText = "Uploading to Server...";
+
+        // 3. Upload
         const url = await uploadToImageKit(compressed);
         
         if(!url) throw new Error("Upload failed");
 
-        // 3. Save to Firestore
-        const expiresAt = Date.now() + (24 * 60 * 60 * 1000); // 24 Hours from now
+        updateProgressBar(80);
+        document.getElementById('upload-subtext').innerText = "Finalizing...";
+
+        // 4. Save to Firestore
+        const expiresAt = Date.now() + (24 * 60 * 60 * 1000); 
 
         await db.collection('stories').add({
             uid: currentUser.uid,
@@ -2317,17 +2409,24 @@ async function handleStoryFileSelect() {
             imageUrl: url,
             timestamp: firebase.firestore.FieldValue.serverTimestamp(),
             expiresAt: expiresAt,
-            viewers: [] // Init empty viewers
+            viewers: [] 
         });
 
-        alert("Story added!");
+        updateProgressBar(100);
+        
+        // Short delay to let user see 100%
+        setTimeout(() => {
+            hideUploadModal();
+            // Optional: visual feedback toast or just refresh tray
+        }, 500);
 
     } catch(err) {
         console.error(err);
+        hideUploadModal();
         alert("Failed to upload story.");
     }
 
-    fileInput.value = ""; // Clear input
+    fileInput.value = ""; 
 }
 
 // --- 4. VIEW STORY VIEWER ---
@@ -3026,31 +3125,46 @@ function reportPost(pid, reportedUid, reportedName) {
 
     // MODIFIED CREATE POST TO HANDLE IMAGE & COMPRESSION
     async function createPost() {
-        const text = document.getElementById('post-text').value;
-        const goal = document.getElementById('post-goal').value || "#Update";
-        const fileInput = document.getElementById('post-file');
-        const btn = document.getElementById('btn-post');
+    const text = document.getElementById('post-text').value;
+    const goal = document.getElementById('post-goal').value || "#Update";
+    const fileInput = document.getElementById('post-file');
+    const btn = document.getElementById('btn-post');
 
-        if(!text && !fileInput.files[0]) return alert("Please add text or an image.");
+    if(!text && !fileInput.files[0]) return alert("Please add text or an image.");
 
-        btn.innerText = "UPLOADING...";
-        btn.disabled = true;
+    // Disable button to prevent double clicks
+    btn.disabled = true;
 
-        let uploadedImageUrl = "";
+    let uploadedImageUrl = "";
 
+    try {
         if(fileInput.files.length > 0) {
-            // Compress Image
+            // 1. Show Modal
+            showUploadModal("Optimizing Image...");
+            
+            // 2. Compress
             const compressedFile = await compressImage(fileInput.files[0]);
-            // Upload Compressed Image
+            
+            updateProgressBar(50);
+            document.getElementById('upload-subtext').innerText = "Uploading Media...";
+
+            // 3. Upload
             uploadedImageUrl = await uploadToImageKit(compressedFile);
+            
             if(!uploadedImageUrl) {
-                btn.innerText = "POST UPDATE";
-                btn.disabled = false;
-                return;
+                throw new Error("Image upload failed");
             }
+            updateProgressBar(90);
+        } else {
+            // If text only, just show a quick spinner
+            showUploadModal("Posting update...");
+            updateProgressBar(50);
         }
 
-        db.collection('posts').add({
+        document.getElementById('upload-subtext').innerText = "Saving Post...";
+
+        // 4. Save to Firestore
+        await db.collection('posts').add({
             text: text,
             goal: goal,
             imageUrl: uploadedImageUrl,
@@ -3059,18 +3173,32 @@ function reportPost(pid, reportedUid, reportedName) {
             userPhoto: currentUser.photoURL,
             boosts: [],
             timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        }).then(() => {
+        });
+
+        updateProgressBar(100);
+
+        // Success!
+        setTimeout(() => {
+            hideUploadModal();
+            
+            // Cleanup UI
             document.getElementById('post-text').value = '';
             clearImage();
             btn.innerText = "POST UPDATE";
             btn.disabled = false;
+            
+            // Go to feed
             switchTab('feed', document.querySelector('.nav-item'));
-        }).catch(err => {
-            alert("Error posting: " + err.message);
-            btn.innerText = "POST UPDATE";
-            btn.disabled = false;
-        });
+        }, 500);
+
+    } catch(err) {
+        console.error(err);
+        hideUploadModal();
+        alert("Error posting: " + err.message);
+        btn.innerText = "POST UPDATE";
+        btn.disabled = false;
     }
+}
 
     function toggleBoost(pid) {
         const ref = db.collection('posts').doc(pid);
