@@ -108,7 +108,7 @@
         label { display: block; font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 6px; font-family: 'JetBrains Mono', monospace; }
 
         .auth-btn, .action-btn {
-            background: var(--accent); color: var(--text-primary); border: none; padding: 14px 25px;
+            background: var(--accent); color: #FFFFFF; border: none; padding: 14px 25px;
             border-radius: 50px; font-weight: 600; cursor: pointer; width: 100%;
             box-shadow: 0 4px 15px var(--accent-glow); margin-top: 10px;
         }
@@ -231,7 +231,7 @@
             background: transparent; color: var(--text-primary); border: 1px solid var(--border); padding: 14px 25px;
             border-radius: 50px; font-weight: 600; cursor: pointer; width: 100%;
             box-shadow: 0 4px 15px var(--accent-glow); margin-top: 10px;
-            opacity: 0.7; cursor: not-allowed;
+        
         }
 
         /* --- Cards --- */
@@ -2961,10 +2961,12 @@ function openUserProfile(uid) {
                 btn.innerText = "Unfollow";
                 btn.style.background = "var(--bg-card)";
                 btn.style.border = "1px solid var(--border)";
+                btn.style.color = "var(--text-primary)";
             } else {
                 btn.innerText = "Follow";
                 btn.style.background = "var(--accent)";
                 btn.style.border = "none";
+                btn.style.color = "#ffffff";
             }
         });
 
@@ -3016,6 +3018,7 @@ function openUserProfile(uid) {
             btn.innerText = "Follow";
             btn.style.background = "var(--accent)";
             btn.style.border = "none";
+            btn.style.color = "#ffffff";
 
         } else {
             // --- FOLLOW ---
@@ -3050,6 +3053,7 @@ function openUserProfile(uid) {
             btn.innerText = "Unfollow";
             btn.style.background = "var(--bg-card)";
             btn.style.border = "1px solid var(--border)";
+            btn.style.color = "var(--text-primary)";
         }
     });
 }
@@ -3736,7 +3740,7 @@ function applyTheme(mode) {
     let effectiveTheme = 'dark'; // Default fallback
 
     if (mode === 'system') {
-        // Check device preference
+        // Detect System Preference
         if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
             effectiveTheme = 'light';
         } else {
@@ -3746,10 +3750,18 @@ function applyTheme(mode) {
         effectiveTheme = mode; // 'light' or 'dark'
     }
 
-    // Apply to DOM
+    // 1. Apply to CSS
     root.setAttribute('data-theme', effectiveTheme);
 
-    // Update Header Icon based on result
+    // 2. NEW: Update Browser Status Bar Color (Meta Tag)
+    // This overrides the manifest.json theme_color while the app is running
+    const metaThemeColor = document.querySelector("meta[name=theme-color]");
+    if (metaThemeColor) {
+        // Use your CSS variable colors: #050505 for dark, #F2F4F8 for light
+        metaThemeColor.setAttribute("content", effectiveTheme === 'dark' ? "#050505" : "#F2F4F8");
+    }
+
+    // 3. Update Icon
     if (btnIcon) {
         btnIcon.className = effectiveTheme === 'dark' ? "fa-solid fa-moon" : "fa-regular fa-sun";
     }

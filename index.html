@@ -21,6 +21,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
     
 
 
@@ -1109,6 +1110,86 @@
     to { transform: scale(1); opacity: 1; }
 }
 
+/* --- STORY EDITOR MODAL --- */
+#story-editor-modal {
+    position: fixed;
+    inset: 0;
+    background: #000;
+    z-index: 11000;
+    display: none;
+    flex-direction: column;
+}
+
+.story-canvas-container {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #111;
+    overflow: hidden;
+}
+
+.story-toolbar-top {
+    height: 60px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 15px;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent);
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 10;
+}
+
+.story-toolbar-bottom {
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    background: #000;
+    z-index: 10;
+}
+
+.editor-btn {
+    color: white;
+    font-size: 1.5rem;
+    background: rgba(255,255,255,0.1);
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border: none;
+}
+
+.sticker-tray {
+    position: absolute;
+    bottom: 80px;
+    left: 0;
+    right: 0;
+    background: rgba(0,0,0,0.9);
+    padding: 10px;
+    display: flex;
+    gap: 15px;
+    overflow-x: auto;
+    display: none; /* Hidden by default */
+}
+
+.sticker-option {
+    font-size: 2rem;
+    cursor: pointer;
+}
+
+/* Font Styles for Story Text */
+.font-classic { font-family: 'Inter', sans-serif; font-weight: 700; }
+.font-mono { font-family: 'JetBrains Mono', monospace; }
+.font-cursive { font-family: 'cursive'; font-style: italic; }
+.font-serif { font-family: 'serif'; font-weight: bold; }
+
 
     </style>
 </head>
@@ -1564,6 +1645,41 @@
     </div>
 </div>
 
+<div id="story-editor-modal">
+    <div class="story-toolbar-top">
+        <i class="fa-solid fa-xmark" onclick="closeStoryEditor()" style="color: white; font-size: 1.5rem; cursor: pointer;"></i>
+        <div class="h-flex" style="gap: 15px;">
+            <i class="fa-solid fa-rotate-left" onclick="editorUndo()" style="color: white; cursor: pointer;"></i>
+            <i class="fa-solid fa-rotate-right" onclick="editorRedo()" style="color: white; cursor: pointer;"></i>
+        </div>
+    </div>
+
+    <div class="story-canvas-container" id="canvas-wrapper">
+        <canvas id="story-canvas"></canvas>
+    </div>
+
+    <div id="sticker-tray" class="sticker-tray">
+        <span class="sticker-option" onclick="addSticker('🔥')">🔥</span>
+        <span class="sticker-option" onclick="addSticker('❤️')">❤️</span>
+        <span class="sticker-option" onclick="addSticker('😂')">😂</span>
+        <span class="sticker-option" onclick="addSticker('🎉')">🎉</span>
+        <span class="sticker-option" onclick="addSticker('🎓')">🎓</span>
+        <span class="sticker-option" onclick="addSticker('📍')">📍</span>
+        <span class="sticker-option" onclick="addSticker('👀')">👀</span>
+        <span class="sticker-option" onclick="addSticker('💯')">💯</span>
+        <span class="sticker-option" onclick="addSticker('🚀')">🚀</span>
+    </div>
+
+    <div class="story-toolbar-bottom">
+        <button class="editor-btn" onclick="addStoryText()"><i class="fa-solid fa-font"></i></button>
+        <button class="editor-btn" onclick="toggleStickers()"><i class="fa-regular fa-face-smile"></i></button>
+        
+        <button class="action-btn" onclick="uploadStoryFromCanvas()" style="width: auto; padding: 10px 20px; margin: 0; font-size: 0.9rem;">
+            Your Story <i class="fa-solid fa-chevron-right"></i>
+        </button>
+    </div>
+</div>
+
     <script>
 
         // Pre-defined high quality banners (Unsplash)
@@ -1766,35 +1882,7 @@ function loadGroupLobby() {
 }
 
 function previewProfilePic() {
-    const fileInput = document.getElementById('setup-file-input');
-    const file = fileInput.files[0];
-    
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            // 1. Set the image source for the cropper
-            const imgElement = document.getElementById('cropper-target-img');
-            imgElement.src = e.target.result;
-            
-            // 2. Show the modal
-            document.getElementById('cropper-modal').style.display = 'flex';
-
-            // 3. Destroy previous cropper if exists (to prevent bugs)
-            if(cropper) {
-                cropper.destroy();
-            }
-
-            // 4. Initialize Cropper.js
-            cropper = new Cropper(imgElement, {
-                aspectRatio: 1, // Force Square for profile pics
-                viewMode: 1,    // Restrict crop box to image size
-                dragMode: 'move',
-                autoCropArea: 0.8,
-                background: false, // Dark background
-            });
-        }
-        reader.readAsDataURL(file);
-    }
+    startCropper('setup-file-input', 'profile');
 }
 
 function rotateImage(deg) {
@@ -1810,32 +1898,7 @@ function cancelCrop() {
     }
 }
 
-function finishCrop() {
-    if(!cropper) return;
 
-    // 1. Get the cropped canvas
-    const canvas = cropper.getCroppedCanvas({
-        width: 500,  // Resize to reasonable profile size
-        height: 500
-    });
-
-    // 2. Convert canvas to Blob/File
-    canvas.toBlob((blob) => {
-        // Create a new File object from the blob
-        finalCroppedFile = new File([blob], "profile-edited.jpg", { type: "image/jpeg" });
-
-        // 3. Update the Preview in the Setup Screen
-        document.getElementById('setup-pic-preview').src = URL.createObjectURL(finalCroppedFile);
-
-        // 4. Close Modal
-        document.getElementById('cropper-modal').style.display = 'none';
-        
-        // Cleanup
-        cropper.destroy();
-        cropper = null;
-
-    }, 'image/jpeg', 0.9);
-}
 
 function getHobbyIcon(hobby) {
     // Map hobby to a specific Font Awesome class and a unique Hex color code.
@@ -1973,6 +2036,12 @@ let selectedHobbies = new Set();
     let lastProfileTab = 'profile'; // Remembers where to go back to
     let cropper = null; 
 let finalCroppedFile = null; // Stores the edited file ready for upload
+// --- EDITOR GLOBALS ---
+let cropContext = null; // 'post', 'profile', or 'story'
+let fabricCanvas = null;
+let editorHistory = [];
+let historyStep = -1;
+let finalPostFile = null; // Store the edited post file
 
     // --- 1. NEW ROUTER SYSTEM ---
     
@@ -2631,60 +2700,249 @@ function triggerAddStory() {
     document.getElementById('story-file-input').click();
 }
 
-async function handleStoryFileSelect() {
-    const fileInput = document.getElementById('story-file-input');
+function handleStoryFileSelect() {
+    startCropper('story-file-input', 'story');
+}
+
+function startCropper(inputId, context) {
+    const fileInput = document.getElementById(inputId);
     const file = fileInput.files[0];
-    if(!file) return;
+    cropContext = context;
 
-    // 1. Show Custom Modal
-    showUploadModal("Compressing Story...");
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const imgElement = document.getElementById('cropper-target-img');
+            imgElement.src = e.target.result;
+            document.getElementById('cropper-modal').style.display = 'flex';
 
-    try {
-        // 2. Compress
-        const compressed = await compressImage(file);
-        
-        updateProgressBar(40);
-        document.getElementById('upload-subtext').innerText = "Uploading to Server...";
+            if(cropper) cropper.destroy();
 
-        // 3. Upload
-        const url = await uploadToImageKit(compressed);
-        
-        if(!url) throw new Error("Upload failed");
+            // Config based on context
+            let aspectRatio = NaN; // Free crop for posts
+            if(context === 'profile') aspectRatio = 1; 
+            if(context === 'story') aspectRatio = 9/16; 
 
-        updateProgressBar(80);
-        document.getElementById('upload-subtext').innerText = "Finalizing...";
-
-        // 4. Save to Firestore
-        const expiresAt = Date.now() + (24 * 60 * 60 * 1000); 
-
-        // --- KEY CHANGE HERE ---
-        const authorName = globalProfileData.displayName || currentUser.displayName;
-        const authorPhoto = globalProfileData.photoURL || currentUser.photoURL;
-
-        await db.collection('stories').add({
-            uid: currentUser.uid,
-            userName: authorName,   // <--- UPDATED
-            userPhoto: authorPhoto, // <--- UPDATED
-            imageUrl: url,
-            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-            expiresAt: expiresAt,
-            viewers: [] 
-        });
-
-        updateProgressBar(100);
-        
-        // Short delay
-        setTimeout(() => {
-            hideUploadModal();
-        }, 500);
-
-    } catch(err) {
-        console.error(err);
-        hideUploadModal();
-        alert("Failed to upload story.");
+            cropper = new Cropper(imgElement, {
+                aspectRatio: aspectRatio,
+                viewMode: 1,
+                dragMode: 'move',
+                autoCropArea: 0.9,
+                background: false,
+            });
+        }
+        reader.readAsDataURL(file);
     }
+    fileInput.value = ""; // Reset input
+}
 
-    fileInput.value = ""; 
+function finishCrop() {
+    if(!cropper) return;
+
+    // Output Size
+    const canvas = cropper.getCroppedCanvas({
+        width: cropContext === 'profile' ? 500 : 1080, 
+    });
+
+    canvas.toBlob((blob) => {
+        // --- PROFILE FLOW ---
+        if(cropContext === 'profile') {
+            finalCroppedFile = new File([blob], "profile.jpg", { type: "image/jpeg" });
+            document.getElementById('setup-pic-preview').src = URL.createObjectURL(finalCroppedFile);
+            document.getElementById('cropper-modal').style.display = 'none';
+        }
+        
+        // --- POST FLOW ---
+        else if (cropContext === 'post') {
+            finalPostFile = new File([blob], "post.jpg", { type: "image/jpeg" });
+            document.getElementById('preview-img').src = URL.createObjectURL(finalPostFile);
+            document.getElementById('image-preview').style.display = 'block';
+            document.getElementById('cropper-modal').style.display = 'none';
+        }
+
+        // --- STORY FLOW (Pass to Fabric Editor) ---
+        else if (cropContext === 'story') {
+            document.getElementById('cropper-modal').style.display = 'none';
+            // Open the Advanced Story Editor with the cropped image
+            initStoryEditor(URL.createObjectURL(blob));
+        }
+
+        cropper.destroy();
+        cropper = null;
+
+    }, 'image/jpeg', 0.9);
+}
+
+// --- STORY EDITOR (FABRIC JS) LOGIC ---
+
+function initStoryEditor(imageUrl) {
+    const modal = document.getElementById('story-editor-modal');
+    modal.style.display = 'flex';
+
+    // 1. Setup Canvas (Responsive)
+    const wrapper = document.getElementById('canvas-wrapper');
+    const width = wrapper.clientWidth;
+    const height = wrapper.clientHeight;
+
+    // Create Fabric Canvas
+    if(fabricCanvas) fabricCanvas.dispose();
+    
+    // Create canvas element dynamically to reset it
+    document.getElementById('story-canvas').remove();
+    const newCanvas = document.createElement('canvas');
+    newCanvas.id = 'story-canvas';
+    wrapper.appendChild(newCanvas);
+
+    fabricCanvas = new fabric.Canvas('story-canvas', {
+        width: width,
+        height: height,
+        backgroundColor: '#000'
+    });
+
+    // 2. Load Image as Background (Fit to screen)
+    fabric.Image.fromURL(imageUrl, function(img) {
+        // Scale image to fit contained
+        const scale = Math.min(width / img.width, height / img.height);
+        
+        img.set({
+            originX: 'center',
+            originY: 'center',
+            left: width / 2,
+            top: height / 2,
+            scaleX: scale,
+            scaleY: scale
+        });
+        
+        fabricCanvas.setBackgroundImage(img, fabricCanvas.renderAll.bind(fabricCanvas));
+        saveHistory(); // Initial state
+    });
+
+    // Reset History
+    editorHistory = [];
+    historyStep = -1;
+
+    // Listen for changes to save history
+    fabricCanvas.on('object:modified', saveHistory);
+    fabricCanvas.on('object:added', saveHistory);
+}
+
+// --- TOOLS ---
+
+function addStoryText() {
+    const text = new fabric.IText('Type here...', {
+        left: 50,
+        top: 100,
+        fontFamily: 'Inter',
+        fill: '#ffffff',
+        fontSize: 40,
+        fontWeight: 'bold',
+        shadow: 'rgba(0,0,0,0.8) 2px 2px 5px'
+    });
+    
+    // Cycle fonts on click
+    text.on('mousedown', function() {
+        const fonts = ['Inter', 'JetBrains Mono', 'cursive', 'serif'];
+        const current = text.fontFamily;
+        let nextIndex = fonts.indexOf(current) + 1;
+        if(nextIndex >= fonts.length) nextIndex = 0;
+        text.set('fontFamily', fonts[nextIndex]);
+        fabricCanvas.renderAll();
+    });
+
+    fabricCanvas.add(text);
+    fabricCanvas.setActiveObject(text);
+    text.enterEditing();
+}
+
+function toggleStickers() {
+    const tray = document.getElementById('sticker-tray');
+    tray.style.display = tray.style.display === 'flex' ? 'none' : 'flex';
+}
+
+function addSticker(emoji) {
+    const text = new fabric.Text(emoji, {
+        left: fabricCanvas.width / 2,
+        top: fabricCanvas.height / 2,
+        fontSize: 80,
+        selectable: true
+    });
+    fabricCanvas.add(text);
+    toggleStickers(); // Hide tray
+}
+
+// --- UNDO / REDO ---
+
+function saveHistory() {
+    // Keep only the last 10 states for performance
+    if(historyStep < editorHistory.length - 1) {
+        editorHistory = editorHistory.slice(0, historyStep + 1);
+    }
+    editorHistory.push(JSON.stringify(fabricCanvas));
+    historyStep++;
+}
+
+function editorUndo() {
+    if (historyStep > 0) {
+        historyStep--;
+        fabricCanvas.loadFromJSON(editorHistory[historyStep], fabricCanvas.renderAll.bind(fabricCanvas));
+    }
+}
+
+function editorRedo() {
+    if (historyStep < editorHistory.length - 1) {
+        historyStep++;
+        fabricCanvas.loadFromJSON(editorHistory[historyStep], fabricCanvas.renderAll.bind(fabricCanvas));
+    }
+}
+
+function closeStoryEditor() {
+    document.getElementById('story-editor-modal').style.display = 'none';
+    document.getElementById('story-file-input').value = "";
+}
+
+// --- FINAL UPLOAD ---
+
+function uploadStoryFromCanvas() {
+    // 1. Get Blob from Canvas
+    document.getElementById('story-canvas').toBlob(async (blob) => {
+        if (!blob) return alert("Canvas error");
+
+        closeStoryEditor();
+        showUploadModal("Uploading Story...");
+
+        try {
+            // 2. Compress (Safety)
+            const file = new File([blob], "story.jpg", { type: "image/jpeg" });
+            const compressed = await compressImage(file);
+            
+            // 3. Upload to ImageKit
+            const url = await uploadToImageKit(compressed);
+            if(!url) throw new Error("Upload failed");
+
+            // 4. Save to Firestore
+            const expiresAt = Date.now() + (24 * 60 * 60 * 1000); 
+            const authorName = globalProfileData.displayName || currentUser.displayName;
+            const authorPhoto = globalProfileData.photoURL || currentUser.photoURL;
+
+            await db.collection('stories').add({
+                uid: currentUser.uid,
+                userName: authorName,
+                userPhoto: authorPhoto,
+                imageUrl: url,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                expiresAt: expiresAt,
+                viewers: [] 
+            });
+
+            updateProgressBar(100);
+            setTimeout(() => { hideUploadModal(); }, 500);
+
+        } catch (e) {
+            console.error(e);
+            hideUploadModal();
+            alert("Story upload failed.");
+        }
+    }, 'image/jpeg', 0.85);
 }
 
 // --- 4. VIEW STORY VIEWER ---
@@ -3170,16 +3428,8 @@ function openNotifications() {
 
     // --- IMAGE COMPRESSION & UPLOAD ---
     function previewImage() {
-        const file = document.getElementById('post-file').files[0];
-        if(file) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                document.getElementById('preview-img').src = e.target.result;
-                document.getElementById('image-preview').style.display = 'block';
-            }
-            reader.readAsDataURL(file);
-        }
-    }
+    startCropper('post-file', 'post');
+}
 
     function clearImage() {
         document.getElementById('post-file').value = "";
@@ -3545,78 +3795,85 @@ function reportPost(pid, reportedUid, reportedName) {
     async function createPost() {
     const text = document.getElementById('post-text').value;
     const goal = document.getElementById('post-goal').value || "#Update";
-    const fileInput = document.getElementById('post-file');
     const btn = document.getElementById('btn-post');
 
-    if(!text && !fileInput.files[0]) return alert("Please add text or an image.");
+    // 1. Validation: Ensure there is either text OR an edited image
+    // Note: We check 'finalPostFile' because that is where the cropped image lives
+    if (!text && !finalPostFile) {
+        return alert("Please add text or an image.");
+    }
 
-    // Disable button
+    // 2. Lock UI
     btn.disabled = true;
-
     let uploadedImageUrl = "";
 
     try {
-        if(fileInput.files.length > 0) {
-            // 1. Show Modal
-            showUploadModal("Optimizing Image...");
+        // 3. Handle Image Upload (if exists)
+        if (finalPostFile) {
+            showUploadModal("Uploading Post...");
             
-            // 2. Compress
-            const compressedFile = await compressImage(fileInput.files[0]);
+            // Compress the cropped image (optimizes size for web)
+            // Note: finalPostFile is already a Blob from the cropper, but we compress to ensure JPEG optimization
+            const compressedFile = await compressImage(finalPostFile);
             
             updateProgressBar(50);
             document.getElementById('upload-subtext').innerText = "Uploading Media...";
 
-            // 3. Upload
+            // Upload to ImageKit
             uploadedImageUrl = await uploadToImageKit(compressedFile);
             
-            if(!uploadedImageUrl) {
-                throw new Error("Image upload failed");
-            }
+            if(!uploadedImageUrl) throw new Error("Image upload failed");
+            
             updateProgressBar(90);
         } else {
-            showUploadModal("Posting update...");
+            // Text-only post
+            showUploadModal("Posting...");
             updateProgressBar(50);
         }
 
         document.getElementById('upload-subtext').innerText = "Saving Post...";
 
-        // --- KEY CHANGE HERE ---
-        // Use globalProfileData to get the custom name and custom photo
+        // 4. Get Author Details (Priority: App Profile -> Google Auth)
         const authorName = globalProfileData.displayName || currentUser.displayName;
         const authorPhoto = globalProfileData.photoURL || currentUser.photoURL;
 
-        // 4. Save to Firestore
+        // 5. Save to Firestore
         await db.collection('posts').add({
             text: text,
             goal: goal,
             imageUrl: uploadedImageUrl,
             uid: currentUser.uid,
-            userName: authorName,   // <--- UPDATED
-            userPhoto: authorPhoto, // <--- UPDATED
+            userName: authorName,
+            userPhoto: authorPhoto,
             boosts: [],
             timestamp: firebase.firestore.FieldValue.serverTimestamp()
         });
 
         updateProgressBar(100);
 
-        // Success!
+        // 6. Success & Cleanup
         setTimeout(() => {
             hideUploadModal();
             
-            // Cleanup UI
+            // Clear inputs
             document.getElementById('post-text').value = '';
-            clearImage();
+            document.getElementById('post-goal').value = '';
+            
+            // Reset Image Preview & Variables
+            clearImage(); 
+            
+            // Reset Button
             btn.innerText = "POST UPDATE";
             btn.disabled = false;
             
-            // Go to feed
+            // Navigate to Feed
             switchTab('feed', document.querySelector('.nav-item'));
         }, 500);
 
     } catch(err) {
         console.error(err);
         hideUploadModal();
-        alert("Error posting: " + err.message);
+        alert("Error: " + err.message);
         btn.innerText = "POST UPDATE";
         btn.disabled = false;
     }
