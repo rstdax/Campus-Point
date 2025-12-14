@@ -2402,10 +2402,14 @@ async function handleStoryFileSelect() {
         // 4. Save to Firestore
         const expiresAt = Date.now() + (24 * 60 * 60 * 1000); 
 
+        // --- KEY CHANGE HERE ---
+        const authorName = globalProfileData.displayName || currentUser.displayName;
+        const authorPhoto = globalProfileData.photoURL || currentUser.photoURL;
+
         await db.collection('stories').add({
             uid: currentUser.uid,
-            userName: currentUser.displayName,
-            userPhoto: currentUser.photoURL,
+            userName: authorName,   // <--- UPDATED
+            userPhoto: authorPhoto, // <--- UPDATED
             imageUrl: url,
             timestamp: firebase.firestore.FieldValue.serverTimestamp(),
             expiresAt: expiresAt,
@@ -2414,10 +2418,9 @@ async function handleStoryFileSelect() {
 
         updateProgressBar(100);
         
-        // Short delay to let user see 100%
+        // Short delay
         setTimeout(() => {
             hideUploadModal();
-            // Optional: visual feedback toast or just refresh tray
         }, 500);
 
     } catch(err) {
@@ -3132,7 +3135,7 @@ function reportPost(pid, reportedUid, reportedName) {
 
     if(!text && !fileInput.files[0]) return alert("Please add text or an image.");
 
-    // Disable button to prevent double clicks
+    // Disable button
     btn.disabled = true;
 
     let uploadedImageUrl = "";
@@ -3156,12 +3159,16 @@ function reportPost(pid, reportedUid, reportedName) {
             }
             updateProgressBar(90);
         } else {
-            // If text only, just show a quick spinner
             showUploadModal("Posting update...");
             updateProgressBar(50);
         }
 
         document.getElementById('upload-subtext').innerText = "Saving Post...";
+
+        // --- KEY CHANGE HERE ---
+        // Use globalProfileData to get the custom name and custom photo
+        const authorName = globalProfileData.displayName || currentUser.displayName;
+        const authorPhoto = globalProfileData.photoURL || currentUser.photoURL;
 
         // 4. Save to Firestore
         await db.collection('posts').add({
@@ -3169,8 +3176,8 @@ function reportPost(pid, reportedUid, reportedName) {
             goal: goal,
             imageUrl: uploadedImageUrl,
             uid: currentUser.uid,
-            userName: currentUser.displayName,
-            userPhoto: currentUser.photoURL,
+            userName: authorName,   // <--- UPDATED
+            userPhoto: authorPhoto, // <--- UPDATED
             boosts: [],
             timestamp: firebase.firestore.FieldValue.serverTimestamp()
         });
