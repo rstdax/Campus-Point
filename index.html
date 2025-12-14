@@ -2961,10 +2961,12 @@ function openUserProfile(uid) {
                 btn.innerText = "Unfollow";
                 btn.style.background = "var(--bg-card)";
                 btn.style.border = "1px solid var(--border)";
+                btn.style.color = "var(--text-primary)";
             } else {
                 btn.innerText = "Follow";
                 btn.style.background = "var(--accent)";
                 btn.style.border = "none";
+                btn.style.color = "#ffffff";
             }
         });
 
@@ -3016,6 +3018,7 @@ function openUserProfile(uid) {
             btn.innerText = "Follow";
             btn.style.background = "var(--accent)";
             btn.style.border = "none";
+            btn.style.color = "#ffffff";
 
         } else {
             // --- FOLLOW ---
@@ -3050,6 +3053,7 @@ function openUserProfile(uid) {
             btn.innerText = "Unfollow";
             btn.style.background = "var(--bg-card)";
             btn.style.border = "1px solid var(--border)";
+            btn.style.color = "var(--text-primary)";
         }
     });
 }
