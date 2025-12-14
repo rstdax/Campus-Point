@@ -2295,14 +2295,12 @@ function renderStoryTray() {
     const tray = document.getElementById('stories-tray');
     tray.innerHTML = '';
 
-    // A. Render "My Story" (First Item)
+    // --- 1. RENDER "MY STORY" (ALWAYS FIRST) ---
     const myStories = activeStories[currentUser.uid] || [];
     const hasMyStory = myStories.length > 0;
     
     let myRingClass = 'none';
     if (hasMyStory) {
-        // Check if I have unseen stories (logic: usually own stories are always "seen" visually, 
-        // but let's make it colored if active to show it exists)
         myRingClass = 'seen'; 
     }
 
@@ -2317,22 +2315,43 @@ function renderStoryTray() {
         </div>
     `;
 
-    // B. Render Other Users
-    Object.keys(activeStories).forEach(uid => {
-        if(uid === currentUser.uid) return; // Skip me (handled above)
+    // --- 2. PREPARE & SORT OTHER USERS ---
+    // A. Filter out "Me" and create an array of user objects with their latest timestamp
+    let storyUsers = Object.keys(activeStories)
+        .filter(uid => uid !== currentUser.uid) // Exclude myself
+        .map(uid => {
+            const stories = activeStories[uid];
+            // The last story in the array is the newest one (due to Firestore query order)
+            const latestStory = stories[stories.length - 1]; 
+            
+            // Get timestamp (handle potential nulls safely)
+            const time = latestStory.timestamp ? latestStory.timestamp.toDate().getTime() : 0;
+            
+            return {
+                uid: uid,
+                stories: stories,
+                latestStory: latestStory,
+                timestamp: time
+            };
+        });
 
-        const userStories = activeStories[uid];
-        const lastStory = userStories[userStories.length - 1]; // Use details from last story
+    // B. Sort descending (Newest time first)
+    storyUsers.sort((a, b) => b.timestamp - a.timestamp);
+
+    // --- 3. RENDER SORTED USERS ---
+    storyUsers.forEach(user => {
+        const uid = user.uid;
+        const stories = user.stories;
+        const lastStory = user.latestStory;
         
-        // Determine if seen
-        // Simple logic: Check if currentUser ID is in 'viewers' array of the *last* story
-        // For a perfect Instagram clone, check ALL stories, but this is good for MVP
+        // Determine if seen (if any story in the stack is unseen, show colorful ring)
         let isUnseen = false;
-        userStories.forEach(s => {
+        for (let s of stories) {
             if(!s.viewers || !s.viewers.includes(currentUser.uid)) {
                 isUnseen = true;
+                break; // Found one unseen, that's enough to mark the ring
             }
-        });
+        }
 
         const ringClass = isUnseen ? 'unseen' : 'seen';
 
