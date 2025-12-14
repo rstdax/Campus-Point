@@ -3214,6 +3214,41 @@ function uploadStoryFromCanvas() {
     }, 'image/jpeg', 0.85);
 }
 
+// --- NOTIFICATION HELPER ---
+function sendAppNotification(targetUid, type, text, postId = null) {
+    if (!targetUid || targetUid === currentUser.uid) return; // Don't notify yourself
+
+    const myName = globalProfileData.displayName || currentUser.displayName;
+    const myPhoto = globalProfileData.photoURL || currentUser.photoURL;
+    const timestamp = firebase.firestore.FieldValue.serverTimestamp();
+
+    // Create a unique ID for 'likes' so spamming like/unlike doesn't create 100 notifications
+    // For comments, we leave ID auto-generated so every comment gets a notification
+    let docId = null;
+    if (type === 'like' && postId) {
+        docId = `${postId}_${currentUser.uid}`; // Unique ID: PostID + LikerID
+    }
+
+    const notifData = {
+        type: type,
+        fromUid: currentUser.uid,
+        fromName: myName,
+        fromPhoto: myPhoto,
+        text: text,
+        timestamp: timestamp,
+        read: false,
+        postId: postId // Save Post ID to potentially open the post later
+    };
+
+    const ref = db.collection('users').doc(targetUid).collection('notifications');
+
+    if (docId) {
+        ref.doc(docId).set(notifData); // Overwrite existing like notification
+    } else {
+        ref.add(notifData); // Add new notification (for comments)
+    }
+}
+
 // --- 4. VIEW STORY VIEWER ---
 function openStoryViewer(uid) {
     currentStoryUid = uid;
@@ -4149,34 +4184,42 @@ function reportPost(pid, reportedUid, reportedName) {
 }
 
     function toggleBoost(pid) {
-        const ref = db.collection('posts').doc(pid);
+    const ref = db.collection('posts').doc(pid);
 
-        db.runTransaction(t => {
-            return t.get(ref).then(doc => {
-                const boosts = doc.data().boosts || [];
-                const isCurrentlyBoosted = boosts.includes(currentUser.uid);
+    db.runTransaction(t => {
+        return t.get(ref).then(doc => {
+            if (!doc.exists) throw "Post does not exist";
 
-                t.update(ref, { 
-                    boosts: isCurrentlyBoosted 
-                        ? firebase.firestore.FieldValue.arrayRemove(currentUser.uid) 
-                        : firebase.firestore.FieldValue.arrayUnion(currentUser.uid) 
-                });
-                
-                // Return whether the post was boosted (true) or unboosted (false)
-                return !isCurrentlyBoosted;
+            const data = doc.data();
+            const boosts = data.boosts || [];
+            const isCurrentlyBoosted = boosts.includes(currentUser.uid);
+            const postAuthorUid = data.uid; // Get the author ID
+
+            // Update Boost Array
+            t.update(ref, { 
+                boosts: isCurrentlyBoosted 
+                    ? firebase.firestore.FieldValue.arrayRemove(currentUser.uid) 
+                    : firebase.firestore.FieldValue.arrayUnion(currentUser.uid) 
             });
-        }).then(wasBoosted => {
-            // SUCCESS: If the action was a BOOST (not an unboost), show the animation
-            if (wasBoosted) {
-                showBoostAnimation();
-            }
-            // If it was an unboost, we don't need a visible animation.
             
-        }).catch(error => {
-            console.error("Boost transaction failed: ", error);
-            // Optional: Show an error toast here
+            // Return data to the .then() block
+            return { 
+                wasBoosted: !isCurrentlyBoosted, 
+                authorUid: postAuthorUid 
+            };
         });
-    }
+    }).then(result => {
+        // SUCCESS
+        if (result.wasBoosted) {
+            showBoostAnimation();
+            // --- NEW: Send Notification ---
+            sendAppNotification(result.authorUid, 'like', 'boosted your post.', pid);
+        }
+        
+    }).catch(error => {
+        console.error("Boost transaction failed: ", error);
+    });
+}
 
     function toggleDiscussion(pid) {
         const area = document.getElementById(`discuss-${pid}`);
@@ -4185,12 +4228,33 @@ function reportPost(pid, reportedUid, reportedName) {
     }
 
     function postComment(pid) {
-        const val = document.getElementById(`input-${pid}`).value;
-        if(!val) return;
-        db.collection('posts').doc(pid).collection('comments').add({
-            text: val, userName: currentUser.displayName, uid: currentUser.uid, timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        }).then(() => document.getElementById(`input-${pid}`).value = '');
-    }
+    const val = document.getElementById(`input-${pid}`).value;
+    if(!val) return;
+
+    // 1. Fetch Post to get Author ID
+    db.collection('posts').doc(pid).get().then(doc => {
+        if(doc.exists) {
+            const postData = doc.data();
+            const authorUid = postData.uid;
+
+            // 2. Add Comment
+            db.collection('posts').doc(pid).collection('comments').add({
+                text: val, 
+                userName: currentUser.displayName, 
+                uid: currentUser.uid, 
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            }).then(() => {
+                // 3. Clear Input
+                document.getElementById(`input-${pid}`).value = '';
+                
+                // --- NEW: Send Notification ---
+                // We truncate the comment if it's too long for the notification
+                const snippet = val.length > 20 ? val.substring(0, 20) + "..." : val;
+                sendAppNotification(authorUid, 'comment', `commented: "${snippet}"`, pid);
+            });
+        }
+    }).catch(err => console.error("Error posting comment:", err));
+}
 
     function loadComments(pid) {
         const box = document.getElementById(`comments-${pid}`);
