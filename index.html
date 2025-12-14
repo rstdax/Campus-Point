@@ -2559,17 +2559,34 @@ function showStoryAtIndex(index) {
         return;
     }
     if(index < 0) {
-        // Could go to previous user here in advanced version
         index = 0; 
     }
 
     currentStoryIndex = index;
     const story = currentViewerStories[index];
 
-    // 1. Update UI
+    // 1. Update UI & Add Click Listeners for Profile
     document.getElementById('sv-image').src = story.imageUrl;
-    document.getElementById('sv-avatar').style.backgroundImage = `url('${story.userPhoto}')`;
-    document.getElementById('sv-name').innerText = story.userName;
+    
+    // --- AVATAR CLICK ---
+    const avatarEl = document.getElementById('sv-avatar');
+    avatarEl.style.backgroundImage = `url('${story.userPhoto}')`;
+    avatarEl.style.cursor = 'pointer';
+    avatarEl.onclick = (e) => {
+        e.stopPropagation(); // Don't skip story
+        closeStoryViewer();  // Close modal
+        openUserProfile(story.uid); // Go to profile
+    };
+
+    // --- NAME CLICK ---
+    const nameEl = document.getElementById('sv-name');
+    nameEl.innerText = story.userName;
+    nameEl.style.cursor = 'pointer';
+    nameEl.onclick = (e) => {
+        e.stopPropagation();
+        closeStoryViewer();
+        openUserProfile(story.uid);
+    };
     
     // Time calc
     const now = Date.now();
