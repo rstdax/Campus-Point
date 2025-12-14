@@ -812,6 +812,69 @@
 .crop-btn.save { color: var(--accent); }
 .crop-btn.cancel { color: #ff5555; }
 
+/* --- BANNER & PROFILE HEADER STYLES --- */
+.profile-header-wrapper {
+    position: relative;
+    margin-bottom: 60px; /* Space for the overlapping profile pic */
+}
+
+.banner-img {
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+    background-color: var(--bg-card);
+    border-radius: 0 0 16px 16px; /* Rounded bottom corners */
+    border-bottom: 1px solid var(--border);
+}
+
+/* Position the Profile Picture (Circle) to overlap the banner */
+.profile-pic-overlap {
+    position: absolute;
+    bottom: -50px; /* Half of height to overlap */
+    left: 50%;
+    transform: translateX(-50%);
+    width: 110px;
+    height: 110px;
+    border-radius: 50%;
+    border: 4px solid var(--bg-main); /* Creates a "cutout" effect */
+    background-color: var(--bg-main);
+    z-index: 2;
+}
+
+/* --- BANNER PICKER MODAL --- */
+#banner-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.9);
+    z-index: 10000;
+    display: none;
+    flex-direction: column;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.banner-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr); /* 2 Columns */
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.banner-option {
+    width: 100%;
+    height: 80px;
+    border-radius: 8px;
+    object-fit: cover;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.2s;
+}
+
+.banner-option:hover, .banner-option.selected {
+    border-color: var(--accent);
+    transform: scale(1.02);
+}
+
 
     </style>
 </head>
@@ -920,41 +983,50 @@
             <i class="fa-solid fa-pen"></i>
         </div>
 
-        <main id="section-setup" class="content-area hidden">
-    <h2 class="mono" style="margin-bottom: 10px;">PROFILE SETUP</h2>
-    <p style="color:var(--text-secondary); font-size:0.9rem; margin-bottom:30px;">Update your academic identity.</p>
+        <main id="section-setup" class="content-area hidden" style="padding-top: 0;">
     
-    <div class="edit-pic-wrapper" onclick="document.getElementById('setup-file-input').click()">
-        <img id="setup-pic-preview" src="" class="edit-pic-img">
-        <div class="edit-pic-badge">
-            <i class="fa-solid fa-pencil"></i>
+    <div class="profile-header-wrapper" style="margin-bottom: 50px;">
+        <img id="setup-banner-preview" src="" class="banner-img">
+        <button class="secondary-btn" onclick="openBannerModal()" style="position: absolute; top: 10px; right: 10px; width: auto; background: rgba(0,0,0,0.6); color: white; border: none; font-size: 0.8rem; padding: 5px 12px;">
+            <i class="fa-solid fa-image"></i> Change Banner
+        </button>
+
+        <div class="edit-pic-wrapper profile-pic-overlap" onclick="document.getElementById('setup-file-input').click()" style="margin: 0;">
+            <img id="setup-pic-preview" src="" class="edit-pic-img">
+            <div class="edit-pic-badge">
+                <i class="fa-solid fa-pencil"></i>
+            </div>
         </div>
     </div>
-    <input type="file" id="setup-file-input" accept="image/*" style="display:none;" onchange="previewProfilePic()">
 
-    <label>FULL NAME</label>
-    <input type="text" id="setup-name" class="nexus-input" placeholder="Your Name">
-    <label>INSTITUTION / UNIVERSITY</label>
-    <input type="text" id="setup-university" class="nexus-input" placeholder="e.g. Nagaon University">
-    <label>MAJOR / STREAM</label>
-    <input type="text" id="setup-major" class="nexus-input" placeholder="e.g. Computer Science">
-    <div class="h-flex" style="gap: 15px;">
-        <div style="flex:1">
-            <label>YEAR / SEMESTER</label>
-            <input type="text" id="setup-year" class="nexus-input" placeholder="e.g. 3rd Sem">
-        </div>
+    <div style="padding: 0 20px 80px 20px;"> <h2 class="mono" style="text-align:center; margin-bottom: 20px;">EDIT PROFILE</h2>
+        
+        <input type="file" id="setup-file-input" accept="image/*" style="display:none;" onchange="previewProfilePic()">
+
+        <label>FULL NAME</label>
+        <input type="text" id="setup-name" class="nexus-input">
+        
+        <label>INSTITUTION</label>
+        <input type="text" id="setup-university" class="nexus-input">
+        
+        <label>MAJOR</label>
+        <input type="text" id="setup-major" class="nexus-input">
+        
+        <label>YEAR</label>
+        <input type="text" id="setup-year" class="nexus-input">
+
+        <label>BIO <span id="bio-count" style="float:right; font-size:0.7rem;">0/150</span></label>
+        <textarea id="setup-bio" class="nexus-input" rows="3" maxlength="150" oninput="updateBioCount()"></textarea>
+
+        <label>INTERESTS</label>
+        <div id="setup-interests" class="interests-container"></div>
+
+        <label>FUTURE VISION</label>
+        <input type="text" id="setup-goal" class="nexus-input">
+        
+        <button id="btn-save-profile" class="action-btn" onclick="completeSetup()">SAVE PROFILE</button>
+        <button class="secondary-btn" onclick="cancelSetup()" style="width:100%;">Cancel</button>
     </div>
-    <label>BIO <span id="bio-count" style="float:right; font-size:0.7rem;">0/150</span></label>
-    <textarea id="setup-bio" class="nexus-input" rows="3" maxlength="150" placeholder="Short description about yourself..." oninput="updateBioCount()"></textarea>
-
-    <label>INTERESTS (Tap to select)</label>
-    <div id="setup-interests" class="interests-container"></div>
-
-    <label>FUTURE VISION (In 5 Years)</label>
-    <input type="text" id="setup-goal" class="nexus-input" placeholder="e.g., A Senior Developer, Entrepreneur...">
-    
-    <button id="btn-save-profile" class="action-btn" onclick="completeSetup()">SAVE PROFILE</button>
-    <button class="secondary-btn" onclick="cancelSetup()" style="width:100%; border:none; color:var(--text-secondary)">Cancel</button>
 </main>
 
         <main id="section-feed" class="content-area hidden">
@@ -1074,9 +1146,13 @@
             </div>
         </main>
 
-        <main id="section-profile" class="content-area hidden">
-            <div style="text-align: center; padding: 20px 0;">
-                <img id="profile-pic" src="" style="width: 100px; height: 100px; border-radius: 50%; border: 2px solid var(--accent); margin-bottom: 15px;">
+        <main id="section-profile" class="content-area hidden" style="padding-top: 0;">
+            <div class="profile-header-wrapper">
+                <img id="profile-banner" src="" class="banner-img">
+                <img id="profile-pic" src="" class="profile-pic-overlap">
+            </div>
+
+            <div style="text-align: center; padding: 0 20px;">
                 <h2 id="profile-name">User</h2>
                 <p id="profile-academic" class="mono" style="color: var(--accent); font-size: 0.9rem; margin-bottom: 5px;"></p>
                 <p id="profile-uni" style="color: var(--text-secondary); font-size: 0.8rem; margin-bottom: 15px;"></p>
@@ -1104,9 +1180,12 @@
             <div id="profile-feed"></div>
         </main>
 
-        <main id="section-other-profile" class="content-area hidden">
+        <main id="section-other-profile" class="content-area hidden" style="padding-top: 0;">
+    <div class="profile-header-wrapper">
+        <img id="other-banner" src="" class="banner-img">
+        <div id="other-pic" class="profile-pic-overlap" style="background-size: cover; border-width: 4px; border-style: solid; border-color: var(--bg-main);"></div>
+    </div>
     <div style="text-align: center; padding: 20px 0;">
-        <div id="other-pic" style="width: 100px; height: 100px; border-radius: 50%; border: 2px solid var(--accent); margin: 0 auto 15px auto; background-size: cover;"></div>
         <h2 id="other-name">User</h2>
         <p id="other-academic" class="mono" style="color: var(--accent); font-size: 0.9rem; margin-bottom: 5px;"></p>
         
