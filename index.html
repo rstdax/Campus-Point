@@ -722,6 +722,40 @@
     text-align: center;
 }
 
+/* --- EDIT PROFILE PIC STYLES --- */
+.edit-pic-wrapper {
+    position: relative;
+    width: 100px;
+    height: 100px;
+    margin: 0 auto 25px auto;
+    cursor: pointer;
+}
+
+.edit-pic-img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--border);
+}
+
+.edit-pic-badge {
+    position: absolute;
+    bottom: 5px;
+    right: 5px;
+    width: 30px;
+    height: 30px;
+    background: var(--accent);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    border: 2px solid var(--bg-card);
+    font-size: 0.9rem;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+
     </style>
 </head>
 <body>
@@ -830,32 +864,41 @@
         </div>
 
         <main id="section-setup" class="content-area hidden">
-            <h2 class="mono" style="margin-bottom: 10px;">PROFILE SETUP</h2>
-            <p style="color:var(--text-secondary); font-size:0.9rem; margin-bottom:30px;">Update your academic identity.</p>
-            <label>FULL NAME</label>
-            <input type="text" id="setup-name" class="nexus-input" placeholder="Your Name">
-            <label>INSTITUTION / UNIVERSITY</label>
-            <input type="text" id="setup-university" class="nexus-input" placeholder="e.g. Nagaon University">
-            <label>MAJOR / STREAM</label>
-            <input type="text" id="setup-major" class="nexus-input" placeholder="e.g. Computer Science">
-            <div class="h-flex" style="gap: 15px;">
-                <div style="flex:1">
-                    <label>YEAR / SEMESTER</label>
-                    <input type="text" id="setup-year" class="nexus-input" placeholder="e.g. 3rd Sem">
-                </div>
-            </div>
-            <label>BIO <span id="bio-count" style="float:right; font-size:0.7rem;">0/150</span></label>
-<textarea id="setup-bio" class="nexus-input" rows="3" maxlength="150" placeholder="Short description about yourself..." oninput="updateBioCount()"></textarea>
-
-<label>INTERESTS (Tap to select)</label>
-<div id="setup-interests" class="interests-container">
+    <h2 class="mono" style="margin-bottom: 10px;">PROFILE SETUP</h2>
+    <p style="color:var(--text-secondary); font-size:0.9rem; margin-bottom:30px;">Update your academic identity.</p>
+    
+    <div class="edit-pic-wrapper" onclick="document.getElementById('setup-file-input').click()">
+        <img id="setup-pic-preview" src="" class="edit-pic-img">
+        <div class="edit-pic-badge">
+            <i class="fa-solid fa-pencil"></i>
+        </div>
     </div>
+    <input type="file" id="setup-file-input" accept="image/*" style="display:none;" onchange="previewProfilePic()">
 
-<label>FUTURE VISION (In 5 Years)</label>
-<input type="text" id="setup-goal" class="nexus-input" placeholder="e.g., A Senior Developer, Entrepreneur...">
-            <button class="action-btn" onclick="completeSetup()">SAVE PROFILE</button>
-            <button class="secondary-btn" onclick="cancelSetup()" style="width:100%; border:none; color:var(--text-secondary)">Cancel</button>
-        </main>
+    <label>FULL NAME</label>
+    <input type="text" id="setup-name" class="nexus-input" placeholder="Your Name">
+    <label>INSTITUTION / UNIVERSITY</label>
+    <input type="text" id="setup-university" class="nexus-input" placeholder="e.g. Nagaon University">
+    <label>MAJOR / STREAM</label>
+    <input type="text" id="setup-major" class="nexus-input" placeholder="e.g. Computer Science">
+    <div class="h-flex" style="gap: 15px;">
+        <div style="flex:1">
+            <label>YEAR / SEMESTER</label>
+            <input type="text" id="setup-year" class="nexus-input" placeholder="e.g. 3rd Sem">
+        </div>
+    </div>
+    <label>BIO <span id="bio-count" style="float:right; font-size:0.7rem;">0/150</span></label>
+    <textarea id="setup-bio" class="nexus-input" rows="3" maxlength="150" placeholder="Short description about yourself..." oninput="updateBioCount()"></textarea>
+
+    <label>INTERESTS (Tap to select)</label>
+    <div id="setup-interests" class="interests-container"></div>
+
+    <label>FUTURE VISION (In 5 Years)</label>
+    <input type="text" id="setup-goal" class="nexus-input" placeholder="e.g., A Senior Developer, Entrepreneur...">
+    
+    <button id="btn-save-profile" class="action-btn" onclick="completeSetup()">SAVE PROFILE</button>
+    <button class="secondary-btn" onclick="cancelSetup()" style="width:100%; border:none; color:var(--text-secondary)">Cancel</button>
+</main>
 
         <main id="section-feed" class="content-area hidden">
             <div class="stories-wrapper">
@@ -1188,6 +1231,17 @@ function loadGroupLobby() {
             </div>
         `;
     });
+}
+
+function previewProfilePic() {
+    const file = document.getElementById('setup-file-input').files[0];
+    if(file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('setup-pic-preview').src = e.target.result;
+        }
+        reader.readAsDataURL(file);
+    }
 }
 
 function getHobbyIcon(hobby) {
@@ -1633,41 +1687,77 @@ function retryGPS() {
         });
     }
 
-    function completeSetup() {
-        const name = document.getElementById('setup-name').value;
-        const uni = document.getElementById('setup-university').value;
-        const major = document.getElementById('setup-major').value;
-        const year = document.getElementById('setup-year').value;
-        const bio = document.getElementById('setup-bio').value;
-        const futureGoal = document.getElementById('setup-goal').value;
+    async function completeSetup() {
+    const name = document.getElementById('setup-name').value;
+    const uni = document.getElementById('setup-university').value;
+    const major = document.getElementById('setup-major').value;
+    const year = document.getElementById('setup-year').value;
+    const bio = document.getElementById('setup-bio').value;
+    const futureGoal = document.getElementById('setup-goal').value;
+    
+    // NEW: Get the file
+    const fileInput = document.getElementById('setup-file-input');
+    const saveBtn = document.getElementById('btn-save-profile');
 
-        if(!name || !uni || !major) return alert("Required fields missing");
+    if(!name || !uni || !major) return alert("Required fields missing");
 
-        // 1. Create the update object WITHOUT follower counts
+    // UI Feedback
+    saveBtn.innerText = "SAVING...";
+    saveBtn.disabled = true;
+
+    try {
+        let finalPhotoURL = currentUser.photoURL; // Default to existing
+
+        // Check if user selected a NEW file
+        if (fileInput.files.length > 0) {
+            saveBtn.innerText = "UPLOADING IMAGE...";
+            // 1. Compress
+            const compressed = await compressImage(fileInput.files[0]);
+            // 2. Upload to ImageKit
+            const newUrl = await uploadToImageKit(compressed);
+            
+            if (newUrl) {
+                finalPhotoURL = newUrl;
+                // Optional: Update Firebase Auth Profile (so it persists across apps)
+                await currentUser.updateProfile({ photoURL: finalPhotoURL });
+            }
+        }
+
         const userData = {
             uid: currentUser.uid, 
             displayName: name, 
             email: currentUser.email, 
-            photoURL: currentUser.photoURL,
+            photoURL: finalPhotoURL, // Save the new URL to Firestore
             academic: { university: uni, major: major, year: year },
             bio: bio,
             futureGoal: futureGoal,
             interests: Array.from(selectedHobbies),
-            // REMOVED: followersCount and followingCount
-            // We removed them so we don't accidentally overwrite the database with old numbers.
             lastActive: firebase.firestore.FieldValue.serverTimestamp()
         };
 
-        // 2. Send update
-        db.collection('users').doc(currentUser.uid).set(userData, { merge: true })
-            .then(() => {
-                // Update local data immediately so we don't need to refresh
-                globalProfileData = { ...globalProfileData, ...userData };
-                loadAppInterface(globalProfileData);
-                showShareModal();
-            })
-            .catch(e => alert(e.message));
+        // Send update
+        await db.collection('users').doc(currentUser.uid).set(userData, { merge: true });
+
+        // Update local data
+        globalProfileData = { ...globalProfileData, ...userData };
+        loadAppInterface(globalProfileData);
+        
+        // Reset UI
+        saveBtn.innerText = "SAVE PROFILE";
+        saveBtn.disabled = false;
+        
+        // Clear file input
+        fileInput.value = ""; 
+        
+        showShareModal(); // Or switchTab('profile')
+
+    } catch (e) {
+        console.error(e);
+        alert("Error saving profile: " + e.message);
+        saveBtn.innerText = "SAVE PROFILE";
+        saveBtn.disabled = false;
     }
+}
 
     // Find and replace this function in index.html
 function renderHobbiesSelector() {
@@ -2749,20 +2839,24 @@ function reportPost(pid, reportedUid, reportedName) {
 
     
     function editProfile() {
-        document.getElementById('setup-name').value = globalProfileData.displayName || "";
-        document.getElementById('setup-university').value = globalProfileData.academic.university || "";
-        document.getElementById('setup-major').value = globalProfileData.academic.major || "";
-        document.getElementById('setup-year').value = globalProfileData.academic.year || "";
-        switchTab('setup', null);
-        // Inside editProfile...
-document.getElementById('setup-bio').value = globalProfileData.bio || "";
-document.getElementById('setup-goal').value = globalProfileData.futureGoal || "";
-updateBioCount();
+    // Load text data
+    document.getElementById('setup-name').value = globalProfileData.displayName || "";
+    document.getElementById('setup-university').value = globalProfileData.academic.university || "";
+    document.getElementById('setup-major').value = globalProfileData.academic.major || "";
+    document.getElementById('setup-year').value = globalProfileData.academic.year || "";
+    document.getElementById('setup-bio').value = globalProfileData.bio || "";
+    document.getElementById('setup-goal').value = globalProfileData.futureGoal || "";
+    updateBioCount();
 
-// Load saved hobbies
-selectedHobbies = new Set(globalProfileData.interests || []);
-renderHobbiesSelector();
-    }
+    // NEW: Load current profile picture into the preview
+    document.getElementById('setup-pic-preview').src = globalProfileData.photoURL || currentUser.photoURL;
+
+    // Load saved hobbies
+    selectedHobbies = new Set(globalProfileData.interests || []);
+    renderHobbiesSelector();
+
+    switchTab('setup', null);
+}
     
     function cancelSetup() { if(globalProfileData.uid) switchTab('profile', document.querySelectorAll('.nav-item')[3]); }
 
