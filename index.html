@@ -1044,6 +1044,71 @@
     overflow-y: auto;
 }
 
+/* --- THEME MODAL STYLES --- */
+#theme-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 12000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(4px);
+}
+
+.theme-card {
+    background: var(--bg-card);
+    width: 90%;
+    max-width: 320px;
+    border-radius: 16px;
+    padding: 20px;
+    border: 1px solid var(--border);
+    animation: scaleIn 0.2s ease-out;
+}
+
+.theme-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    margin-bottom: 20px;
+    font-size: 1.1rem;
+    color: var(--text-primary);
+}
+
+.theme-option {
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.theme-option:hover {
+    background: var(--bg-input);
+}
+
+.theme-option.active {
+    border-color: var(--accent);
+    background: rgba(77, 107, 248, 0.1); /* Subtle accent tint */
+}
+
+.theme-option i {
+    font-size: 1.2rem;
+    width: 30px;
+    color: var(--text-secondary);
+}
+
+.theme-option.active i {
+    color: var(--accent);
+}
+
+@keyframes scaleIn {
+    from { transform: scale(0.95); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
 
     </style>
 </head>
@@ -1148,7 +1213,7 @@
                     <div id="notif-badge" class="notif-badge"></div>
                 </div>
 
-                <i class="fa-solid fa-moon" id="theme-btn" onclick="toggleTheme()" style="margin-right: 20px; color: var(--text-secondary); cursor:pointer;"></i>
+                <i class="fa-solid fa-moon" id="theme-btn" onclick="openThemeModal()" style="margin-right: 20px; color: var(--text-secondary); cursor:pointer;"></i>
                 <img id="header-avatar" src="" style="width:28px; height:28px; border-radius:6px; display:none;">
             </div>
         </header>
@@ -1473,6 +1538,29 @@
         <div id="views-list-content" class="views-list">
             <div class="loader-spinner" style="margin: 30px auto;"></div>
         </div>
+    </div>
+</div>
+
+<div id="theme-modal" onclick="closeThemeModal()">
+    <div class="theme-card" onclick="event.stopPropagation()">
+        <div class="theme-title">Appearance</div>
+        
+        <div class="theme-option" onclick="setTheme('light')" id="opt-light">
+            <i class="fa-regular fa-sun"></i>
+            <div>Light Mode</div>
+        </div>
+
+        <div class="theme-option" onclick="setTheme('dark')" id="opt-dark">
+            <i class="fa-solid fa-moon"></i>
+            <div>Dark Mode</div>
+        </div>
+
+        <div class="theme-option" onclick="setTheme('system')" id="opt-system">
+            <i class="fa-solid fa-desktop"></i>
+            <div>System Default</div>
+        </div>
+        
+        <button class="secondary-btn" onclick="closeThemeModal()" style="width:100%; margin-top:10px;">Cancel</button>
     </div>
 </div>
 
@@ -3615,6 +3703,65 @@ function reportPost(pid, reportedUid, reportedName) {
         h.setAttribute('data-theme', m);
         document.getElementById('theme-btn').className = m === 'dark' ? "fa-solid fa-moon" : "fa-regular fa-sun";
     }
+
+    // --- THEME LOGIC ---
+
+// 1. Initialize on Load
+// Check localStorage or default to 'system'
+let currentThemeSetting = localStorage.getItem('theme_preference') || 'system';
+applyTheme(currentThemeSetting);
+
+function openThemeModal() {
+    document.getElementById('theme-modal').style.display = 'flex';
+    
+    // Highlight the current selection
+    document.querySelectorAll('.theme-option').forEach(el => el.classList.remove('active'));
+    document.getElementById(`opt-${currentThemeSetting}`).classList.add('active');
+}
+
+function closeThemeModal() {
+    document.getElementById('theme-modal').style.display = 'none';
+}
+
+function setTheme(mode) {
+    currentThemeSetting = mode;
+    localStorage.setItem('theme_preference', mode); // Remember decision
+    applyTheme(mode);
+    closeThemeModal();
+}
+
+function applyTheme(mode) {
+    const root = document.documentElement;
+    const btnIcon = document.getElementById('theme-btn');
+    
+    let effectiveTheme = 'dark'; // Default fallback
+
+    if (mode === 'system') {
+        // Check device preference
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+            effectiveTheme = 'light';
+        } else {
+            effectiveTheme = 'dark';
+        }
+    } else {
+        effectiveTheme = mode; // 'light' or 'dark'
+    }
+
+    // Apply to DOM
+    root.setAttribute('data-theme', effectiveTheme);
+
+    // Update Header Icon based on result
+    if (btnIcon) {
+        btnIcon.className = effectiveTheme === 'dark' ? "fa-solid fa-moon" : "fa-regular fa-sun";
+    }
+}
+
+// Listener for System Changes (if user changes OS theme while app is open)
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+    if (currentThemeSetting === 'system') {
+        applyTheme('system');
+    }
+});
 
     initApp();
 
