@@ -1254,7 +1254,33 @@
         </div>
     </div>
 
+    <div id="banner-modal">
+    <div class="h-flex" style="justify-content: space-between; margin-bottom: 10px;">
+        <h3 style="color: white;">Select Banner</h3>
+        <i class="fa-solid fa-xmark" onclick="closeBannerModal()" style="color: white; font-size: 1.5rem; cursor: pointer;"></i>
+    </div>
+    <div id="banner-grid-container" class="banner-grid">
+        </div>
+</div>
+
     <script>
+
+        // Pre-defined high quality banners (Unsplash)
+const BANNER_OPTIONS = [
+    "https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=600&q=80", // Gradient Blue
+    "https://images.unsplash.com/photo-1557683316-973673baf926?w=600&q=80", // Gradient Dark
+    "https://images.unsplash.com/photo-1519681393798-3828fb4090bb?w=600&q=80", // Night Sky
+    "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=600&q=80", // Tech/Globe
+    "https://images.unsplash.com/photo-1493246507139-91e8fad9978e?w=600&q=80", // Mountains
+    "https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?w=600&q=80", // Neon City
+    "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600&q=80", // Beach
+    "https://images.unsplash.com/photo-1518005020951-ecc8e1201358?w=600&q=80", // Code
+    "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=600&q=80", // Matrix/Cyber
+    "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=600&q=80"  // Library/Books
+];
+
+let selectedBannerUrl = BANNER_OPTIONS[0]; // Default
+const DEFAULT_BANNER = BANNER_OPTIONS[0];
 
 // --- IMPROVED PWA INSTALLATION LOGIC (Android & iOS) ---
 
@@ -1337,6 +1363,38 @@ function hideInstallModal() {
 // Rename your existing function to match the call above
 function hideInstallPrompt() {
     hideInstallModal();
+}
+
+function openBannerModal() {
+    const container = document.getElementById('banner-grid-container');
+    container.innerHTML = '';
+    
+    BANNER_OPTIONS.forEach(url => {
+        const img = document.createElement('img');
+        img.src = url;
+        img.className = 'banner-option';
+        if(url === selectedBannerUrl) img.classList.add('selected');
+        
+        img.onclick = () => {
+            selectedBannerUrl = url;
+            // Visual feedback
+            document.querySelectorAll('.banner-option').forEach(el => el.classList.remove('selected'));
+            img.classList.add('selected');
+            
+            // Update preview
+            document.getElementById('setup-banner-preview').src = url;
+            
+            // Close modal after short delay
+            setTimeout(closeBannerModal, 200);
+        };
+        container.appendChild(img);
+    });
+    
+    document.getElementById('banner-modal').style.display = 'flex';
+}
+
+function closeBannerModal() {
+    document.getElementById('banner-modal').style.display = 'none';
 }
 
 // --- ANIMATION FUNCTION ---
@@ -1950,6 +2008,7 @@ function retryGPS() {
             displayName: name, 
             email: currentUser.email, 
             photoURL: finalPhotoURL, // Save the new URL to Firestore
+            bannerUrl: selectedBannerUrl,
             academic: { university: uni, major: major, year: year },
             bio: bio,
             futureGoal: futureGoal,
@@ -2042,6 +2101,7 @@ function updateBioCount() {
         document.getElementById('profile-academic').innerText = `${userData.academic.major} • ${userData.academic.year}`;
         document.getElementById('profile-uni').innerText = userData.academic.university;
         document.getElementById('profile-bio').innerText = userData.bio || "";
+        document.getElementById('profile-banner').src = userData.bannerUrl || DEFAULT_BANNER;
 
         // 2. Show Goal
 if(userData.futureGoal) {
@@ -2422,6 +2482,7 @@ function openUserProfile(uid) {
 
     db.collection('users').doc(uid).onSnapshot(doc => {
         const u = doc.data();
+        document.getElementById('other-banner').src = u.bannerUrl || DEFAULT_BANNER;
         document.getElementById('other-pic').style.backgroundImage = `url('${u.photoURL}')`;
         document.getElementById('other-name').innerText = u.displayName;
 
@@ -3074,6 +3135,9 @@ function reportPost(pid, reportedUid, reportedName) {
 
     // NEW: Load current profile picture into the preview
     document.getElementById('setup-pic-preview').src = globalProfileData.photoURL || currentUser.photoURL;
+
+    selectedBannerUrl = globalProfileData.bannerUrl || DEFAULT_BANNER;
+    document.getElementById('setup-banner-preview').src = selectedBannerUrl;
 
     // Load saved hobbies
     selectedHobbies = new Set(globalProfileData.interests || []);
