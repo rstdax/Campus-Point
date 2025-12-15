@@ -4608,6 +4608,10 @@ function updateCarouselDots(pid, count) {
 
         updateProgressBar(100);
 
+        const successAudio = new Audio('https://campuspoint.netlify.app/success.mp3');
+        successAudio.volume = 0.5;
+        successAudio.play().catch(e => console.log("Audio play failed", e));
+
         setTimeout(() => {
             hideUploadModal();
             // Cleanup
