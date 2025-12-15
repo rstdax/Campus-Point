@@ -21,6 +21,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
     
 
 
@@ -34,7 +35,7 @@
             --border: #2A2A2E;
             --text-primary: #EDEDED;
             --text-secondary: #888888;
-            --accent: #4dabf8;
+            --accent: #008cff;
             --accent-backup: #4dabf8;
             --accent-glow: rgba(77, 107, 248, 0.4);
             --boost-color: #FFD700;
@@ -1109,6 +1110,237 @@
     to { transform: scale(1); opacity: 1; }
 }
 
+/* --- STORY EDITOR MODAL --- */
+#story-editor-modal {
+    position: fixed;
+    inset: 0;
+    background: #000;
+    z-index: 11000;
+    display: none;
+    flex-direction: column;
+}
+
+.story-canvas-container {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #111;
+    overflow: hidden;
+}
+
+.story-toolbar-top {
+    height: 60px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 15px;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent);
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 10;
+}
+
+.story-toolbar-bottom {
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    background: #000;
+    z-index: 10;
+}
+
+.editor-btn {
+    color: white;
+    font-size: 1.5rem;
+    background: rgba(255,255,255,0.1);
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border: none;
+}
+
+.sticker-tray {
+    position: absolute;
+    bottom: 80px;
+    left: 0;
+    right: 0;
+    background: rgba(0,0,0,0.9);
+    padding: 10px;
+    display: flex;
+    gap: 15px;
+    overflow-x: auto;
+    display: none; /* Hidden by default */
+}
+
+.sticker-option {
+    font-size: 2rem;
+    cursor: pointer;
+}
+
+/* Font Styles for Story Text */
+.font-classic { font-family: 'Inter', sans-serif; font-weight: 700; }
+.font-mono { font-family: 'JetBrains Mono', monospace; }
+.font-cursive { font-family: 'cursive'; font-style: italic; }
+.font-serif { font-family: 'serif'; font-weight: bold; }
+
+/* --- STORY EDITOR EXTRA TOOLS --- */
+
+/* Font Picker Tray */
+.font-tray {
+    position: absolute;
+    bottom: 80px;
+    left: 0;
+    right: 0;
+    background: rgba(0,0,0,0.9);
+    padding: 15px;
+    display: none; /* Hidden by default */
+    gap: 15px;
+    overflow-x: auto;
+    z-index: 20;
+}
+
+.font-option {
+    color: white;
+    font-size: 1.2rem;
+    padding: 5px 15px;
+    border: 1px solid #444;
+    border-radius: 20px;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.font-option.selected {
+    background: var(--accent);
+    border-color: var(--accent);
+}
+
+/* Text Edit Modal (Dialog) */
+#text-edit-dialog, #mention-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    z-index: 12000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+}
+
+.edit-card {
+    background: var(--bg-card);
+    width: 90%;
+    max-width: 350px;
+    padding: 20px;
+    border-radius: 15px;
+    border: 1px solid var(--border);
+}
+
+/* User Search List */
+.search-results {
+    max-height: 200px;
+    overflow-y: auto;
+    margin-top: 10px;
+}
+
+.search-item {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+}
+
+.search-item:hover { background: var(--bg-input); }
+
+/* --- NOTIFICATION POST PREVIEW --- */
+.notif-post-thumb {
+    width: 45px;
+    height: 45px;
+    border-radius: 6px;
+    margin-left: 10px;
+    object-fit: cover;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    flex-shrink: 0; /* Prevent shrinking on small screens */
+}
+
+/* Style for Text-Only Placeholder */
+.notif-post-thumb.placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    font-size: 1.2rem;
+}
+
+/* --- DISCUSSION ROOM STYLES --- */
+#section-discussion-room {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-main);
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 2000;
+}
+
+.room-header {
+    height: 60px;
+    display: flex;
+    align-items: center;
+    padding: 0 15px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-glass);
+    backdrop-filter: blur(10px);
+}
+
+.room-scroll-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.room-footer {
+    padding: 15px;
+    border-top: 1px solid var(--border);
+    background: var(--bg-card);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Specific Comment Styles */
+.room-comment-bubble {
+    background: var(--bg-input);
+    padding: 12px;
+    border-radius: 12px;
+    border-bottom-left-radius: 2px;
+    border: 1px solid var(--border);
+}
+
+.preview-comment-item {
+    padding: 10px;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+.preview-comment-item strong {
+    color: var(--text-primary);
+    margin-right: 5px;
+}
+
 
     </style>
 </head>
@@ -1564,6 +1796,89 @@
     </div>
 </div>
 
+<div id="story-editor-modal">
+    <div class="story-toolbar-top">
+        <i class="fa-solid fa-xmark" onclick="closeStoryEditor()" style="color: white; font-size: 1.5rem; cursor: pointer;"></i>
+        <div class="h-flex" style="gap: 15px;">
+            <i class="fa-solid fa-rotate-left" onclick="editorUndo()" style="color: white; cursor: pointer;"></i>
+            <i class="fa-solid fa-rotate-right" onclick="editorRedo()" style="color: white; cursor: pointer;"></i>
+        </div>
+    </div>
+
+    <div class="story-canvas-container" id="canvas-wrapper">
+        <canvas id="story-canvas"></canvas>
+    </div>
+
+    <div id="sticker-tray" class="sticker-tray">
+        <span class="sticker-option" onclick="addSticker('🔥')">🔥</span>
+        <span class="sticker-option" onclick="addSticker('❤️')">❤️</span>
+        <span class="sticker-option" onclick="addSticker('😂')">😂</span>
+        <span class="sticker-option" onclick="addSticker('🎉')">🎉</span>
+        <span class="sticker-option" onclick="addSticker('🎓')">🎓</span>
+        <span class="sticker-option" onclick="addSticker('📍')">📍</span>
+        <span class="sticker-option" onclick="addSticker('👀')">👀</span>
+        <span class="sticker-option" onclick="addSticker('💯')">💯</span>
+    </div>
+
+    <div id="font-tray" class="font-tray">
+        <div class="font-option font-classic" onclick="applyFont('Inter')">Classic</div>
+        <div class="font-option font-mono" onclick="applyFont('JetBrains Mono')">Code</div>
+        <div class="font-option font-cursive" onclick="applyFont('cursive')">Style</div>
+        <div class="font-option font-serif" onclick="applyFont('serif')">Formal</div>
+        <div class="font-option" style="font-family: impact" onclick="applyFont('Impact')">Bold</div>
+    </div>
+
+    <div class="story-toolbar-bottom">
+        <button class="editor-btn" onclick="addNewTextLayer()"><i class="fa-solid fa-font"></i></button>
+        <button class="editor-btn" onclick="toggleFonts()"><i class="fa-solid fa-text-height"></i></button>
+        <button class="editor-btn" onclick="toggleStickers()"><i class="fa-regular fa-face-smile"></i></button>
+        <button class="editor-btn" onclick="openMentionDialog()"><i class="fa-solid fa-at"></i></button>
+        
+        <button class="action-btn" onclick="uploadStoryFromCanvas()" style="width: auto; padding: 10px 20px; margin: 0; font-size: 0.9rem;">
+            Post <i class="fa-solid fa-paper-plane"></i>
+        </button>
+    </div>
+</div>
+
+<div id="text-edit-dialog">
+    <div class="edit-card">
+        <label>EDIT TEXT</label>
+        <textarea id="story-text-input" class="nexus-input" rows="3" style="font-size: 1.2rem;"></textarea>
+        <div class="h-flex" style="gap: 10px;">
+            <button class="secondary-btn" onclick="document.getElementById('text-edit-dialog').style.display='none'">Cancel</button>
+            <button class="action-btn" onclick="saveTextEdit()">Done</button>
+        </div>
+        <button class="secondary-btn" onclick="deleteActiveObject()" style="width:100%; border-color:#ff5555; color:#ff5555; margin-top:10px;">Delete Element</button>
+    </div>
+</div>
+
+<div id="mention-modal">
+    <div class="edit-card">
+        <label>MENTION A FRIEND</label>
+        <input type="text" id="mention-search" class="nexus-input" placeholder="Search name..." oninput="searchUsersForMention(this.value)">
+        <div id="mention-results" class="search-results"></div>
+        <button class="secondary-btn" onclick="document.getElementById('mention-modal').style.display='none'" style="width:100%; margin-top:10px;">Close</button>
+    </div>
+</div>
+
+<main id="section-discussion-room" class="hidden">
+    <div class="room-header">
+        <i class="fa-solid fa-arrow-left" onclick="closeDiscussionRoom()" style="font-size: 1.2rem; cursor: pointer; padding: 10px;"></i>
+        <div class="mono" style="font-weight: 700; font-size: 1.1rem; margin-left: 10px;">DISCUSSION ROOM</div>
+    </div>
+    
+    <div id="room-comments-list" class="room-scroll-area">
+        </div>
+
+    <div class="room-footer">
+        <div class="avatar" id="room-my-avatar" style="width: 35px; height: 35px;"></div>
+        <input type="text" id="room-input" class="nexus-input" style="margin:0; flex:1;" placeholder="Join the discussion...">
+        <button class="action-btn" onclick="postRoomComment()" style="width: auto; margin: 0; padding: 10px 15px;">
+            <i class="fa-solid fa-paper-plane"></i>
+        </button>
+    </div>
+</main>
+
     <script>
 
         // Pre-defined high quality banners (Unsplash)
@@ -1766,35 +2081,7 @@ function loadGroupLobby() {
 }
 
 function previewProfilePic() {
-    const fileInput = document.getElementById('setup-file-input');
-    const file = fileInput.files[0];
-    
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            // 1. Set the image source for the cropper
-            const imgElement = document.getElementById('cropper-target-img');
-            imgElement.src = e.target.result;
-            
-            // 2. Show the modal
-            document.getElementById('cropper-modal').style.display = 'flex';
-
-            // 3. Destroy previous cropper if exists (to prevent bugs)
-            if(cropper) {
-                cropper.destroy();
-            }
-
-            // 4. Initialize Cropper.js
-            cropper = new Cropper(imgElement, {
-                aspectRatio: 1, // Force Square for profile pics
-                viewMode: 1,    // Restrict crop box to image size
-                dragMode: 'move',
-                autoCropArea: 0.8,
-                background: false, // Dark background
-            });
-        }
-        reader.readAsDataURL(file);
-    }
+    startCropper('setup-file-input', 'profile');
 }
 
 function rotateImage(deg) {
@@ -1810,32 +2097,7 @@ function cancelCrop() {
     }
 }
 
-function finishCrop() {
-    if(!cropper) return;
 
-    // 1. Get the cropped canvas
-    const canvas = cropper.getCroppedCanvas({
-        width: 500,  // Resize to reasonable profile size
-        height: 500
-    });
-
-    // 2. Convert canvas to Blob/File
-    canvas.toBlob((blob) => {
-        // Create a new File object from the blob
-        finalCroppedFile = new File([blob], "profile-edited.jpg", { type: "image/jpeg" });
-
-        // 3. Update the Preview in the Setup Screen
-        document.getElementById('setup-pic-preview').src = URL.createObjectURL(finalCroppedFile);
-
-        // 4. Close Modal
-        document.getElementById('cropper-modal').style.display = 'none';
-        
-        // Cleanup
-        cropper.destroy();
-        cropper = null;
-
-    }, 'image/jpeg', 0.9);
-}
 
 function getHobbyIcon(hobby) {
     // Map hobby to a specific Font Awesome class and a unique Hex color code.
@@ -1973,6 +2235,14 @@ let selectedHobbies = new Set();
     let lastProfileTab = 'profile'; // Remembers where to go back to
     let cropper = null; 
 let finalCroppedFile = null; // Stores the edited file ready for upload
+// --- EDITOR GLOBALS ---
+let cropContext = null; // 'post', 'profile', or 'story'
+let fabricCanvas = null;
+let editorHistory = [];
+let historyStep = -1;
+let finalPostFile = null; // Store the edited post file
+let currentRoomPostId = null;
+let roomListener = null; // To stop realtime updates when leaving
 
     // --- 1. NEW ROUTER SYSTEM ---
     
@@ -2631,60 +2901,454 @@ function triggerAddStory() {
     document.getElementById('story-file-input').click();
 }
 
-async function handleStoryFileSelect() {
-    const fileInput = document.getElementById('story-file-input');
+function handleStoryFileSelect() {
+    startCropper('story-file-input', 'story');
+}
+
+function startCropper(inputId, context) {
+    const fileInput = document.getElementById(inputId);
     const file = fileInput.files[0];
-    if(!file) return;
+    cropContext = context;
 
-    // 1. Show Custom Modal
-    showUploadModal("Compressing Story...");
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const imgElement = document.getElementById('cropper-target-img');
+            imgElement.src = e.target.result;
+            document.getElementById('cropper-modal').style.display = 'flex';
 
-    try {
-        // 2. Compress
-        const compressed = await compressImage(file);
+            if(cropper) cropper.destroy();
+
+            // Config based on context
+            let aspectRatio = NaN; // Free crop for posts
+            if(context === 'profile') aspectRatio = 1; 
+            if(context === 'story') aspectRatio = 9/16; 
+
+            cropper = new Cropper(imgElement, {
+                aspectRatio: aspectRatio,
+                viewMode: 1,
+                dragMode: 'move',
+                autoCropArea: 0.9,
+                background: false,
+            });
+        }
+        reader.readAsDataURL(file);
+    }
+    fileInput.value = ""; // Reset input
+}
+
+function finishCrop() {
+    if(!cropper) return;
+
+    // Output Size
+    const canvas = cropper.getCroppedCanvas({
+        width: cropContext === 'profile' ? 500 : 1080, 
+    });
+
+    canvas.toBlob((blob) => {
+        // --- PROFILE FLOW ---
+        if(cropContext === 'profile') {
+            finalCroppedFile = new File([blob], "profile.jpg", { type: "image/jpeg" });
+            document.getElementById('setup-pic-preview').src = URL.createObjectURL(finalCroppedFile);
+            document.getElementById('cropper-modal').style.display = 'none';
+        }
         
-        updateProgressBar(40);
-        document.getElementById('upload-subtext').innerText = "Uploading to Server...";
+        // --- POST FLOW ---
+        else if (cropContext === 'post') {
+            finalPostFile = new File([blob], "post.jpg", { type: "image/jpeg" });
+            document.getElementById('preview-img').src = URL.createObjectURL(finalPostFile);
+            document.getElementById('image-preview').style.display = 'block';
+            document.getElementById('cropper-modal').style.display = 'none';
+        }
 
-        // 3. Upload
-        const url = await uploadToImageKit(compressed);
+        // --- STORY FLOW (Pass to Fabric Editor) ---
+        else if (cropContext === 'story') {
+            document.getElementById('cropper-modal').style.display = 'none';
+            // Open the Advanced Story Editor with the cropped image
+            initStoryEditor(URL.createObjectURL(blob));
+        }
+
+        cropper.destroy();
+        cropper = null;
+
+    }, 'image/jpeg', 0.9);
+}
+
+// --- STORY EDITOR (FABRIC JS) LOGIC ---
+
+function initStoryEditor(imageUrl) {
+    const modal = document.getElementById('story-editor-modal');
+    modal.style.display = 'flex';
+
+    // 1. Setup Canvas (Responsive)
+    const wrapper = document.getElementById('canvas-wrapper');
+    const width = wrapper.clientWidth;
+    const height = wrapper.clientHeight;
+
+    // Create Fabric Canvas
+    if(fabricCanvas) fabricCanvas.dispose();
+    
+    // Create canvas element dynamically to reset it
+    document.getElementById('story-canvas').remove();
+    const newCanvas = document.createElement('canvas');
+    newCanvas.id = 'story-canvas';
+    wrapper.appendChild(newCanvas);
+
+    fabricCanvas = new fabric.Canvas('story-canvas', {
+        width: width,
+        height: height,
+        backgroundColor: '#000'
+    });
+
+    fabricCanvas.on('mouse:down', function(options) {
+        if (options.target) {
+            // Check if it is a text object
+            if (options.target.type === 'i-text') {
+                // Prevent default editing
+                options.target.editable = false; 
+                // Open custom dialog
+                openTextEditor(options.target);
+            }
+        }
+    });
+
+    // 2. Load Image as Background (Fit to screen)
+    fabric.Image.fromURL(imageUrl, function(img) {
+        // Scale image to fit contained
+        const scale = Math.min(width / img.width, height / img.height);
         
-        if(!url) throw new Error("Upload failed");
-
-        updateProgressBar(80);
-        document.getElementById('upload-subtext').innerText = "Finalizing...";
-
-        // 4. Save to Firestore
-        const expiresAt = Date.now() + (24 * 60 * 60 * 1000); 
-
-        // --- KEY CHANGE HERE ---
-        const authorName = globalProfileData.displayName || currentUser.displayName;
-        const authorPhoto = globalProfileData.photoURL || currentUser.photoURL;
-
-        await db.collection('stories').add({
-            uid: currentUser.uid,
-            userName: authorName,   // <--- UPDATED
-            userPhoto: authorPhoto, // <--- UPDATED
-            imageUrl: url,
-            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-            expiresAt: expiresAt,
-            viewers: [] 
+        img.set({
+            originX: 'center',
+            originY: 'center',
+            left: width / 2,
+            top: height / 2,
+            scaleX: scale,
+            scaleY: scale
         });
-
-        updateProgressBar(100);
         
-        // Short delay
-        setTimeout(() => {
-            hideUploadModal();
-        }, 500);
+        fabricCanvas.setBackgroundImage(img, fabricCanvas.renderAll.bind(fabricCanvas));
+        saveHistory(); // Initial state
+    });
 
-    } catch(err) {
-        console.error(err);
-        hideUploadModal();
-        alert("Failed to upload story.");
+    // Reset History
+    editorHistory = [];
+    historyStep = -1;
+
+    // Listen for changes to save history
+    fabricCanvas.on('object:modified', saveHistory);
+    fabricCanvas.on('object:added', saveHistory);
+}
+
+// --- TEXT & FONT LOGIC ---
+
+let activeTextObject = null; // Track which text is being edited
+
+function addNewTextLayer() {
+    const text = new fabric.IText('Type here', {
+        left: fabricCanvas.width / 2,
+        top: fabricCanvas.height / 2,
+        fontFamily: 'Inter',
+        fill: '#ffffff',
+        fontSize: 40,
+        fontWeight: 'bold',
+        originX: 'center',
+        originY: 'center',
+        shadow: 'rgba(0,0,0,0.8) 2px 2px 5px',
+        editable: false // Disable built-in edit, use our dialog
+    });
+    fabricCanvas.add(text);
+    fabricCanvas.setActiveObject(text);
+    openTextEditor(text); // Open dialog immediately
+}
+
+function openTextEditor(obj) {
+    activeTextObject = obj;
+    document.getElementById('story-text-input').value = obj.text;
+    document.getElementById('text-edit-dialog').style.display = 'flex';
+}
+
+function saveTextEdit() {
+    if (activeTextObject) {
+        const val = document.getElementById('story-text-input').value;
+        activeTextObject.set({ text: val });
+        fabricCanvas.renderAll();
+        saveHistory();
+    }
+    document.getElementById('text-edit-dialog').style.display = 'none';
+}
+
+function deleteActiveObject() {
+    if (activeTextObject) {
+        fabricCanvas.remove(activeTextObject);
+        saveHistory();
+    }
+    document.getElementById('text-edit-dialog').style.display = 'none';
+}
+
+function toggleFonts() {
+    const tray = document.getElementById('font-tray');
+    // Hide sticker tray if open
+    document.getElementById('sticker-tray').style.display = 'none';
+    
+    tray.style.display = (tray.style.display === 'flex') ? 'none' : 'flex';
+}
+
+function applyFont(fontName) {
+    const activeObj = fabricCanvas.getActiveObject();
+    if (activeObj && activeObj.type === 'i-text') {
+        activeObj.set({ fontFamily: fontName });
+        fabricCanvas.renderAll();
+        saveHistory();
+    } else {
+        alert("Please select a text element first.");
+    }
+}
+
+// --- MENTION LOGIC ---
+
+function openMentionDialog() {
+    document.getElementById('mention-modal').style.display = 'flex';
+    document.getElementById('mention-search').value = '';
+    document.getElementById('mention-results').innerHTML = '';
+    document.getElementById('mention-search').focus();
+}
+
+function searchUsersForMention(query) {
+    const resDiv = document.getElementById('mention-results');
+    if(query.length < 2) {
+        resDiv.innerHTML = '';
+        return;
     }
 
-    fileInput.value = ""; 
+    // Simple startAt search (Case sensitive in Firestore usually, but good enough for MVP)
+    db.collection('users')
+        .where('displayName', '>=', query)
+        .where('displayName', '<=', query + '\uf8ff')
+        .limit(5)
+        .get()
+        .then(snapshot => {
+            resDiv.innerHTML = '';
+            snapshot.forEach(doc => {
+                const u = doc.data();
+                resDiv.innerHTML += `
+                    <div class="search-item" onclick="addMentionToStory('${u.uid}', '${u.displayName}')">
+                        <div class="avatar" style="background-image: url('${u.photoURL}')"></div>
+                        <div>
+                            <div style="font-weight:600">${u.displayName}</div>
+                            <div style="font-size:0.8rem;color:#888">${u.academic.major}</div>
+                        </div>
+                    </div>
+                `;
+            });
+        });
+}
+
+function addMentionToStory(uid, name) {
+    document.getElementById('mention-modal').style.display = 'none';
+    
+    // Create text object with custom property 'mentionedUid'
+    const text = new fabric.IText(`@${name}`, {
+        left: fabricCanvas.width / 2,
+        top: fabricCanvas.height / 2,
+        fontFamily: 'Inter',
+        fill: '#FFD700', // Gold color for mentions
+        fontSize: 35,
+        fontWeight: 'bold',
+        originX: 'center',
+        originY: 'center',
+        shadow: 'rgba(0,0,0,0.8) 2px 2px 5px',
+        editable: false,
+        // CUSTOM DATA
+        mentionedUid: uid 
+    });
+
+    fabricCanvas.add(text);
+    fabricCanvas.setActiveObject(text);
+    saveHistory();
+}
+
+// --- TOOLS ---
+
+function addStoryText() {
+    const text = new fabric.IText('Type here...', {
+        left: 50,
+        top: 100,
+        fontFamily: 'Inter',
+        fill: '#ffffff',
+        fontSize: 40,
+        fontWeight: 'bold',
+        shadow: 'rgba(0,0,0,0.8) 2px 2px 5px'
+    });
+    
+    // Cycle fonts on click
+    text.on('mousedown', function() {
+        const fonts = ['Inter', 'JetBrains Mono', 'cursive', 'serif'];
+        const current = text.fontFamily;
+        let nextIndex = fonts.indexOf(current) + 1;
+        if(nextIndex >= fonts.length) nextIndex = 0;
+        text.set('fontFamily', fonts[nextIndex]);
+        fabricCanvas.renderAll();
+    });
+
+    fabricCanvas.add(text);
+    fabricCanvas.setActiveObject(text);
+    text.enterEditing();
+}
+
+function toggleStickers() {
+    const tray = document.getElementById('sticker-tray');
+    tray.style.display = tray.style.display === 'flex' ? 'none' : 'flex';
+}
+
+function addSticker(emoji) {
+    const text = new fabric.Text(emoji, {
+        left: fabricCanvas.width / 2,
+        top: fabricCanvas.height / 2,
+        fontSize: 80,
+        selectable: true
+    });
+    fabricCanvas.add(text);
+    toggleStickers(); // Hide tray
+}
+
+// --- UNDO / REDO ---
+
+function saveHistory() {
+    // Keep only the last 10 states for performance
+    if(historyStep < editorHistory.length - 1) {
+        editorHistory = editorHistory.slice(0, historyStep + 1);
+    }
+    editorHistory.push(JSON.stringify(fabricCanvas));
+    historyStep++;
+}
+
+function editorUndo() {
+    if (historyStep > 0) {
+        historyStep--;
+        fabricCanvas.loadFromJSON(editorHistory[historyStep], fabricCanvas.renderAll.bind(fabricCanvas));
+    }
+}
+
+function editorRedo() {
+    if (historyStep < editorHistory.length - 1) {
+        historyStep++;
+        fabricCanvas.loadFromJSON(editorHistory[historyStep], fabricCanvas.renderAll.bind(fabricCanvas));
+    }
+}
+
+function closeStoryEditor() {
+    document.getElementById('story-editor-modal').style.display = 'none';
+    document.getElementById('story-file-input').value = "";
+}
+
+// --- FINAL UPLOAD ---
+
+function uploadStoryFromCanvas() {
+    document.getElementById('story-canvas').toBlob(async (blob) => {
+        if (!blob) return alert("Canvas error");
+
+        closeStoryEditor();
+        showUploadModal("Uploading Story...");
+
+        try {
+            // 1. Compress
+            const file = new File([blob], "story.jpg", { type: "image/jpeg" });
+            const compressed = await compressImage(file);
+            
+            // 2. Upload
+            const url = await uploadToImageKit(compressed);
+            if(!url) throw new Error("Upload failed");
+
+            // 3. Scan for Mentions (Collect UIDs)
+            const objects = fabricCanvas.getObjects();
+            let mentionedUserIds = [];
+            
+            objects.forEach(obj => {
+                if (obj.mentionedUid) {
+                    mentionedUserIds.push(obj.mentionedUid);
+                }
+            });
+            // Remove duplicates
+            mentionedUserIds = [...new Set(mentionedUserIds)];
+
+            // 4. Save Story
+            const expiresAt = Date.now() + (24 * 60 * 60 * 1000); 
+            const myName = globalProfileData.displayName || currentUser.displayName;
+            
+            await db.collection('stories').add({
+                uid: currentUser.uid,
+                userName: myName,
+                userPhoto: globalProfileData.photoURL || currentUser.photoURL,
+                imageUrl: url,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                expiresAt: expiresAt,
+                viewers: [],
+                mentions: mentionedUserIds // Save metadata if needed later
+            });
+
+            // 5. Send Notifications
+            const notifBatch = db.batch();
+            const timestamp = firebase.firestore.FieldValue.serverTimestamp();
+
+            mentionedUserIds.forEach(targetUid => {
+                const ref = db.collection('users').doc(targetUid).collection('notifications').doc();
+                notifBatch.set(ref, {
+                    type: 'mention',
+                    fromUid: currentUser.uid,
+                    fromName: myName,
+                    fromPhoto: globalProfileData.photoURL || currentUser.photoURL,
+                    text: "mentioned you in their story.",
+                    timestamp: timestamp,
+                    read: false
+                });
+            });
+            
+            await notifBatch.commit();
+
+            updateProgressBar(100);
+            setTimeout(() => { hideUploadModal(); }, 500);
+
+        } catch (e) {
+            console.error(e);
+            hideUploadModal();
+            alert("Story upload failed.");
+        }
+    }, 'image/jpeg', 0.85);
+}
+
+// --- NOTIFICATION HELPER ---
+function sendAppNotification(targetUid, type, text, postId = null, postThumb = null) {
+    if (!targetUid || targetUid === currentUser.uid) return;
+
+    const myName = globalProfileData.displayName || currentUser.displayName;
+    const myPhoto = globalProfileData.photoURL || currentUser.photoURL;
+    const timestamp = firebase.firestore.FieldValue.serverTimestamp();
+
+    // Unique ID logic for likes to prevent spam
+    let docId = null;
+    if (type === 'like' && postId) {
+        docId = `${postId}_${currentUser.uid}`;
+    }
+
+    const notifData = {
+        type: type,
+        fromUid: currentUser.uid,
+        fromName: myName,
+        fromPhoto: myPhoto,
+        text: text,
+        timestamp: timestamp,
+        read: false,
+        postId: postId,
+        postThumb: postThumb // <--- SAVING THE IMAGE URL
+    };
+
+    const ref = db.collection('users').doc(targetUid).collection('notifications');
+
+    if (docId) {
+        ref.doc(docId).set(notifData);
+    } else {
+        ref.add(notifData);
+    }
 }
 
 // --- 4. VIEW STORY VIEWER ---
@@ -3059,13 +3723,9 @@ function openUserProfile(uid) {
 }
 
 function openNotifications() {
-    // 1. Switch to the view
     switchTab('notifications');
-    
-    // 2. Hide the red badge locally immediately
     document.getElementById('notif-badge').style.display = 'none';
 
-    // 3. Load data
     const list = document.getElementById('notification-list');
     list.innerHTML = '<div class="loader-spinner" style="margin: 20px auto;"></div>';
 
@@ -3081,15 +3741,36 @@ function openNotifications() {
               return;
           }
 
-          const batch = db.batch(); // Batch to mark them as read
+          const batch = db.batch(); 
 
           snapshot.forEach(doc => {
               const n = doc.data();
               const time = n.timestamp ? new Date(n.timestamp.toDate()).toLocaleDateString() : '';
               
-              // Render Item
+              // --- PREVIEW LOGIC ---
+              let postPreviewHTML = '';
+              
+              if(n.postThumb) {
+                  // CASE 1: Post has an image -> Show Image
+                  postPreviewHTML = `<img src="${n.postThumb}" class="notif-post-thumb">`;
+              } 
+              else if (n.postId) {
+                  // CASE 2: Post exists but is Text-Only -> Show Icon Placeholder
+                  postPreviewHTML = `
+                      <div class="notif-post-thumb placeholder">
+                          <i class="fa-solid fa-align-left"></i>
+                      </div>
+                  `;
+              }
+              // CASE 3: Follow notification -> Show nothing (postPreviewHTML stays empty)
+
+              // Determine Click Action
+              // If it's a "Follow", go to Profile. If it's "Like/Comment", go to that specific Post.
+              // Note: You'll need to handle 'openPost(pid)' later, or just default to profile for now.
+              const clickAction = `openUserProfile('${n.fromUid}')`; 
+
               list.innerHTML += `
-                  <div class="notif-item" onclick="openUserProfile('${n.fromUid}')">
+                  <div class="notif-item" onclick="${clickAction}">
                       <div class="avatar" style="background-image: url('${n.fromPhoto}')"></div>
                       <div class="notif-content">
                           <div class="notif-text">
@@ -3097,16 +3778,15 @@ function openNotifications() {
                           </div>
                           <div class="notif-time">${time}</div>
                       </div>
+                      ${postPreviewHTML} 
                   </div>
               `;
 
-              // If unread, add to batch to mark as read
               if(n.read === false) {
                   batch.update(doc.ref, { read: true });
               }
           });
 
-          // Commit the "mark as read" batch
           batch.commit().catch(e => console.log("Error marking read", e));
       });
 }
@@ -3170,16 +3850,8 @@ function openNotifications() {
 
     // --- IMAGE COMPRESSION & UPLOAD ---
     function previewImage() {
-        const file = document.getElementById('post-file').files[0];
-        if(file) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                document.getElementById('preview-img').src = e.target.result;
-                document.getElementById('image-preview').style.display = 'block';
-            }
-            reader.readAsDataURL(file);
-        }
-    }
+    startCropper('post-file', 'post');
+}
 
     function clearImage() {
         document.getElementById('post-file').value = "";
@@ -3531,9 +4203,17 @@ function reportPost(pid, reportedUid, reportedName) {
         </div>
         
         <div class="discussion-area" id="discuss-${pid}">
-            <div id="comments-${pid}" style="margin-bottom:10px;"></div>
-            <div class="h-flex">
-                <input type="text" id="input-${pid}" class="nexus-input" style="margin-bottom:0; font-size:0.85rem; padding:8px;" placeholder="Comment...">
+            
+            <div id="preview-comments-${pid}" style="margin-bottom:10px;">
+                <p style="font-size:0.8rem; color:var(--text-secondary); padding:5px;">Loading preview...</p>
+            </div>
+
+            <button class="secondary-btn" onclick="openDiscussionRoom('${pid}')" style="width:100%; margin-top:5px; border-color:var(--accent); color:var(--accent);">
+                Open Discussion Room <i class="fa-solid fa-arrow-right-to-bracket"></i>
+            </button>
+
+            <div class="h-flex" style="margin-top:15px; border-top:1px solid var(--border); padding-top:10px;">
+                <input type="text" id="input-${pid}" class="nexus-input" style="margin-bottom:0; font-size:0.85rem; padding:8px;" placeholder="Quick reply...">
                 <button onclick="postComment('${pid}')" style="background:var(--accent); color:white; border:none; padding:8px 15px; border-radius:6px; margin-left:8px;"><i class="fa-solid fa-paper-plane"></i></button>
             </div>
         </div>
@@ -3545,126 +4225,270 @@ function reportPost(pid, reportedUid, reportedName) {
     async function createPost() {
     const text = document.getElementById('post-text').value;
     const goal = document.getElementById('post-goal').value || "#Update";
-    const fileInput = document.getElementById('post-file');
     const btn = document.getElementById('btn-post');
 
-    if(!text && !fileInput.files[0]) return alert("Please add text or an image.");
+    // 1. Validation: Ensure there is either text OR an edited image
+    // Note: We check 'finalPostFile' because that is where the cropped image lives
+    if (!text && !finalPostFile) {
+        return alert("Please add text or an image.");
+    }
 
-    // Disable button
+    // 2. Lock UI
     btn.disabled = true;
-
     let uploadedImageUrl = "";
 
     try {
-        if(fileInput.files.length > 0) {
-            // 1. Show Modal
-            showUploadModal("Optimizing Image...");
+        // 3. Handle Image Upload (if exists)
+        if (finalPostFile) {
+            showUploadModal("Uploading Post...");
             
-            // 2. Compress
-            const compressedFile = await compressImage(fileInput.files[0]);
+            // Compress the cropped image (optimizes size for web)
+            // Note: finalPostFile is already a Blob from the cropper, but we compress to ensure JPEG optimization
+            const compressedFile = await compressImage(finalPostFile);
             
             updateProgressBar(50);
             document.getElementById('upload-subtext').innerText = "Uploading Media...";
 
-            // 3. Upload
+            // Upload to ImageKit
             uploadedImageUrl = await uploadToImageKit(compressedFile);
             
-            if(!uploadedImageUrl) {
-                throw new Error("Image upload failed");
-            }
+            if(!uploadedImageUrl) throw new Error("Image upload failed");
+            
             updateProgressBar(90);
         } else {
-            showUploadModal("Posting update...");
+            // Text-only post
+            showUploadModal("Posting...");
             updateProgressBar(50);
         }
 
         document.getElementById('upload-subtext').innerText = "Saving Post...";
 
-        // --- KEY CHANGE HERE ---
-        // Use globalProfileData to get the custom name and custom photo
+        // 4. Get Author Details (Priority: App Profile -> Google Auth)
         const authorName = globalProfileData.displayName || currentUser.displayName;
         const authorPhoto = globalProfileData.photoURL || currentUser.photoURL;
 
-        // 4. Save to Firestore
+        // 5. Save to Firestore
         await db.collection('posts').add({
             text: text,
             goal: goal,
             imageUrl: uploadedImageUrl,
             uid: currentUser.uid,
-            userName: authorName,   // <--- UPDATED
-            userPhoto: authorPhoto, // <--- UPDATED
+            userName: authorName,
+            userPhoto: authorPhoto,
             boosts: [],
             timestamp: firebase.firestore.FieldValue.serverTimestamp()
         });
 
         updateProgressBar(100);
 
-        // Success!
+        // 6. Success & Cleanup
         setTimeout(() => {
             hideUploadModal();
             
-            // Cleanup UI
+            // Clear inputs
             document.getElementById('post-text').value = '';
-            clearImage();
+            document.getElementById('post-goal').value = '';
+            
+            // Reset Image Preview & Variables
+            clearImage(); 
+            
+            // Reset Button
             btn.innerText = "POST UPDATE";
             btn.disabled = false;
             
-            // Go to feed
+            // Navigate to Feed
             switchTab('feed', document.querySelector('.nav-item'));
         }, 500);
 
     } catch(err) {
         console.error(err);
         hideUploadModal();
-        alert("Error posting: " + err.message);
+        alert("Error: " + err.message);
         btn.innerText = "POST UPDATE";
         btn.disabled = false;
     }
 }
 
     function toggleBoost(pid) {
-        const ref = db.collection('posts').doc(pid);
+    const ref = db.collection('posts').doc(pid);
 
-        db.runTransaction(t => {
-            return t.get(ref).then(doc => {
-                const boosts = doc.data().boosts || [];
-                const isCurrentlyBoosted = boosts.includes(currentUser.uid);
+    db.runTransaction(t => {
+        return t.get(ref).then(doc => {
+            if (!doc.exists) throw "Post does not exist";
 
-                t.update(ref, { 
-                    boosts: isCurrentlyBoosted 
-                        ? firebase.firestore.FieldValue.arrayRemove(currentUser.uid) 
-                        : firebase.firestore.FieldValue.arrayUnion(currentUser.uid) 
-                });
-                
-                // Return whether the post was boosted (true) or unboosted (false)
-                return !isCurrentlyBoosted;
-            });
-        }).then(wasBoosted => {
-            // SUCCESS: If the action was a BOOST (not an unboost), show the animation
-            if (wasBoosted) {
-                showBoostAnimation();
-            }
-            // If it was an unboost, we don't need a visible animation.
+            const data = doc.data();
+            const boosts = data.boosts || [];
+            const isCurrentlyBoosted = boosts.includes(currentUser.uid);
             
-        }).catch(error => {
-            console.error("Boost transaction failed: ", error);
-            // Optional: Show an error toast here
+            // Extract needed data
+            const postAuthorUid = data.uid; 
+            const postImage = data.imageUrl || null; // <--- GET IMAGE
+
+            t.update(ref, { 
+                boosts: isCurrentlyBoosted 
+                    ? firebase.firestore.FieldValue.arrayRemove(currentUser.uid) 
+                    : firebase.firestore.FieldValue.arrayUnion(currentUser.uid) 
+            });
+            
+            return { 
+                wasBoosted: !isCurrentlyBoosted, 
+                authorUid: postAuthorUid,
+                image: postImage // <--- RETURN IMAGE
+            };
         });
-    }
+    }).then(result => {
+        if (result.wasBoosted) {
+            showBoostAnimation();
+            // Pass the image URL to the notification helper
+            sendAppNotification(result.authorUid, 'like', 'boosted your post.', pid, result.image);
+        }
+    }).catch(error => {
+        console.error("Boost transaction failed: ", error);
+    });
+}
 
     function toggleDiscussion(pid) {
-        const area = document.getElementById(`discuss-${pid}`);
-        area.classList.toggle('show');
-        if(area.classList.contains('show')) loadComments(pid);
+    const area = document.getElementById(`discuss-${pid}`);
+    area.classList.toggle('show');
+    
+    // Only load if showing
+    if(area.classList.contains('show')) {
+        loadCommentPreview(pid);
     }
+}
 
-    function postComment(pid) {
-        const val = document.getElementById(`input-${pid}`).value;
-        if(!val) return;
-        db.collection('posts').doc(pid).collection('comments').add({
-            text: val, userName: currentUser.displayName, uid: currentUser.uid, timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        }).then(() => document.getElementById(`input-${pid}`).value = '');
-    }
+function loadCommentPreview(pid) {
+    const container = document.getElementById(`preview-comments-${pid}`);
+    
+    // Fetch ONLY latest 2
+    db.collection('posts').doc(pid).collection('comments')
+        .orderBy('timestamp', 'desc') // Latest first
+        .limit(2)
+        .get()
+        .then(snapshot => {
+            container.innerHTML = '';
+            
+            if(snapshot.empty) {
+                container.innerHTML = '<p style="font-size:0.8rem; color:var(--text-secondary); padding:5px;">No comments yet. Be the first!</p>';
+                return;
+            }
+
+            snapshot.forEach(doc => {
+                const c = doc.data();
+                container.innerHTML += `
+                    <div class="preview-comment-item">
+                        <strong>${c.userName}:</strong> ${c.text}
+                    </div>
+                `;
+            });
+        });
+}
+
+// --- DISCUSSION ROOM LOGIC ---
+
+function openDiscussionRoom(pid) {
+    currentRoomPostId = pid;
+    
+    // 1. Setup UI
+    document.getElementById('section-discussion-room').classList.remove('hidden');
+    document.getElementById('room-my-avatar').style.backgroundImage = `url('${currentUser.photoURL}')`;
+    const list = document.getElementById('room-comments-list');
+    list.innerHTML = '<div class="loader-spinner" style="margin: 50px auto;"></div>';
+
+    // 2. Realtime Listener for ALL comments
+    if(roomListener) roomListener(); // Unsubscribe previous if exists
+
+    roomListener = db.collection('posts').doc(pid).collection('comments')
+        .orderBy('timestamp', 'desc') // Latest at top
+        .onSnapshot(snapshot => {
+            list.innerHTML = '';
+            
+            if(snapshot.empty) {
+                list.innerHTML = '<div style="text-align:center; margin-top:50px; color:var(--text-secondary)"><i class="fa-regular fa-comments" style="font-size:2rem; margin-bottom:10px;"></i><br>Start the discussion!</div>';
+                return;
+            }
+
+            snapshot.forEach(doc => {
+                const c = doc.data();
+                const time = c.timestamp ? new Date(c.timestamp.toDate()).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '';
+                
+                // Determine if it's Me or Others for styling (Optional visual flair)
+                const isMe = c.uid === currentUser.uid;
+                const alignStyle = isMe ? 'margin-left: auto; background: var(--bg-input); border-color: var(--accent);' : '';
+
+                list.innerHTML += `
+                    <div style="display:flex; gap:10px; margin-bottom:15px;">
+                        <div class="avatar" style="background-image: url('${c.userPhoto || 'default.png'}'); width:35px; height:35px; flex-shrink:0;"></div>
+                        <div style="flex:1;">
+                            <div style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:2px;">
+                                <span style="color:var(--text-primary); font-weight:600;">${c.userName}</span> • ${time}
+                            </div>
+                            <div class="room-comment-bubble" style="${isMe ? 'border-left: 3px solid var(--accent);' : ''}">
+                                ${c.text}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        });
+}
+
+function closeDiscussionRoom() {
+    document.getElementById('section-discussion-room').classList.add('hidden');
+    if(roomListener) roomListener(); // Stop listening to save data
+    currentRoomPostId = null;
+}
+
+function postRoomComment() {
+    const input = document.getElementById('room-input');
+    const val = input.value;
+    if(!val || !currentRoomPostId) return;
+
+    // Use existing logic, but for the room
+    addCommentToDB(currentRoomPostId, val).then(() => {
+        input.value = ''; // Clear input
+        // Notification is handled in addCommentToDB
+    });
+}
+
+    // 1. Updated Quick Reply (Inline)
+function postComment(pid) {
+    const val = document.getElementById(`input-${pid}`).value;
+    if(!val) return;
+
+    addCommentToDB(pid, val).then(() => {
+        document.getElementById(`input-${pid}`).value = '';
+        // Refresh preview immediately
+        loadCommentPreview(pid); 
+    });
+}
+
+// 2. Shared DB Logic (Handles DB write & Notifications)
+function addCommentToDB(pid, text) {
+    const myName = globalProfileData.displayName || currentUser.displayName;
+    const myPhoto = globalProfileData.photoURL || currentUser.photoURL;
+
+    return db.collection('posts').doc(pid).get().then(doc => {
+        if(doc.exists) {
+            const postData = doc.data();
+            const authorUid = postData.uid;
+            const postImage = postData.imageUrl || null;
+
+            // Add Comment
+            return db.collection('posts').doc(pid).collection('comments').add({
+                text: text, 
+                userName: myName, 
+                userPhoto: myPhoto, // Save photo for avatar display
+                uid: currentUser.uid, 
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            }).then(() => {
+                // Send Notification
+                const snippet = text.length > 20 ? text.substring(0, 20) + "..." : text;
+                sendAppNotification(authorUid, 'comment', `commented: "${snippet}"`, pid, postImage);
+            });
+        }
+    }).catch(err => console.error("Error posting comment:", err));
+}
 
     function loadComments(pid) {
         const box = document.getElementById(`comments-${pid}`);
