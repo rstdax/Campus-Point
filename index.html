@@ -1341,6 +1341,154 @@
     margin-right: 5px;
 }
 
+/* --- MULTI-IMAGE CAROUSEL (FEED) --- */
+.post-carousel {
+    position: relative;
+    width: 100%;
+    margin-top: 10px;
+}
+
+.carousel-track {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none; /* Firefox */
+    border-radius: 8px;
+    border: 1px solid var(--border);
+}
+
+.carousel-track::-webkit-scrollbar { display: none; }
+
+.carousel-slide {
+    min-width: 100%;
+    scroll-snap-align: center;
+    position: relative;
+}
+
+/* Updated Image Style for Carousel */
+.feed-post-img {
+    width: 100%;
+    height: auto;
+    max-height: 550px; /* 4:5 Ratio */
+    min-height: 250px;
+    object-fit: cover;
+    display: block;
+}
+
+/* Dots Indicator */
+.carousel-dots {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 10px;
+}
+
+.dot {
+    width: 6px;
+    height: 6px;
+    background: var(--text-secondary);
+    border-radius: 50%;
+    opacity: 0.5;
+}
+
+.dot.active {
+    background: var(--accent);
+    opacity: 1;
+    transform: scale(1.2);
+}
+
+/* --- CUSTOM GALLERY PICKER MODAL --- */
+#gallery-picker-modal {
+    position: fixed;
+    inset: 0;
+    background: var(--bg-main);
+    z-index: 11000;
+    display: none;
+    flex-direction: column;
+}
+
+.gallery-header {
+    height: 60px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 15px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-glass);
+}
+
+.gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2px;
+    padding: 2px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.gallery-item {
+    position: relative;
+    padding-bottom: 100%; /* Square */
+    background: #222;
+    cursor: pointer;
+}
+
+.gallery-thumb {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+
+.gallery-item.selected .gallery-thumb {
+    opacity: 1;
+    border: 2px solid var(--accent);
+}
+
+.selection-badge {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.3);
+    border: 1px solid white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    color: white;
+    font-weight: bold;
+}
+
+.gallery-item.selected .selection-badge {
+    background: var(--accent);
+    border-color: var(--accent);
+}
+
+/* Preview area in "New Update" screen */
+.selected-thumbs-preview {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+    overflow-x: auto;
+    padding-bottom: 5px;
+}
+
+.thumb-preview-item {
+    width: 80px;
+    height: 80px;
+    border-radius: 8px;
+    object-fit: cover;
+    border: 1px solid var(--border);
+    flex-shrink: 0;
+}
+
 
     </style>
 </head>
@@ -1553,20 +1701,17 @@
             <input type="text" id="post-goal" class="nexus-input" placeholder="#ExamPrep, #Project... ">
             
             <label>CONTENT</label>
-            <textarea id="post-text" class="nexus-input" rows="5" placeholder="Share your thoughts or ask a question..."></textarea>
+            <textarea id="post-text" class="nexus-input" rows="5" placeholder="Share your thoughts..."></textarea>
             
-            <label>ATTACH IMAGE (Will be compressed)</label>
-            <div style="margin-bottom: 15px;">
-                <input type="file" id="post-file" accept="image/*" style="display:none;" onchange="previewImage()">
-                <button class="secondary-btn" onclick="document.getElementById('post-file').click()" style="width:100%; text-align:center;">
-                    <i class="fa-solid fa-camera"></i> Select Image
-                </button>
-            </div>
+            <label>PHOTOS (Max 3)</label>
             
-            <div id="image-preview" style="display:none; margin-bottom:15px; position:relative;">
-                <img id="preview-img" src="" style="width:100%; border-radius:8px; border:1px solid var(--border);">
-                <button onclick="clearImage()" style="position:absolute; top:10px; right:10px; background:rgba(0,0,0,0.7); color:white; border:none; border-radius:50%; width:30px; height:30px; cursor:pointer;">&times;</button>
-            </div>
+            <div id="final-preview-container" class="selected-thumbs-preview" style="display:none;"></div>
+
+            <input type="file" id="raw-gallery-input" accept="image/*" multiple style="display:none;" onchange="handleRawInput(this)">
+
+            <button class="secondary-btn" onclick="document.getElementById('raw-gallery-input').click()" style="width:100%; text-align:center; margin-bottom: 20px; border-style: dashed;">
+                <i class="fa-regular fa-images"></i> Open Gallery & Select
+            </button>
 
             <button id="btn-post" class="action-btn" onclick="createPost()">POST UPDATE</button>
         </main>
@@ -1878,6 +2023,18 @@
         </button>
     </div>
 </main>
+
+<div id="gallery-picker-modal">
+    <div class="gallery-header">
+        <i class="fa-solid fa-xmark" onclick="closeGalleryPicker()" style="font-size: 1.5rem; cursor:pointer;"></i>
+        <div class="mono" style="font-weight:700;">Select Photos</div>
+        <div class="action-btn" onclick="processSelectedGallery()" style="width:auto; margin:0; padding: 8px 15px; font-size:0.9rem;">
+            Next <i class="fa-solid fa-arrow-right"></i>
+        </div>
+    </div>
+    <div id="gallery-grid" class="gallery-grid">
+        </div>
+</div>
 
     <script>
 
@@ -2243,6 +2400,10 @@ let historyStep = -1;
 let finalPostFile = null; // Store the edited post file
 let currentRoomPostId = null;
 let roomListener = null; // To stop realtime updates when leaving
+let rawFiles = []; // All files user picked from system
+let selectedIndices = []; // Indices of files user selected in our custom grid
+let croppedBlobs = []; // Final processed images ready for upload
+let currentCropIndex = 0; // To track which image we are cropping in the queue
 
     // --- 1. NEW ROUTER SYSTEM ---
     
@@ -2279,6 +2440,141 @@ let roomListener = null; // To stop realtime updates when leaving
             fab.style.display = (hash === 'feed') ? 'flex' : 'none';
         }
     }
+
+    // 1. User picks files from system -> Show Custom Grid
+function handleRawInput(input) {
+    if (input.files && input.files.length > 0) {
+        rawFiles = Array.from(input.files);
+        selectedIndices = []; // Reset selection
+        renderGalleryGrid();
+        document.getElementById('gallery-picker-modal').style.display = 'flex';
+    }
+    input.value = ""; // Reset to allow re-selecting same files
+}
+
+// 2. Render the Grid
+function renderGalleryGrid() {
+    const grid = document.getElementById('gallery-grid');
+    grid.innerHTML = '';
+
+    rawFiles.forEach((file, index) => {
+        const url = URL.createObjectURL(file);
+        const isSelected = selectedIndices.includes(index);
+        const selectionOrder = isSelected ? selectedIndices.indexOf(index) + 1 : '';
+
+        const div = document.createElement('div');
+        div.className = `gallery-item ${isSelected ? 'selected' : ''}`;
+        div.onclick = () => toggleGallerySelection(index);
+
+        div.innerHTML = `
+            <img src="${url}" class="gallery-thumb">
+            <div class="selection-badge">${selectionOrder}</div>
+        `;
+        grid.appendChild(div);
+    });
+}
+
+// 3. Toggle Selection (Max 3)
+function toggleGallerySelection(index) {
+    const pos = selectedIndices.indexOf(index);
+    
+    if (pos > -1) {
+        // Deselect
+        selectedIndices.splice(pos, 1);
+    } else {
+        // Select (Limit 3)
+        if (selectedIndices.length >= 3) {
+            alert("You can select up to 3 photos.");
+            return;
+        }
+        selectedIndices.push(index);
+    }
+    renderGalleryGrid(); // Re-render to update numbers
+}
+
+function closeGalleryPicker() {
+    document.getElementById('gallery-picker-modal').style.display = 'none';
+}
+
+// 4. Start Processing (Crop Queue)
+function processSelectedGallery() {
+    if (selectedIndices.length === 0) return alert("Select at least one photo.");
+    
+    closeGalleryPicker();
+    croppedBlobs = []; // Clear old results
+    currentCropIndex = 0; // Start at first image
+    
+    // Start cropping the first image
+    openCropperForIndex(currentCropIndex);
+}
+
+// 5. Open Cropper for specific image in queue
+function openCropperForIndex(queueIndex) {
+    const fileIndex = selectedIndices[queueIndex];
+    const file = rawFiles[fileIndex];
+    
+    // Re-use your existing startCropper logic but customize it
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const imgElement = document.getElementById('cropper-target-img');
+        imgElement.src = e.target.result;
+        document.getElementById('cropper-modal').style.display = 'flex';
+        
+        if(cropper) cropper.destroy();
+        
+        cropper = new Cropper(imgElement, {
+            viewMode: 1,
+            dragMode: 'move',
+            autoCropArea: 1,
+            background: false,
+        });
+        
+        // Temporarily override the save button to call our specific function
+        const saveBtn = document.querySelector('.crop-btn.save');
+        saveBtn.onclick = () => saveGalleryCrop();
+    }
+    reader.readAsDataURL(file);
+}
+
+// 6. Save Crop & Move to Next
+function saveGalleryCrop() {
+    if(!cropper) return;
+    
+    const canvas = cropper.getCroppedCanvas({ width: 1080 });
+    
+    canvas.toBlob((blob) => {
+        croppedBlobs.push(blob);
+        
+        // Cleanup current crop
+        document.getElementById('cropper-modal').style.display = 'none';
+        cropper.destroy();
+        cropper = null;
+        
+        // Check if more images exist
+        currentCropIndex++;
+        if (currentCropIndex < selectedIndices.length) {
+            // Open next image
+            setTimeout(() => openCropperForIndex(currentCropIndex), 200);
+        } else {
+            // All done! Show preview
+            renderFinalPreviews();
+        }
+    }, 'image/jpeg', 0.9);
+}
+
+// 7. Show Previews in Create Post screen
+function renderFinalPreviews() {
+    const container = document.getElementById('final-preview-container');
+    container.innerHTML = '';
+    container.style.display = 'flex';
+    
+    croppedBlobs.forEach(blob => {
+        const img = document.createElement('img');
+        img.src = URL.createObjectURL(blob);
+        img.className = 'thumb-preview-item';
+        container.appendChild(img);
+    });
+}
 
     // --- 2. MODIFIED SWITCHTAB ---
     // Instead of changing UI directly, this now just updates the URL.
@@ -4135,34 +4431,49 @@ function reportPost(pid, reportedUid, reportedName) {
     function renderPost(doc, source = 'feed') {
     const post = doc.data();
     const pid = doc.id;
-    
-    // Format Timestamp
     const time = post.timestamp ? new Date(post.timestamp.toDate()).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '';
-    
-    // Boost Logic
     const boosts = post.boosts || [];
     const isBoosted = boosts.includes(currentUser.uid);
-    
-    // Owner Check
     const isOwner = post.uid === currentUser.uid;
 
-    // Image HTML (Using the new CSS class for aspect ratio)
-    const imageHTML = post.imageUrl ? `<img src="${post.imageUrl}" class="feed-post-img" alt="Post Image">` : '';
+    // --- CAROUSEL LOGIC ---
+    let mediaHTML = '';
+    
+    // Check for new array format OR fallback to old single image
+    const images = post.images || (post.imageUrl ? [post.imageUrl] : []);
 
-    // --- MENU BUTTONS ---
-    // 1. Delete Button: Only if isOwner is true
-    const deleteBtn = isOwner ? `
-        <div class="dropdown-item danger" onclick="deletePost('${pid}')">
-            <i class="fa-solid fa-trash"></i> Delete Post
-        </div>
-    ` : '';
+    if (images.length > 0) {
+        // 1. Build Slides
+        const slides = images.map(url => `
+            <div class="carousel-slide">
+                <img src="${url}" class="feed-post-img" loading="lazy">
+            </div>
+        `).join('');
 
-    // 2. Report Button: Only if isOwner is false
-    const reportBtn = !isOwner ? `
-        <div class="dropdown-item" onclick="reportPost('${pid}', '${post.uid}', '${post.userName}')">
-            <i class="fa-solid fa-flag"></i> Report
-        </div>
-    ` : '';
+        // 2. Build Dots (Only if > 1 image)
+        let dotsHTML = '';
+        if (images.length > 1) {
+            const dots = images.map((_, i) => `
+                <div class="dot ${i === 0 ? 'active' : ''}" id="dot-${pid}-${i}"></div>
+            `).join('');
+            dotsHTML = `<div class="carousel-dots">${dots}</div>`;
+        }
+
+        // 3. Combine
+        // We add an onscroll event to update dots
+        mediaHTML = `
+            <div class="post-carousel">
+                <div class="carousel-track" id="track-${pid}" onscroll="updateCarouselDots('${pid}', ${images.length})">
+                    ${slides}
+                </div>
+                ${dotsHTML}
+            </div>
+        `;
+    }
+
+    // --- BUTTONS LOGIC (Same as before) ---
+    const deleteBtn = isOwner ? `<div class="dropdown-item danger" onclick="deletePost('${pid}')"><i class="fa-solid fa-trash"></i> Delete Post</div>` : '';
+    const reportBtn = !isOwner ? `<div class="dropdown-item" onclick="reportPost('${pid}', '${post.uid}', '${post.userName}')"><i class="fa-solid fa-flag"></i> Report</div>` : '';
 
     const el = document.createElement('div');
     el.className = 'post-card';
@@ -4170,28 +4481,22 @@ function reportPost(pid, reportedUid, reportedName) {
     el.innerHTML = `
         <div class="h-flex" style="margin-bottom:10px; align-items: flex-start;">
             <div class="avatar" style="background-image: url('${post.userPhoto}'); cursor:pointer;" onclick="openUserProfile('${post.uid}')"></div>
-            
             <div style="flex:1" onclick="openUserProfile('${post.uid}')">
                 <div style="font-weight:600; font-size:0.95rem; cursor:pointer;">${post.userName}</div>
                 <div style="font-size:0.75rem; color:var(--text-secondary)">${time}</div>
             </div>
-
             <div class="post-header-right">
                 <i class="fa-solid fa-ellipsis-vertical menu-trigger" onclick="togglePostMenu('${pid}', '${source}', event)"></i>
-                
                 <div id="menu-${source}-${pid}" class="dropdown-menu">
-                    ${deleteBtn}
-                    ${reportBtn}
-                    <div class="dropdown-item" onclick="togglePostMenu('${pid}', '${source}', event)">
-                        <i class="fa-solid fa-xmark"></i> Close
-                    </div>
+                    ${deleteBtn} ${reportBtn}
+                    <div class="dropdown-item" onclick="togglePostMenu('${pid}', '${source}', event)"><i class="fa-solid fa-xmark"></i> Close</div>
                 </div>
             </div>
         </div>
-
         <div class="goal-tag mono" style="margin-bottom:10px; display:inline-block;">${post.goal}</div>
         <p style="font-size:0.95rem; line-height:1.5;">${post.text}</p>
-        ${imageHTML}
+        
+        ${mediaHTML}
         
         <div class="post-actions">
             <div class="action-item ${isBoosted ? 'boosted' : ''}" onclick="toggleBoost('${pid}')">
@@ -4201,17 +4506,13 @@ function reportPost(pid, reportedUid, reportedName) {
                 <i class="fa-regular fa-comment-dots"></i><span>Discussion</span>
             </div>
         </div>
-        
         <div class="discussion-area" id="discuss-${pid}">
-            
             <div id="preview-comments-${pid}" style="margin-bottom:10px;">
-                <p style="font-size:0.8rem; color:var(--text-secondary); padding:5px;">Loading preview...</p>
+                <p style="font-size:0.8rem; color:var(--text-secondary);">Loading preview...</p>
             </div>
-
             <button class="secondary-btn" onclick="openDiscussionRoom('${pid}')" style="width:100%; margin-top:5px; border-color:var(--accent); color:var(--accent);">
                 Open Discussion Room <i class="fa-solid fa-arrow-right-to-bracket"></i>
             </button>
-
             <div class="h-flex" style="margin-top:15px; border-top:1px solid var(--border); padding-top:10px;">
                 <input type="text" id="input-${pid}" class="nexus-input" style="margin-bottom:0; font-size:0.85rem; padding:8px;" placeholder="Quick reply...">
                 <button onclick="postComment('${pid}')" style="background:var(--accent); color:white; border:none; padding:8px 15px; border-radius:6px; margin-left:8px;"><i class="fa-solid fa-paper-plane"></i></button>
@@ -4221,57 +4522,76 @@ function reportPost(pid, reportedUid, reportedName) {
     return el;
 }
 
+// Helper to update dots on scroll
+function updateCarouselDots(pid, count) {
+    if (count <= 1) return;
+    const track = document.getElementById(`track-${pid}`);
+    const width = track.offsetWidth;
+    const scroll = track.scrollLeft;
+    
+    // Calculate current index
+    const index = Math.round(scroll / width);
+    
+    // Update classes
+    for(let i=0; i<count; i++) {
+        const dot = document.getElementById(`dot-${pid}-${i}`);
+        if(dot) {
+            if(i === index) dot.classList.add('active');
+            else dot.classList.remove('active');
+        }
+    }
+}
+
     // MODIFIED CREATE POST TO HANDLE IMAGE & COMPRESSION
     async function createPost() {
     const text = document.getElementById('post-text').value;
     const goal = document.getElementById('post-goal').value || "#Update";
     const btn = document.getElementById('btn-post');
 
-    // 1. Validation: Ensure there is either text OR an edited image
-    // Note: We check 'finalPostFile' because that is where the cropped image lives
-    if (!text && !finalPostFile) {
-        return alert("Please add text or an image.");
+    // Validation
+    if (!text && croppedBlobs.length === 0) {
+        return alert("Please add text or photos.");
     }
 
-    // 2. Lock UI
     btn.disabled = true;
-    let uploadedImageUrl = "";
+    let imageUrls = []; // Array to store URLs
 
     try {
-        // 3. Handle Image Upload (if exists)
-        if (finalPostFile) {
-            showUploadModal("Uploading Post...");
+        if (croppedBlobs.length > 0) {
+            showUploadModal(`Uploading ${croppedBlobs.length} Photos...`);
             
-            // Compress the cropped image (optimizes size for web)
-            // Note: finalPostFile is already a Blob from the cropper, but we compress to ensure JPEG optimization
-            const compressedFile = await compressImage(finalPostFile);
-            
-            updateProgressBar(50);
-            document.getElementById('upload-subtext').innerText = "Uploading Media...";
+            // Upload ALL images in parallel
+            const uploadPromises = croppedBlobs.map(async (blob) => {
+                const compressedFile = new File([blob], "post.jpg", { type: "image/jpeg" });
+                const compressed = await compressImage(compressedFile); // Optional extra compression
+                return await uploadToImageKit(compressed);
+            });
 
-            // Upload to ImageKit
-            uploadedImageUrl = await uploadToImageKit(compressedFile);
+            // Wait for all to finish
+            const results = await Promise.all(uploadPromises);
             
-            if(!uploadedImageUrl) throw new Error("Image upload failed");
+            // Filter out failures
+            imageUrls = results.filter(url => url !== null);
+            
+            if(imageUrls.length === 0) throw new Error("Image upload failed");
             
             updateProgressBar(90);
         } else {
-            // Text-only post
             showUploadModal("Posting...");
             updateProgressBar(50);
         }
 
         document.getElementById('upload-subtext').innerText = "Saving Post...";
 
-        // 4. Get Author Details (Priority: App Profile -> Google Auth)
         const authorName = globalProfileData.displayName || currentUser.displayName;
         const authorPhoto = globalProfileData.photoURL || currentUser.photoURL;
 
-        // 5. Save to Firestore
+        // Save to Firestore (Note: using 'images' array now)
         await db.collection('posts').add({
             text: text,
             goal: goal,
-            imageUrl: uploadedImageUrl,
+            images: imageUrls, // NEW ARRAY FIELD
+            imageUrl: imageUrls[0] || null, // BACKWARD COMPATIBILITY (Keep first image here for old clients)
             uid: currentUser.uid,
             userName: authorName,
             userPhoto: authorPhoto,
@@ -4281,22 +4601,19 @@ function reportPost(pid, reportedUid, reportedName) {
 
         updateProgressBar(100);
 
-        // 6. Success & Cleanup
         setTimeout(() => {
             hideUploadModal();
-            
-            // Clear inputs
+            // Cleanup
             document.getElementById('post-text').value = '';
             document.getElementById('post-goal').value = '';
+            document.getElementById('final-preview-container').innerHTML = '';
+            document.getElementById('final-preview-container').style.display = 'none';
+            croppedBlobs = [];
+            rawFiles = [];
+            selectedIndices = [];
             
-            // Reset Image Preview & Variables
-            clearImage(); 
-            
-            // Reset Button
             btn.innerText = "POST UPDATE";
             btn.disabled = false;
-            
-            // Navigate to Feed
             switchTab('feed', document.querySelector('.nav-item'));
         }, 500);
 
