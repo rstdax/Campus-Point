@@ -2293,6 +2293,19 @@
     </div>
 </div>
 
+<div id="share-ready-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:12000; flex-direction:column; align-items:center; justify-content:center;">
+    <div style="background:var(--bg-card); padding:30px; border-radius:20px; width:80%; max-width:300px; text-align:center; border:1px solid var(--border);">
+        <div style="font-size:3rem; margin-bottom:15px;">🎉</div>
+        <h3 style="color:var(--text-primary); margin-bottom:10px;">Reel Ready!</h3>
+        <p style="color:var(--text-secondary); font-size:0.9rem; margin-bottom:20px;">Watermark added successfully.</p>
+        
+        <button class="action-btn" onclick="executeShare()" style="margin-bottom:10px;">
+            <i class="fa-solid fa-share-nodes"></i> Share Now
+        </button>
+        <button class="secondary-btn" onclick="closeShareReadyModal()">Cancel</button>
+    </div>
+</div>
+
     <script>
 
         // Pre-defined high quality banners (Unsplash)
@@ -2689,6 +2702,9 @@ let isReelsLoading = false;  // Prevents fetching twice at the same time
 let lastFeedDoc = null;      // Stores the snapshot of the last loaded post
 let isFeedLoading = false;   // Prevents double fetching
 let isFeedEnd = false;       // Stops fetching if no more posts exist
+
+// Global variable to hold the processed file temporarily
+let tempShareFile = null;
 
 // 1. OPEN MODAL
 function openTrimModal(file, duration) {
@@ -5466,41 +5482,35 @@ function updateCarouselDots(pid, count) {
 const watermarkCanvas = document.createElement('canvas');
 const watermarkCtx = watermarkCanvas.getContext('2d');
 
+// Modified Watermark Function
 async function shareReelWithWatermark(videoUrl) {
     showUploadModal("Preparing Share...");
     const statusText = document.getElementById('upload-subtext');
     statusText.innerText = "Downloading video stream...";
     
     try {
-        // 1. Setup Video Element
         const video = document.createElement('video');
-        video.crossOrigin = "anonymous"; // Essential for ImageKit/Firebase Storage
+        video.crossOrigin = "anonymous";
         video.src = videoUrl;
-        video.muted = false; // We need audio in the recording
-        
-        // Wait for metadata
+        video.muted = false;
+
         await new Promise((resolve, reject) => {
             video.onloadedmetadata = () => resolve();
             video.onerror = (e) => reject("Video load failed");
         });
 
-        // 2. Setup Canvas size match video
+        // Setup Canvas
         watermarkCanvas.width = video.videoWidth;
         watermarkCanvas.height = video.videoHeight;
         
-        // 3. Create Recorder Stream
-        // Capture stream from canvas
-        const canvasStream = watermarkCanvas.captureStream(30); // 30 FPS
-        
-        // We also need Audio! 
-        // NOTE: captureStream() on canvas does NOT capture audio from the video element.
-        // We need to route the video audio to a destination and add the track.
+        // Audio Context
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         const source = audioCtx.createMediaElementSource(video);
         const destination = audioCtx.createMediaStreamDestination();
         source.connect(destination);
         
-        // Combine video track (canvas) + audio track (video element)
+        // Stream
+        const canvasStream = watermarkCanvas.captureStream(30);
         const combinedStream = new MediaStream([
             ...canvasStream.getVideoTracks(),
             ...destination.stream.getAudioTracks()
@@ -5513,87 +5523,85 @@ async function shareReelWithWatermark(videoUrl) {
         
         recorder.onstop = async () => {
             const blob = new Blob(chunks, { type: 'video/mp4' });
-            const file = new File([blob], "campuspoint-reel.mp4", { type: "video/mp4" });
+            // Store file globally so the next function can access it
+            tempShareFile = new File([blob], "campuspoint-reel.mp4", { type: "video/mp4" });
             
-            hideUploadModal();
-            
-            // Share or Download
-            if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                try {
-                    await navigator.share({
-                        files: [file],
-                        title: 'Campus Point Reel',
-                        text: 'Check out this reel from Campus Point!'
-                    });
-                } catch (shareError) {
-                    console.log("Share cancelled or failed", shareError);
-                }
-            } else {
-                // Fallback to direct download
-                const a = document.createElement('a');
-                a.href = URL.createObjectURL(blob);
-                a.download = "campuspoint-reel.mp4";
-                a.click();
-            }
-            
-            // Cleanup
+            // Clean up
             video.remove();
             audioCtx.close();
+            hideUploadModal();
+
+            // OPEN THE NEW MODAL (This solves the error)
+            document.getElementById('share-ready-modal').style.display = 'flex';
         };
 
-        // 4. Start Recording Loop
         recorder.start();
         video.play();
-        statusText.innerText = "Applying Watermark... (Please wait)";
+        statusText.innerText = "Applying Watermark...";
         
         // Draw Loop
         const draw = () => {
             if (video.paused || video.ended) return;
-            
-            // Draw Video Frame
             watermarkCtx.drawImage(video, 0, 0, watermarkCanvas.width, watermarkCanvas.height);
             
-            // Draw Watermark (Logo Text)
-            // Save context
+            // Watermark Logic
             watermarkCtx.save();
-            
-            // Config Font
-            const fontSize = Math.max(20, watermarkCanvas.width * 0.05); // Responsive size
+            const fontSize = Math.max(20, watermarkCanvas.width * 0.05);
             watermarkCtx.font = `bold ${fontSize}px 'JetBrains Mono', monospace`;
             watermarkCtx.fillStyle = "rgba(255, 255, 255, 0.8)";
             watermarkCtx.shadowColor = "rgba(0, 0, 0, 0.8)";
             watermarkCtx.shadowBlur = 4;
             
-            // Text Position (Bottom Right)
             const text = "CAMPUS POINT";
             const metrics = watermarkCtx.measureText(text);
             const x = watermarkCanvas.width - metrics.width - 20;
             const y = watermarkCanvas.height - 40;
             
-            // Draw Icon (Simple Bolt)
-            // watermarkCtx.fillText("⚡ " + text, x, y); 
-            watermarkCtx.fillText(text, x, y);
-            
+            watermarkCtx.fillText("⚡ " + text, x, y);
             watermarkCtx.restore();
             
-            // Update Progress Bar
             const percent = (video.currentTime / video.duration) * 100;
             updateProgressBar(percent);
-            
             requestAnimationFrame(draw);
         };
         draw();
         
-        // Stop when video ends
-        video.onended = () => {
-            recorder.stop();
-        };
+        video.onended = () => recorder.stop();
 
     } catch (e) {
         console.error(e);
         hideUploadModal();
-        alert("Could not process video share. " + e);
+        alert("Share failed: " + e);
     }
+}
+
+// New Function called by the Modal Button
+async function executeShare() {
+    if (!tempShareFile) return;
+
+    if (navigator.canShare && navigator.canShare({ files: [tempShareFile] })) {
+        try {
+            await navigator.share({
+                files: [tempShareFile],
+                title: 'Campus Point Reel',
+                text: 'Check out this reel from Campus Point!'
+            });
+        } catch (shareError) {
+            console.log("Share cancelled/failed", shareError);
+        }
+    } else {
+        // Fallback Download
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(tempShareFile);
+        a.download = "campuspoint-reel.mp4";
+        a.click();
+    }
+    closeShareReadyModal();
+}
+
+function closeShareReadyModal() {
+    document.getElementById('share-ready-modal').style.display = 'none';
+    tempShareFile = null; // Clear memory
 }
 
 function loadCommentPreview(pid) {
