@@ -1482,6 +1482,112 @@
     flex-shrink: 0;
 }
 
+/* --- REELS STYLES --- */
+.reels-scroll-wrapper {
+    height: 100vh; /* Full height */
+    overflow-y: scroll;
+    scroll-snap-type: y mandatory; /* The magic snap property */
+    scrollbar-width: none; /* Hide scrollbar */
+}
+.reels-scroll-wrapper::-webkit-scrollbar { display: none; }
+
+.reel-item {
+    width: 100%;
+    height: 100vh; /* dynamic viewport height */
+    scroll-snap-align: start;
+    position: relative;
+    background: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.reel-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* Fill screen */
+    cursor: pointer;
+}
+
+/* Overlay Gradients & Info */
+.reel-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 40%);
+    pointer-events: none; /* Let clicks pass through to video */
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 20px 20px 70px 20px; /* Padding bottom for nav bar */
+}
+
+.reel-info {
+    color: white;
+    margin-bottom: 10px;
+    pointer-events: auto;
+}
+
+.reel-username {
+    font-weight: 700;
+    font-size: 1rem;
+    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.reel-desc {
+    font-size: 0.9rem;
+    line-height: 1.4;
+    max-width: 85%;
+    opacity: 0.9;
+}
+
+/* Right Side Actions */
+.reel-actions {
+    position: absolute;
+    bottom: 100px;
+    right: 15px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 25px;
+    pointer-events: auto;
+    z-index: 10;
+}
+
+.reel-action-btn {
+    color: white;
+    font-size: 1.8rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    text-shadow: 0 2px 5px rgba(0,0,0,0.5);
+    cursor: pointer;
+}
+
+.reel-action-btn span {
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.reel-mute-indicator {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0,0,0,0.6);
+    padding: 15px;
+    border-radius: 50%;
+    color: white;
+    font-size: 1.5rem;
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+}
+
 
     </style>
 </head>
@@ -1680,6 +1786,11 @@
     </div>
 </div>
 
+<main id="section-reels" class="content-area hidden" style="padding: 0; background: #000; height: 100vh; overflow: hidden;">
+    <div id="reels-container" class="reels-scroll-wrapper">
+        </div>
+</main>
+
         <main id="section-chat-list" class="content-area hidden">
             <h2 class="mono" style="margin-bottom:20px;">MESSAGES</h2>
             <div id="chat-list-container">
@@ -1688,26 +1799,40 @@
         </main>
 
         <main id="section-create" class="content-area hidden">
-            <h2 class="mono" style="margin-bottom: 20px;">NEW UPDATE</h2>
-            
-            <label>TOPIC TAG</label>
-            <input type="text" id="post-goal" class="nexus-input" placeholder="#ExamPrep, #Project... ">
-            
-            <label>CONTENT</label>
-            <textarea id="post-text" class="nexus-input" rows="5" placeholder="Share your thoughts..."></textarea>
-            
-            <label>PHOTOS (Max 3)</label>
-            
-            <div id="final-preview-container" class="selected-thumbs-preview" style="display:none;"></div>
+    <h2 class="mono" style="margin-bottom: 20px;">NEW UPDATE</h2>
+    
+    <label>TOPIC TAG</label>
+    <input type="text" id="post-goal" class="nexus-input" placeholder="#ExamPrep, #Project... ">
+    
+    <label>CONTENT</label>
+    <textarea id="post-text" class="nexus-input" rows="5" placeholder="Share your thoughts..."></textarea>
+    
+    <label>MEDIA (Photos or Video)</label>
+    
+    <div id="final-preview-container" class="selected-thumbs-preview" style="display:none; flex-wrap: wrap;"></div>
 
-            <input type="file" id="raw-gallery-input" accept="image/*" multiple style="display:none;" onchange="handleRawInput(this)">
+    <input type="file" id="raw-gallery-input" accept="image/*, video/mp4, video/quicktime" multiple style="display:none;" onchange="handleRawInput(this)">
 
-            <button class="secondary-btn" onclick="document.getElementById('raw-gallery-input').click()" style="width:100%; text-align:center; margin-bottom: 20px; border-style: dashed;">
-                <i class="fa-regular fa-images"></i> Open Gallery & Select
-            </button>
+    <p id="upload-type-indicator" style="font-size: 0.8rem; color: var(--accent); display: none; margin-bottom: 10px; text-align: center;">
+        <i class="fa-solid fa-film"></i> Video Selected (Reel Mode)
+    </p>
 
-            <button id="btn-post" class="action-btn" onclick="createPost()">POST UPDATE</button>
-        </main>
+    <div class="h-flex" style="gap: 10px; margin-bottom: 20px;">
+        
+        <button class="secondary-btn" onclick="document.getElementById('raw-gallery-input').click()" style="flex: 1; text-align:center; border-style: dashed; padding: 15px; margin-top: 0;">
+            <i class="fa-solid fa-image" style="font-size: 1.2rem; display: block; margin-bottom: 5px;"></i> 
+            Select Photos
+        </button>
+
+        <button class="secondary-btn" onclick="triggerVideoUpload()" style="flex: 1; text-align:center; border-style: dashed; padding: 15px; margin-top: 0;">
+            <i class="fa-solid fa-video" style="font-size: 1.2rem; display: block; margin-bottom: 5px;"></i> 
+            Upload Reel
+        </button>
+
+    </div>
+
+    <button id="btn-post" class="action-btn" onclick="createPost()">POST UPDATE</button>
+</main>
 
         <main id="section-radar" class="content-area hidden">
     
@@ -1849,6 +1974,7 @@
 
         <nav class="bottom-nav hidden" id="main-nav">
             <div class="nav-item active" onclick="switchTab('feed', this)"><i class="fa-solid fa-house"></i></div>
+            <div class="nav-item" onclick="switchTab('reels', this)"><i class="fa-brands fa-youtube"></i></div>
             <div class="nav-item" onclick="switchTab('radar', this)"><i class="fa-regular fa-compass"></i></div>
             <div class="nav-item" onclick="switchTab('groups', this)"><i class="fa-solid fa-users"></i></div>
             <div class="nav-item" onclick="switchTab('chat-list', this)"><i class="fa-regular fa-comments"></i></div>
@@ -2405,6 +2531,8 @@ let selectedIndices = []; // Indices of files user selected in our custom grid
 let croppedBlobs = []; // Final processed images ready for upload
 let currentCropIndex = 0; // To track which image we are cropping in the queue
 
+let selectedVideoFile = null; // Stores the raw video file
+
     // --- 1. NEW ROUTER SYSTEM ---
     
     // This function handles the actual UI changes based on the URL hash
@@ -2439,17 +2567,63 @@ let currentCropIndex = 0; // To track which image we are cropping in the queue
         if (fab) {
             fab.style.display = (hash === 'feed') ? 'flex' : 'none';
         }
+
+        if (hash === 'reels') {
+            if(!reelsObserver) initReelsObserver();
+            loadReels();
+        }
     }
 
     // 1. User picks files from system -> Show Custom Grid
 function handleRawInput(input) {
     if (input.files && input.files.length > 0) {
-        rawFiles = Array.from(input.files);
-        selectedIndices = []; // Reset selection
-        renderGalleryGrid();
-        document.getElementById('gallery-picker-modal').style.display = 'flex';
+        const file = input.files[0];
+        const isVideo = file.type.startsWith('video/');
+
+        // Reset previous states
+        selectedVideoFile = null;
+        rawFiles = [];
+        selectedIndices = [];
+        document.getElementById('upload-type-indicator').style.display = 'none';
+        document.getElementById('final-preview-container').innerHTML = '';
+
+        if (isVideo) {
+            // --- VIDEO FLOW ---
+            if (file.size > 50 * 1024 * 1024) { // 50MB Limit
+                alert("Video is too large. Max size is 50MB.");
+                input.value = "";
+                return;
+            }
+
+            selectedVideoFile = file; // Store the video file
+            
+            // Show Video Preview
+            const container = document.getElementById('final-preview-container');
+            container.style.display = 'flex';
+            container.innerHTML = `
+                <div style="position:relative; width:100%;">
+                    <video src="${URL.createObjectURL(file)}" style="width:100%; max-height:200px; border-radius:8px; background:#000;" controls></video>
+                    <div style="position:absolute; top:10px; right:10px; background:rgba(0,0,0,0.6); color:white; padding:5px 10px; border-radius:4px; font-size:0.8rem;">
+                        Reel Preview
+                    </div>
+                </div>
+            `;
+            
+            // Show indicator text
+            document.getElementById('upload-type-indicator').style.display = 'block';
+            
+        } else {
+            // --- IMAGE FLOW (Default) ---
+            // Reset accept attribute back to default
+            document.getElementById('raw-gallery-input').accept = "image/*, video/mp4, video/quicktime";
+            
+            rawFiles = Array.from(input.files);
+            selectedIndices = []; 
+            renderGalleryGrid(); // Show your existing gallery grid
+            document.getElementById('gallery-picker-modal').style.display = 'flex';
+        }
     }
-    input.value = ""; // Reset to allow re-selecting same files
+    input.value = ""; // Reset input so same file can be selected again if needed
 }
 
 // 2. Render the Grid
@@ -4448,42 +4622,51 @@ function reportPost(pid, reportedUid, reportedName) {
     const isBoosted = boosts.includes(currentUser.uid);
     const isOwner = post.uid === currentUser.uid;
 
-    // --- CAROUSEL LOGIC ---
+    // --- MEDIA LOGIC (Image vs Video) ---
     let mediaHTML = '';
-    
-    // Check for new array format OR fallback to old single image
-    const images = post.images || (post.imageUrl ? [post.imageUrl] : []);
 
-    if (images.length > 0) {
-        // 1. Build Slides
-        const slides = images.map(url => `
-            <div class="carousel-slide">
-                <img src="${url}" class="feed-post-img" loading="lazy">
-            </div>
-        `).join('');
-
-        // 2. Build Dots (Only if > 1 image)
-        let dotsHTML = '';
-        if (images.length > 1) {
-            const dots = images.map((_, i) => `
-                <div class="dot ${i === 0 ? 'active' : ''}" id="dot-${pid}-${i}"></div>
-            `).join('');
-            dotsHTML = `<div class="carousel-dots">${dots}</div>`;
-        }
-
-        // 3. Combine
-        // We add an onscroll event to update dots
+    // 1. CHECK IF IT IS A VIDEO (REEL)
+    if (post.videoUrl) {
         mediaHTML = `
-            <div class="post-carousel">
-                <div class="carousel-track" id="track-${pid}" onscroll="updateCarouselDots('${pid}', ${images.length})">
-                    ${slides}
+            <div style="width:100%; height: 450px; background: #000; border-radius: 8px; margin-top:10px; overflow:hidden; position:relative;">
+                <video src="${post.videoUrl}" style="width:100%; height:100%; object-fit:contain;" controls playsinline loop></video>
+                <div style="position:absolute; top:10px; right:10px; background:rgba(0,0,0,0.6); padding:4px 8px; border-radius:4px; color:white; font-size:0.7rem;">
+                    <i class="fa-solid fa-video"></i> Reel
                 </div>
-                ${dotsHTML}
             </div>
         `;
+    } 
+    // 2. CHECK IF IT IS AN IMAGE CAROUSEL
+    else {
+        const images = post.images || (post.imageUrl ? [post.imageUrl] : []);
+        
+        if (images.length > 0) {
+            const slides = images.map(url => `
+                <div class="carousel-slide">
+                    <img src="${url}" class="feed-post-img" loading="lazy">
+                </div>
+            `).join('');
+
+            let dotsHTML = '';
+            if (images.length > 1) {
+                const dots = images.map((_, i) => `
+                    <div class="dot ${i === 0 ? 'active' : ''}" id="dot-${pid}-${i}"></div>
+                `).join('');
+                dotsHTML = `<div class="carousel-dots">${dots}</div>`;
+            }
+
+            mediaHTML = `
+                <div class="post-carousel">
+                    <div class="carousel-track" id="track-${pid}" onscroll="updateCarouselDots('${pid}', ${images.length})">
+                        ${slides}
+                    </div>
+                    ${dotsHTML}
+                </div>
+            `;
+        }
     }
 
-    // --- BUTTONS LOGIC (Same as before) ---
+    // --- BUTTONS LOGIC ---
     const deleteBtn = isOwner ? `<div class="dropdown-item danger" onclick="deletePost('${pid}')"><i class="fa-solid fa-trash"></i> Delete Post</div>` : '';
     const reportBtn = !isOwner ? `<div class="dropdown-item" onclick="reportPost('${pid}', '${post.uid}', '${post.userName}')"><i class="fa-solid fa-flag"></i> Report</div>` : '';
 
@@ -4505,7 +4688,7 @@ function reportPost(pid, reportedUid, reportedName) {
                 </div>
             </div>
         </div>
-        <div class="goal-tag mono" style="margin-bottom:10px; display:inline-block;">${post.goal}</div>
+        <div class="goal-tag mono" style="margin-bottom:10px; display:inline-block;">${post.goal || ''}</div>
         <p style="font-size:0.95rem; line-height:1.5;">${post.text}</p>
         
         ${mediaHTML}
@@ -4534,6 +4717,13 @@ function reportPost(pid, reportedUid, reportedName) {
     return el;
 }
 
+function triggerVideoUpload() {
+    const input = document.getElementById('raw-gallery-input');
+    // Force input to accept video files
+    input.accept = "video/mp4, video/quicktime"; 
+    input.click();
+}
+
 // Helper to update dots on scroll
 function updateCarouselDots(pid, count) {
     if (count <= 1) return;
@@ -4560,77 +4750,102 @@ function updateCarouselDots(pid, count) {
     const goal = document.getElementById('post-goal').value || "#Update";
     const btn = document.getElementById('btn-post');
 
-    // Validation
-    if (!text && croppedBlobs.length === 0) {
-        return alert("Please add text or photos.");
+    // Validation: Must have text OR (images OR video)
+    if (!text && croppedBlobs.length === 0 && !selectedVideoFile) {
+        return alert("Please add text, photos, or a video.");
     }
 
     btn.disabled = true;
-    let imageUrls = []; // Array to store URLs
+    let imageUrls = [];
+    let videoUrl = null;
+    let postType = 'post'; // Default
 
     try {
-        if (croppedBlobs.length > 0) {
+        // --- 1. HANDLE VIDEO UPLOAD ---
+        if (selectedVideoFile) {
+            showUploadModal("Uploading Reel (this may take a moment)...");
+            postType = 'reel'; // Mark as reel
+            
+            // Upload directly (no compression for video in this script)
+            videoUrl = await uploadToImageKit(selectedVideoFile);
+            
+            if(!videoUrl) throw new Error("Video upload failed");
+            updateProgressBar(100);
+        }
+        
+        // --- 2. HANDLE IMAGE UPLOAD (Existing Logic) ---
+        else if (croppedBlobs.length > 0) {
             showUploadModal(`Uploading ${croppedBlobs.length} Photos...`);
             
-            // Upload ALL images in parallel
             const uploadPromises = croppedBlobs.map(async (blob) => {
                 const compressedFile = new File([blob], "post.jpg", { type: "image/jpeg" });
-                const compressed = await compressImage(compressedFile); // Optional extra compression
+                const compressed = await compressImage(compressedFile);
                 return await uploadToImageKit(compressed);
             });
 
-            // Wait for all to finish
             const results = await Promise.all(uploadPromises);
-            
-            // Filter out failures
             imageUrls = results.filter(url => url !== null);
             
             if(imageUrls.length === 0) throw new Error("Image upload failed");
-            
-            updateProgressBar(90);
+            updateProgressBar(100);
         } else {
             showUploadModal("Posting...");
             updateProgressBar(50);
         }
 
-        document.getElementById('upload-subtext').innerText = "Saving Post...";
+        // --- 3. SAVE TO FIRESTORE ---
+        document.getElementById('upload-subtext').innerText = "Saving...";
 
         const authorName = globalProfileData.displayName || currentUser.displayName;
         const authorPhoto = globalProfileData.photoURL || currentUser.photoURL;
 
-        // Save to Firestore (Note: using 'images' array now)
         await db.collection('posts').add({
             text: text,
             goal: goal,
-            images: imageUrls, // NEW ARRAY FIELD
-            imageUrl: imageUrls[0] || null, // BACKWARD COMPATIBILITY (Keep first image here for old clients)
             uid: currentUser.uid,
             userName: authorName,
             userPhoto: authorPhoto,
+            
+            // Media Fields
+            type: postType,          // 'post' or 'reel'
+            images: imageUrls,       // Array of image URLs
+            imageUrl: imageUrls[0] || null, // Fallback
+            videoUrl: videoUrl,      // Video URL if reel
+            
             boosts: [],
             timestamp: firebase.firestore.FieldValue.serverTimestamp()
         });
 
-        updateProgressBar(100);
-
+        // --- 4. SUCCESS & CLEANUP ---
         const successAudio = new Audio('https://campuspoint.netlify.app/success.mp3');
         successAudio.volume = 0.5;
         successAudio.play().catch(e => console.log("Audio play failed", e));
 
         setTimeout(() => {
             hideUploadModal();
-            // Cleanup
+            
+            // Reset Form
             document.getElementById('post-text').value = '';
             document.getElementById('post-goal').value = '';
             document.getElementById('final-preview-container').innerHTML = '';
             document.getElementById('final-preview-container').style.display = 'none';
+            document.getElementById('upload-type-indicator').style.display = 'none';
+            
+            // Clear Data
             croppedBlobs = [];
             rawFiles = [];
             selectedIndices = [];
+            selectedVideoFile = null;
             
             btn.innerText = "POST UPDATE";
             btn.disabled = false;
-            switchTab('feed', document.querySelector('.nav-item'));
+            
+            // Redirect based on type
+            if(postType === 'reel') {
+                switchTab('reels', document.querySelector('.nav-item:nth-child(3)'));
+            } else {
+                switchTab('feed', document.querySelector('.nav-item'));
+            }
         }, 500);
 
     } catch(err) {
@@ -4996,6 +5211,145 @@ function renderUserListItem(u) {
         </div>
     `;
 }
+
+// --- REELS SYSTEM ---
+
+let reelsObserver = null;
+let currentPlayingVideo = null;
+
+// 1. Initialize Observer (Intersection API)
+// This detects which video is currently visible
+function initReelsObserver() {
+    const options = {
+        root: document.getElementById('reels-container'),
+        rootMargin: '0px',
+        threshold: 0.6 // Video must be 60% visible to play
+    };
+
+    reelsObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            const video = entry.target.querySelector('video');
+            if (!video) return;
+
+            if (entry.isIntersecting) {
+                // Play video when visible
+                video.currentTime = 0; // Optional: Restart or continue
+                const playPromise = video.play();
+                if (playPromise !== undefined) {
+                    playPromise.catch(error => {
+                        console.log("Autoplay blocked (needs interaction)");
+                        // Show mute icon if autoplay blocked
+                    });
+                }
+                currentPlayingVideo = video;
+            } else {
+                // Pause when scrolled away
+                video.pause();
+            }
+        });
+    }, options);
+}
+
+// 2. Load Reels Data
+function loadReels() {
+    const container = document.getElementById('reels-container');
+    
+    // Check if we already loaded to prevent flicker
+    if(container.children.length > 0) return; 
+
+    container.innerHTML = '<div class="loader-spinner" style="position:absolute;top:50%;left:50%;"></div>';
+
+    // Fetch posts that have a 'videoUrl' property (or filter by type='reel')
+    // Note: You need to update your upload logic to save `videoUrl`
+    db.collection('posts')
+      .where('videoUrl', '!=', null) 
+      .limit(10)
+      .get()
+      .then(snapshot => {
+          container.innerHTML = '';
+          
+          if(snapshot.empty) {
+              container.innerHTML = '<p style="color:white; text-align:center; padding-top:50%;">No reels yet.</p>';
+              return;
+          }
+
+          snapshot.forEach(doc => {
+              container.appendChild(renderReelItem(doc));
+          });
+
+          // Attach observer to new elements
+          document.querySelectorAll('.reel-item').forEach(el => {
+              reelsObserver.observe(el);
+          });
+      });
+}
+
+// 3. Render Individual Reel
+function renderReelItem(doc) {
+    const data = doc.data();
+    const pid = doc.id;
+    const isLiked = data.boosts && data.boosts.includes(currentUser.uid);
+
+    const div = document.createElement('div');
+    div.className = 'reel-item';
+    
+    div.innerHTML = `
+        <video class="reel-video" loop playsinline muted>
+            <source src="${data.videoUrl}" type="video/mp4">
+        </video>
+        
+        <div class="reel-mute-indicator"><i class="fa-solid fa-volume-xmark"></i></div>
+
+        <div class="reel-overlay">
+            <div class="reel-info">
+                <div class="reel-username" onclick="openUserProfile('${data.uid}')">
+                    <div class="avatar" style="background-image: url('${data.userPhoto}'); width:35px; height:35px;"></div>
+                    ${data.userName}
+                    <button style="background:transparent; border:1px solid rgba(255,255,255,0.5); color:white; border-radius:4px; padding:2px 8px; font-size:0.7rem; margin-left:10px;">Follow</button>
+                </div>
+                <div class="reel-desc">${data.text || ''}</div>
+                <div style="font-size:0.8rem; margin-top:5px; opacity:0.8;">
+                    <i class="fa-solid fa-music"></i> Original Audio
+                </div>
+            </div>
+        </div>
+
+        <div class="reel-actions">
+            <div class="reel-action-btn" onclick="toggleBoost('${pid}')">
+                <i class="${isLiked ? 'fa-solid' : 'fa-regular'} fa-heart" style="color: ${isLiked ? '#ff5555' : 'white'}"></i>
+                <span>${data.boosts ? data.boosts.length : 0}</span>
+            </div>
+            <div class="reel-action-btn" onclick="openDiscussionRoom('${pid}')">
+                <i class="fa-regular fa-comment-dots"></i>
+                <span>Comment</span>
+            </div>
+             <div class="reel-action-btn" onclick="shareReel('${pid}')">
+                <i class="fa-regular fa-paper-plane"></i>
+            </div>
+        </div>
+    `;
+
+    // Handle Tap to Mute/Unmute
+    const video = div.querySelector('video');
+    const indicator = div.querySelector('.reel-mute-indicator');
+    
+    div.onclick = (e) => {
+        // Prevent clicking if hitting buttons
+        if(e.target.closest('.reel-actions') || e.target.closest('.reel-info')) return;
+        
+        video.muted = !video.muted;
+        indicator.innerHTML = video.muted ? '<i class="fa-solid fa-volume-xmark"></i>' : '<i class="fa-solid fa-volume-high"></i>';
+        indicator.style.opacity = '1';
+        setTimeout(() => { indicator.style.opacity = '0'; }, 1000);
+    };
+
+    return div;
+}
+
+// 4. Update the Router to handle loading
+// (Add this check inside your existing router() function)
+// If hash === 'reels', call initReelsObserver() and loadReels()
+
     </script>
 </body>
 </html>
