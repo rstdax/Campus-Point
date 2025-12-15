@@ -1588,6 +1588,57 @@
     pointer-events: none;
 }
 
+/* --- POST VIDEO CONTROLS --- */
+.post-video-wrapper {
+    position: relative;
+    width: 100%;
+    height: 450px;
+    background: #000;
+    border-radius: 8px;
+    margin-top: 10px;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+/* Centered Play Button */
+.post-play-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 3.5rem;
+    color: rgba(255, 255, 255, 0.9);
+    pointer-events: none; /* Clicks pass through to wrapper */
+    display: block; /* Visible by default (paused) */
+    z-index: 5;
+    filter: drop-shadow(0 2px 5px rgba(0,0,0,0.5));
+}
+
+/* Bottom Right Mute Button */
+.post-mute-btn {
+    position: absolute;
+    bottom: 15px;
+    right: 15px;
+    width: 35px;
+    height: 35px;
+    background: rgba(0, 0, 0, 0.6);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 0.9rem;
+    cursor: pointer;
+    z-index: 10;
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(255,255,255,0.3);
+    transition: transform 0.2s;
+}
+
+.post-mute-btn:active {
+    transform: scale(0.9);
+}
+
 
     </style>
 </head>
@@ -4628,8 +4679,17 @@ function reportPost(pid, reportedUid, reportedName) {
     // 1. CHECK IF IT IS A VIDEO (REEL)
     if (post.videoUrl) {
         mediaHTML = `
-            <div style="width:100%; height: 450px; background: #000; border-radius: 8px; margin-top:10px; overflow:hidden; position:relative;">
-                <video src="${post.videoUrl}" style="width:100%; height:100%; object-fit:contain;" controls playsinline loop></video>
+            <div class="post-video-wrapper">
+                <video src="${post.videoUrl}" style="width:100%; height:100%; object-fit:contain;" loop playsinline muted></video>
+                
+                <div class="post-play-overlay">
+                    <i class="fa-solid fa-play"></i>
+                </div>
+                
+                <div class="post-mute-btn">
+                    <i class="fa-solid fa-volume-xmark"></i>
+                </div>
+
                 <div style="position:absolute; top:10px; right:10px; background:rgba(0,0,0,0.6); padding:4px 8px; border-radius:4px; color:white; font-size:0.7rem;">
                     <i class="fa-solid fa-video"></i> Reel
                 </div>
@@ -4714,6 +4774,48 @@ function reportPost(pid, reportedUid, reportedName) {
             </div>
         </div>
     `;
+
+    // --- NEW: ATTACH VIDEO EVENT LISTENERS ---
+    // We check if this post actually contains a video
+    if (post.videoUrl) {
+        const videoElement = el.querySelector('video');
+        const videoWrapper = el.querySelector('.post-video-wrapper');
+        const playOverlay = el.querySelector('.post-play-overlay');
+        const muteBtn = el.querySelector('.post-mute-btn');
+        const muteIcon = muteBtn.querySelector('i');
+
+        if (videoElement) {
+            // 1. Play/Pause Logic (Clicking the video area)
+            videoWrapper.onclick = (e) => {
+                // Prevent toggling if clicking the mute button specifically
+                if (e.target.closest('.post-mute-btn')) return;
+
+                if (videoElement.paused) {
+                    videoElement.play();
+                } else {
+                    videoElement.pause();
+                }
+            };
+
+            // 2. Mute/Unmute Logic
+            muteBtn.onclick = (e) => {
+                e.stopPropagation(); // Stop bubble up
+                videoElement.muted = !videoElement.muted;
+                
+                // Update Icon
+                if (videoElement.muted) {
+                    muteIcon.className = 'fa-solid fa-volume-xmark';
+                } else {
+                    muteIcon.className = 'fa-solid fa-volume-high';
+                }
+            };
+
+            // 3. UI Sync (Show/Hide overlay automatically based on state)
+            videoElement.onplay = () => { playOverlay.style.display = 'none'; };
+            videoElement.onpause = () => { playOverlay.style.display = 'block'; };
+        }
+    }
+
     return el;
 }
 
