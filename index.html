@@ -2708,6 +2708,8 @@ let tempShareFile = null;
 
 let isGlobalMuted = true; // Default to true (Required for browser autoplay)
 
+window.currentHash = null; // Initialize global tracker
+
 // 1. OPEN MODAL
 function openTrimModal(file, duration) {
     rawVideoFile = file; // Save original
@@ -2912,70 +2914,71 @@ function closeTrimModal() {
     
     // This function handles the actual UI changes based on the URL hash
     // --- 1. NEW ROUTER SYSTEM (Enhanced) ---
+// --- FIXED ROUTER SYSTEM ---
+
 function router() {
-    // Get the hash (remove the #) or default to 'feed'
+    // 1. Get the target hash
     const newHash = window.location.hash.slice(1) || 'feed';
     
-    // Check if we are "re-clicking" the feed tab
-    // We check if the previous hash was also 'feed' (or empty) AND the new one is 'feed'
-    const isReClickingFeed = (newHash === 'feed') && 
-                             (!window.currentHash || window.currentHash === 'feed');
-
-    // Update global tracker
+    // 2. Detect if we are clicking the same tab we are already on
+    const isSameTab = (window.currentHash === newHash);
+    
+    // 3. Update global tracker immediately
     window.currentHash = newHash;
 
-    // --- HANDLE FEED RE-CLICK (Scroll & Refresh) ---
-    if (isReClickingFeed) {
-        // 1. Scroll to top smoothly
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        
-        // 2. Refresh Feed (Only if scrolled down or just to be safe)
-        // We use a small timeout to let the scroll start first
-        setTimeout(() => {
-            loadFeed(false); // false = Fresh Load
-        }, 300);
-        
-        return; // Stop here, no need to toggle classes
-    }
-
-    // --- STANDARD TAB SWITCHING LOGIC ---
-    
-    // Hide all sections
+    // 4. ALWAYS update UI Visibility first (Fixes Blank Screen)
     document.querySelectorAll('.content-area').forEach(el => el.classList.add('hidden'));
-    
-    // Remove active class from all nav items
     document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
 
-    // Handle specific screens
     const activeSection = document.getElementById('section-' + newHash);
-    
     if (activeSection) {
-        // Show the section matching the hash
         activeSection.classList.remove('hidden');
         
-        // Highlight the corresponding Bottom Nav item
+        // Highlight Nav
         const navBtn = document.querySelector(`.nav-item[onclick*="'${newHash}'"]`);
         if (navBtn) navBtn.classList.add('active');
-        
-        // Scroll to top immediately when switching TABS (not re-clicking)
-        window.scrollTo(0, 0);
-
     } else {
-        // Fallback
+        // Fallback if ID doesn't exist
         window.location.hash = 'feed';
+        return;
     }
 
-    // Special handling for Floating Action Button (Only show on feed)
+    // 5. FAB Visibility
     const fab = document.querySelector('.floating-fab');
     if (fab) {
         fab.style.display = (newHash === 'feed') ? 'flex' : 'none';
     }
 
+    // 6. SPECIAL LOGIC: Feed Tab
+    if (newHash === 'feed') {
+        // If user is already on feed and clicks "Home" again -> Scroll & Refresh
+        if (isSameTab) {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            setTimeout(() => {
+                loadFeed(false); // Reload latest
+            }, 300);
+        } 
+        // If this is the first load or switching from another tab
+        else {
+             window.scrollTo(0, 0);
+             // Ensure feed is loaded if empty
+             const container = document.getElementById('feed-container');
+             if(container && container.children.length === 0) {
+                 loadFeed(false);
+             }
+        }
+    }
+
+    // 7. SPECIAL LOGIC: Reels Tab
     if (newHash === 'reels') {
-        if(!reelsObserver) initReelsObserver();
+        // Initialize observer if not ready
+        if(typeof initReelsObserver === 'function' && !reelsObserver) {
+            initReelsObserver();
+        }
         
+        // Load reels if empty
         const container = document.getElementById('reels-container');
-        if(container.children.length === 0) {
+        if(container && container.children.length === 0) {
             loadReels(false); 
         }
     }
