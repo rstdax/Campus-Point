@@ -1523,16 +1523,23 @@
     cursor: pointer;
 }
 
-/* Overlay Gradients & Info */
-.reel-overlay {
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 40%);
-    pointer-events: none; /* Let clicks pass through to video */
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
-    padding: 20px 20px 70px 20px; /* Padding bottom for nav bar */
+/* --- REELS OVERLAY (UPDATED: Top Left Position) --- */
+.reel-overlay { 
+    position: absolute; 
+    inset: 0; 
+    /* 1. Flip Gradient: Darken the top instead of the bottom so text is readable */
+    background: linear-gradient(to bottom, rgba(0,0,0,0.9) 0%, transparent 60%); 
+    pointer-events: none; 
+    
+    /* 2. Push content to the Top */
+    display: flex; 
+    flex-direction: column; 
+    justify-content: flex-start; 
+    
+    /* 3. Adjust Padding: 
+       Top: 90px (To clear the Header) 
+       Left/Right/Bottom: 20px */
+    padding: 90px 20px 20px 20px; 
 }
 
 .reel-info {
