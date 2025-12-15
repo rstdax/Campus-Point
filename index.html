@@ -1766,7 +1766,7 @@
     <div class="app-container">
         
         <header class="header">
-            <div class="brand mono" style="font-weight:700;">CAMPUS<span style="color:var(--accent)">POINT</span></div>
+            <div class="brand mono" style="font-weight:700; cursor:pointer;" onclick="loadFeed(false)">CAMPUS<span style="color:var(--accent)">POINT</span></div>
             <div class="h-flex">
                 <div class="header-icon-btn" onclick="openNotifications()">
                     <i class="fa-regular fa-bell" style="font-size: 1.2rem;"></i>
@@ -2661,6 +2661,11 @@ let trimDuration = 15; // Target duration
 let lastReelDoc = null;      // Stores the snapshot of the last loaded post
 let isReelsLoading = false;  // Prevents fetching twice at the same time
 
+// --- FEED PAGINATION GLOBALS ---
+let lastFeedDoc = null;      // Stores the snapshot of the last loaded post
+let isFeedLoading = false;   // Prevents double fetching
+let isFeedEnd = false;       // Stops fetching if no more posts exist
+
 // 1. OPEN MODAL
 function openTrimModal(file, duration) {
     rawVideoFile = file; // Save original
@@ -3096,6 +3101,16 @@ function renderFinalPreviews() {
             // Check if user is near the bottom (within 300px)
             if(reelsContainer.scrollTop + reelsContainer.clientHeight >= reelsContainer.scrollHeight - 300) {
                 loadReels(true); // Load Next Page
+            }
+        });
+
+        window.addEventListener('scroll', () => {
+            // Check if we are on the Feed tab
+            if (window.location.hash === '' || window.location.hash === '#feed') {
+                // Check if user is near bottom of page
+                if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 500) {
+                    loadFeed(true); // Load Next Page
+                }
             }
         });
         
@@ -3559,7 +3574,7 @@ followingEl.parentElement.onclick = () => openFollowList('following', currentUse
             attemptGeoFetch(); 
         }, 300000); // 300000ms = 5 minutes
 
-        startFeedListener();
+        loadFeed(false);
         loadProfilePosts();
         loadChatList(); // Load Chats
         
@@ -4921,12 +4936,72 @@ function reportPost(pid, reportedUid, reportedName) {
     });
 }
 
-    function startFeedListener() {
-    db.collection('posts').orderBy('timestamp', 'desc').limit(20).onSnapshot(snap => {
-        const container = document.getElementById('feed-container'); 
+    function loadFeed(isNextPage = false) {
+    // 1. Safety Checks
+    if (isFeedLoading || isFeedEnd) return;
+    
+    const container = document.getElementById('feed-container');
+
+    // 2. Initial Load Setup
+    if (!isNextPage) {
         container.innerHTML = '';
-        // PASS 'feed' HERE
-        snap.forEach(doc => container.appendChild(renderPost(doc, 'feed')));
+        lastFeedDoc = null;
+        isFeedEnd = false;
+        // Add Spinner to bottom
+        container.innerHTML = '<div id="feed-spinner" class="loader-spinner" style="margin:20px auto;"></div>';
+    } else {
+        // Add Spinner to bottom for next page
+        const spinner = document.createElement('div');
+        spinner.id = 'feed-spinner';
+        spinner.className = 'loader-spinner';
+        spinner.style.margin = '20px auto';
+        container.appendChild(spinner);
+    }
+
+    isFeedLoading = true;
+
+    // 3. Build Query
+    let query = db.collection('posts')
+        .orderBy('timestamp', 'desc')
+        .limit(10); // Load 10 posts at a time
+
+    // 4. Pagination
+    if (isNextPage && lastFeedDoc) {
+        query = query.startAfter(lastFeedDoc);
+    }
+
+    // 5. Fetch Data
+    query.get().then(snapshot => {
+        // Remove Spinner
+        const spinner = document.getElementById('feed-spinner');
+        if (spinner) spinner.remove();
+
+        // Check if empty
+        if (snapshot.empty) {
+            isFeedEnd = true;
+            isFeedLoading = false;
+            if (!isNextPage && container.children.length === 0) {
+                container.innerHTML = '<div style="text-align:center; padding:40px; color:var(--text-secondary);">No updates yet.</div>';
+            }
+            return;
+        }
+
+        // Update Cursor
+        lastFeedDoc = snapshot.docs[snapshot.docs.length - 1];
+
+        // Render Posts
+        snapshot.forEach(doc => {
+            const postEl = renderPost(doc, 'feed');
+            container.appendChild(postEl);
+        });
+
+        isFeedLoading = false;
+
+    }).catch(err => {
+        console.error("Feed Error:", err);
+        const spinner = document.getElementById('feed-spinner');
+        if (spinner) spinner.remove();
+        isFeedLoading = false;
     });
 }
 
