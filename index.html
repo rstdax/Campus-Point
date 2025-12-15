@@ -2823,6 +2823,8 @@ function renderFinalPreviews() {
         firebase.initializeApp(firebaseConfig);
         db = firebase.firestore();
         auth = firebase.auth();
+
+        initFeedObserver();
         
         auth.onAuthStateChanged(user => {
             const loader = document.getElementById('auth-loader');
@@ -4813,6 +4815,12 @@ function reportPost(pid, reportedUid, reportedName) {
             // 3. UI Sync (Show/Hide overlay automatically based on state)
             videoElement.onplay = () => { playOverlay.style.display = 'none'; };
             videoElement.onpause = () => { playOverlay.style.display = 'block'; };
+
+            // 4. ATTACH TO AUTO-SCROLL OBSERVER
+            // This line connects this video to the "pause on scroll" logic
+            if (typeof feedObserver !== 'undefined' && feedObserver) {
+                feedObserver.observe(videoElement);
+            }
         }
     }
 
@@ -5312,6 +5320,27 @@ function renderUserListItem(u) {
             </div>
         </div>
     `;
+}
+
+let feedObserver = null;
+
+function initFeedObserver() {
+    const options = {
+        root: null, // Use the browser viewport
+        rootMargin: '0px',
+        threshold: 0.5 // Trigger when 50% of the video is visible/hidden
+    };
+
+    feedObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            const video = entry.target;
+            
+            // If the video is leaving the screen AND is currently playing
+            if (!entry.isIntersecting && !video.paused) {
+                video.pause();
+            }
+        });
+    }, options);
 }
 
 // --- REELS SYSTEM ---
