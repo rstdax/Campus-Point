@@ -5552,10 +5552,13 @@ async function shareReelWithWatermark(videoUrl) {
             watermarkCtx.shadowColor = "rgba(0, 0, 0, 0.8)";
             watermarkCtx.shadowBlur = 4;
             
+            watermarkCtx.textAlign = "center"; // 1. Center alignment
+    
             const text = "CAMPUS POINT";
-            const metrics = watermarkCtx.measureText(text);
-            const x = watermarkCanvas.width - metrics.width - 20;
-            const y = watermarkCanvas.height - 40;
+            // 2. X is now middle of screen
+            const x = watermarkCanvas.width / 2; 
+            // 3. Y is near bottom (30px padding)
+            const y = watermarkCanvas.height - 50;
             
             watermarkCtx.fillText("⚡ " + text, x, y);
             watermarkCtx.restore();
