@@ -2657,6 +2657,10 @@ let selectedVideoFile = null; // Stores the raw video file
 let rawVideoFile = null; // Holds the huge original file
 let trimDuration = 15; // Target duration
 
+// --- PAGINATION GLOBALS ---
+let lastReelDoc = null;      // Stores the snapshot of the last loaded post
+let isReelsLoading = false;  // Prevents fetching twice at the same time
+
 // 1. OPEN MODAL
 function openTrimModal(file, duration) {
     rawVideoFile = file; // Save original
@@ -2863,9 +2867,14 @@ function closeTrimModal() {
         }
 
         if (hash === 'reels') {
-            if(!reelsObserver) initReelsObserver();
-            loadReels();
-        }
+    if(!reelsObserver) initReelsObserver();
+    
+    // Only load if empty to save data and keep position
+    const container = document.getElementById('reels-container');
+    if(container.children.length === 0) {
+        loadReels(false); // False = Fresh Load
+    }
+}
     }
 
     // 1. User picks files from system -> Show Custom Grid
@@ -3081,6 +3090,14 @@ function renderFinalPreviews() {
         auth = firebase.auth();
 
         initFeedObserver();
+
+        const reelsContainer = document.getElementById('reels-container');
+        reelsContainer.addEventListener('scroll', () => {
+            // Check if user is near the bottom (within 300px)
+            if(reelsContainer.scrollTop + reelsContainer.clientHeight >= reelsContainer.scrollHeight - 300) {
+                loadReels(true); // Load Next Page
+            }
+        });
         
         auth.onAuthStateChanged(user => {
             const loader = document.getElementById('auth-loader');
@@ -5633,48 +5650,85 @@ function initReelsObserver() {
 }
 
 // 2. Load Reels Data
-function loadReels() {
-    const container = document.getElementById('reels-container');
+function loadReels(isNextPage = false) {
+    // 1. Prevent duplicate calls or loading if already busy
+    if (isReelsLoading) return;
     
-    // Prevent flicker
-    if(container.children.length > 0) return; 
+    const container = document.getElementById('reels-container');
 
-    container.innerHTML = '<div class="loader-spinner" style="position:absolute;top:50%;left:50%;"></div>';
+    // 2. If this is a FRESH load (not scrolling down), clear everything
+    if (!isNextPage) {
+        // Only clear if we aren't already viewing reels (prevents flickering on tab switch)
+        // But for simplicity in your router logic, we usually clear it.
+        container.innerHTML = '';
+        lastReelDoc = null;
+        
+        // Show Spinner
+        container.innerHTML = '<div id="reel-spinner" class="loader-spinner" style="position:absolute;top:50%;left:50%;"></div>';
+    }
 
-    // FIX: Removed the .where() clause that caused the conflict.
-    // We now fetch posts ordered by time and filter them in the code below.
-    db.collection('posts')
-      .orderBy('timestamp', 'desc') 
-      .limit(50) // Fetch a bit more to ensure we find enough videos
-      .get()
-      .then(snapshot => {
-          container.innerHTML = '';
-          
-          let videoCount = 0;
+    isReelsLoading = true;
 
-          snapshot.forEach(doc => {
-              const data = doc.data();
-              
-              // MANUAL FILTER: Only render if it has a videoUrl
-              if (data.videoUrl) {
-                  container.appendChild(renderReelItem(doc));
-                  videoCount++;
-              }
-          });
+    // 3. Build Query
+    let query = db.collection('posts')
+        .orderBy('timestamp', 'desc')
+        .limit(15); // Smaller batches (15) are faster to load than 50
 
-          if(videoCount === 0) {
-              container.innerHTML = '<p style="color:white; text-align:center; padding-top:50%;">No reels yet.</p>';
-          } else {
-              // Attach observer to the new elements
-              document.querySelectorAll('.reel-item').forEach(el => {
-                  reelsObserver.observe(el);
-              });
-          }
-      })
-      .catch(error => {
-          console.error("Error loading reels:", error);
-          container.innerHTML = '<p style="color:white; text-align:center; padding-top:50%;">Error loading reels.</p>';
-      });
+    // 4. If loading MORE, start after the last document we saw
+    if (isNextPage && lastReelDoc) {
+        query = query.startAfter(lastReelDoc);
+    }
+
+    query.get().then(snapshot => {
+        // Remove initial spinner if it exists
+        const spinner = document.getElementById('reel-spinner');
+        if (spinner) spinner.remove();
+
+        // A. Handle "End of Database"
+        if (snapshot.empty) {
+            isReelsLoading = false;
+            if (!isNextPage && container.children.length === 0) {
+                container.innerHTML = '<p style="color:white; text-align:center; padding-top:50%;">No reels yet.</p>';
+            }
+            return;
+        }
+
+        // B. Update Cursor for next fetch
+        lastReelDoc = snapshot.docs[snapshot.docs.length - 1];
+        
+        let videoCountInThisBatch = 0;
+
+        // C. Render Videos
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            
+            // Client-side Filter: Only render if it has a videoUrl
+            if (data.videoUrl) {
+                container.appendChild(renderReelItem(doc));
+                videoCountInThisBatch++;
+            }
+        });
+
+        // D. Re-attach observers to new elements
+        document.querySelectorAll('.reel-item').forEach(el => {
+            reelsObserver.observe(el);
+        });
+
+        isReelsLoading = false;
+
+        // E. SMART RECURSION (Critical Step)
+        // If we fetched 15 posts but NONE were videos (all text/images),
+        // the screen is empty, so the user cannot scroll to trigger "next".
+        // We must automatically fetch the NEXT page immediately.
+        if (videoCountInThisBatch === 0) {
+            console.log("No videos in this batch, auto-loading next batch...");
+            loadReels(true);
+        }
+
+    }).catch(error => {
+        console.error("Error loading reels:", error);
+        isReelsLoading = false;
+    });
 }
 
 // 3. Render Individual Reel
