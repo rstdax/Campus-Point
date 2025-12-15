@@ -1588,6 +1588,47 @@
     pointer-events: none;
 }
 
+/* --- NEW REEL CONTROLS --- */
+
+/* Center Play Button Overlay */
+.reel-play-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 4rem;
+    color: rgba(255, 255, 255, 0.8);
+    pointer-events: none; /* Let clicks pass through to the container */
+    display: none; /* Hidden by default (when playing) */
+    z-index: 5;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+}
+
+/* Bottom Right Mute Button */
+.reel-custom-mute-btn {
+    position: absolute;
+    bottom: 20px; 
+    right: 20px;
+    width: 40px;
+    height: 40px;
+    background: rgba(0, 0, 0, 0.6);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1rem;
+    cursor: pointer;
+    z-index: 20; /* Above overlay */
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(255,255,255,0.2);
+    transition: transform 0.2s;
+}
+
+.reel-custom-mute-btn:active {
+    transform: scale(0.9);
+}
+
 
     </style>
 </head>
@@ -5232,16 +5273,22 @@ function initReelsObserver() {
             if (!video) return;
 
             if (entry.isIntersecting) {
-                // Play video when visible
-                video.currentTime = 0; // Optional: Restart or continue
+                // --- MODIFICATION START ---
+                // Removed "video.currentTime = 0;" so videos resume instead of restarting
+                
+                // Attempt to play
                 const playPromise = video.play();
+                
                 if (playPromise !== undefined) {
                     playPromise.catch(error => {
-                        console.log("Autoplay blocked (needs interaction)");
-                        // Show mute icon if autoplay blocked
+                        console.log("Autoplay blocked:", error);
+                        // The UI stays in "Paused" state (Play icon visible) automatically
+                        // because video.onpause is triggered by the failure.
                     });
                 }
                 currentPlayingVideo = video;
+                // --- MODIFICATION END ---
+                
             } else {
                 // Pause when scrolled away
                 video.pause();
@@ -5293,12 +5340,19 @@ function renderReelItem(doc) {
     const div = document.createElement('div');
     div.className = 'reel-item';
     
+    // Note: 'controls' attribute removed from video
     div.innerHTML = `
         <video class="reel-video" loop playsinline muted>
             <source src="${data.videoUrl}" type="video/mp4">
         </video>
         
-        <div class="reel-mute-indicator"><i class="fa-solid fa-volume-xmark"></i></div>
+        <div class="reel-play-overlay">
+            <i class="fa-solid fa-play"></i>
+        </div>
+
+        <div class="reel-custom-mute-btn">
+            <i class="fa-solid fa-volume-xmark"></i>
+        </div>
 
         <div class="reel-overlay">
             <div class="reel-info">
@@ -5329,18 +5383,40 @@ function renderReelItem(doc) {
         </div>
     `;
 
-    // Handle Tap to Mute/Unmute
+    // --- LOGIC ---
     const video = div.querySelector('video');
-    const indicator = div.querySelector('.reel-mute-indicator');
-    
+    const playOverlay = div.querySelector('.reel-play-overlay');
+    const muteBtn = div.querySelector('.reel-custom-mute-btn');
+    const muteIcon = muteBtn.querySelector('i');
+
+    // 1. Handle Play/Pause on Container Tap
     div.onclick = (e) => {
-        // Prevent clicking if hitting buttons
-        if(e.target.closest('.reel-actions') || e.target.closest('.reel-info')) return;
+        // Prevent triggering if clicking specific buttons (actions, mute, user info)
+        if(e.target.closest('.reel-actions') || 
+           e.target.closest('.reel-info') || 
+           e.target.closest('.reel-custom-mute-btn')) return;
         
+        if (video.paused) {
+            video.play();
+        } else {
+            video.pause();
+        }
+    };
+
+    // 2. Sync UI with Video State (Handles auto-scroll pause/play)
+    video.onplay = () => { playOverlay.style.display = 'none'; };
+    video.onpause = () => { playOverlay.style.display = 'block'; };
+
+    // 3. Handle Mute Toggle
+    muteBtn.onclick = (e) => {
+        e.stopPropagation(); // Stop click from pausing the video
         video.muted = !video.muted;
-        indicator.innerHTML = video.muted ? '<i class="fa-solid fa-volume-xmark"></i>' : '<i class="fa-solid fa-volume-high"></i>';
-        indicator.style.opacity = '1';
-        setTimeout(() => { indicator.style.opacity = '0'; }, 1000);
+        
+        if (video.muted) {
+            muteIcon.className = 'fa-solid fa-volume-xmark';
+        } else {
+            muteIcon.className = 'fa-solid fa-volume-high';
+        }
     };
 
     return div;
