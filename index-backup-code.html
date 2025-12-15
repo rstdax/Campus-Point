@@ -2706,6 +2706,10 @@ let isFeedEnd = false;       // Stops fetching if no more posts exist
 // Global variable to hold the processed file temporarily
 let tempShareFile = null;
 
+let isGlobalMuted = true; // Default to true (Required for browser autoplay)
+
+window.currentHash = null; // Initialize global tracker
+
 // 1. OPEN MODAL
 function openTrimModal(file, duration) {
     rawVideoFile = file; // Save original
@@ -2909,48 +2913,76 @@ function closeTrimModal() {
     // --- 1. NEW ROUTER SYSTEM ---
     
     // This function handles the actual UI changes based on the URL hash
-    function router() {
-        // Get the hash (remove the #) or default to 'feed'
-        const hash = window.location.hash.slice(1) || 'feed';
-        
-        // Hide all sections
-        document.querySelectorAll('.content-area').forEach(el => el.classList.add('hidden'));
-        
-        // Remove active class from all nav items
-        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+    // --- 1. NEW ROUTER SYSTEM (Enhanced) ---
+// --- FIXED ROUTER SYSTEM ---
 
-        // Handle specific screens
-        const activeSection = document.getElementById('section-' + hash);
-        
-        if (activeSection) {
-            // Show the section matching the hash
-            activeSection.classList.remove('hidden');
-            
-            // Highlight the corresponding Bottom Nav item (if it exists)
-            // We match based on the onclick attribute containing the hash name
-            const navBtn = document.querySelector(`.nav-item[onclick*="'${hash}'"]`);
-            if (navBtn) navBtn.classList.add('active');
-        } else {
-            // Fallback: If hash doesn't match any ID, go to feed
-            window.location.hash = 'feed';
-        }
-
-        // Special handling for Floating Action Button (Only show on feed)
-        const fab = document.querySelector('.floating-fab');
-        if (fab) {
-            fab.style.display = (hash === 'feed') ? 'flex' : 'none';
-        }
-
-        if (hash === 'reels') {
-    if(!reelsObserver) initReelsObserver();
+function router() {
+    // 1. Get the target hash
+    const newHash = window.location.hash.slice(1) || 'feed';
     
-    // Only load if empty to save data and keep position
-    const container = document.getElementById('reels-container');
-    if(container.children.length === 0) {
-        loadReels(false); // False = Fresh Load
+    // 2. Detect if we are clicking the same tab we are already on
+    const isSameTab = (window.currentHash === newHash);
+    
+    // 3. Update global tracker immediately
+    window.currentHash = newHash;
+
+    // 4. ALWAYS update UI Visibility first (Fixes Blank Screen)
+    document.querySelectorAll('.content-area').forEach(el => el.classList.add('hidden'));
+    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+
+    const activeSection = document.getElementById('section-' + newHash);
+    if (activeSection) {
+        activeSection.classList.remove('hidden');
+        
+        // Highlight Nav
+        const navBtn = document.querySelector(`.nav-item[onclick*="'${newHash}'"]`);
+        if (navBtn) navBtn.classList.add('active');
+    } else {
+        // Fallback if ID doesn't exist
+        window.location.hash = 'feed';
+        return;
+    }
+
+    // 5. FAB Visibility
+    const fab = document.querySelector('.floating-fab');
+    if (fab) {
+        fab.style.display = (newHash === 'feed') ? 'flex' : 'none';
+    }
+
+    // 6. SPECIAL LOGIC: Feed Tab
+    if (newHash === 'feed') {
+        // If user is already on feed and clicks "Home" again -> Scroll & Refresh
+        if (isSameTab) {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            setTimeout(() => {
+                loadFeed(false); // Reload latest
+            }, 300);
+        } 
+        // If this is the first load or switching from another tab
+        else {
+             window.scrollTo(0, 0);
+             // Ensure feed is loaded if empty
+             const container = document.getElementById('feed-container');
+             if(container && container.children.length === 0) {
+                 loadFeed(false);
+             }
+        }
+    }
+
+    // 7. SPECIAL LOGIC: Reels Tab
+    if (newHash === 'reels') {
+        // Initialize observer if not ready
+        if(typeof initReelsObserver === 'function' && !reelsObserver) {
+            initReelsObserver();
+        }
+        
+        // Load reels if empty
+        const container = document.getElementById('reels-container');
+        if(container && container.children.length === 0) {
+            loadReels(false); 
+        }
     }
 }
-    }
 
     // 1. User picks files from system -> Show Custom Grid
 function handleRawInput(input) {
@@ -5941,7 +5973,7 @@ function initReelsObserver() {
     const options = {
         root: document.getElementById('reels-container'),
         rootMargin: '0px',
-        threshold: 0.6 // Video must be 60% visible to play
+        threshold: 0.6 
     };
 
     reelsObserver = new IntersectionObserver((entries) => {
@@ -5950,18 +5982,23 @@ function initReelsObserver() {
             if (!video) return;
 
             if (entry.isIntersecting) {
-                // Play video when visible
-                video.currentTime = 0; // Optional: Restart or continue
+                // --- NEW: Apply Global Mute State ---
+                video.muted = isGlobalMuted; 
+                // ------------------------------------
+
                 const playPromise = video.play();
                 if (playPromise !== undefined) {
                     playPromise.catch(error => {
-                        console.log("Autoplay blocked (needs interaction)");
-                        // Show mute icon if autoplay blocked
+                        console.log("Autoplay blocked:", error);
+                        // If blocked (usually due to unmuted audio), force mute and try again
+                        if (!video.muted) {
+                            video.muted = true;
+                            video.play();
+                        }
                     });
                 }
                 currentPlayingVideo = video;
             } else {
-                // Pause when scrolled away
                 video.pause();
             }
         });
@@ -6073,7 +6110,7 @@ function renderReelItem(doc) {
                 <div class="reel-username" onclick="openUserProfile('${data.uid}')">
                     <div class="avatar" style="background-image: url('${data.userPhoto}'); width:35px; height:35px;"></div>
                     ${data.userName}
-                    </div>
+                </div>
                 <div class="reel-desc">${data.text || ''}</div>
                 <div style="font-size:0.8rem; margin-top:5px; opacity:0.8;">
                     <i class="fa-solid fa-music"></i> Original Audio
@@ -6097,19 +6134,41 @@ function renderReelItem(doc) {
         </div>
     `;
 
-    // Handle Tap to Mute/Unmute
+    // --- UPDATED MUTE LOGIC START ---
     const video = div.querySelector('video');
     const indicator = div.querySelector('.reel-mute-indicator');
     
+    // Apply the current global state immediately when rendered
+    // (This ensures if I unmuted previous video, this one starts unmuted too)
+    if (typeof isGlobalMuted !== 'undefined') {
+        video.muted = isGlobalMuted;
+    }
+
     div.onclick = (e) => {
         // Prevent clicking if hitting buttons
         if(e.target.closest('.reel-actions') || e.target.closest('.reel-info')) return;
         
-        video.muted = !video.muted;
-        indicator.innerHTML = video.muted ? '<i class="fa-solid fa-volume-xmark"></i>' : '<i class="fa-solid fa-volume-high"></i>';
+        // 1. Toggle Global State
+        if (typeof isGlobalMuted !== 'undefined') {
+            isGlobalMuted = !isGlobalMuted; 
+            video.muted = isGlobalMuted;
+        } else {
+            // Fallback if variable missing
+            video.muted = !video.muted;
+        }
+
+        // 2. Update Icon based on new state
+        if (video.muted) {
+            indicator.innerHTML = '<i class="fa-solid fa-volume-xmark"></i>';
+        } else {
+            indicator.innerHTML = '<i class="fa-solid fa-volume-high"></i>';
+        }
+
+        // 3. Animation
         indicator.style.opacity = '1';
         setTimeout(() => { indicator.style.opacity = '0'; }, 1000);
     };
+    // --- UPDATED MUTE LOGIC END ---
 
     return div;
 }
