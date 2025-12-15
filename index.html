@@ -5636,34 +5636,44 @@ function initReelsObserver() {
 function loadReels() {
     const container = document.getElementById('reels-container');
     
-    // Check if we already loaded to prevent flicker
+    // Prevent flicker
     if(container.children.length > 0) return; 
 
     container.innerHTML = '<div class="loader-spinner" style="position:absolute;top:50%;left:50%;"></div>';
 
-    // Fetch posts that have a 'videoUrl' property (or filter by type='reel')
-    // Note: You need to update your upload logic to save `videoUrl`
+    // FIX: Removed the .where() clause that caused the conflict.
+    // We now fetch posts ordered by time and filter them in the code below.
     db.collection('posts')
-      .where('videoUrl', '!=', null) 
-      .orderBy('timestamp', 'desc')
-      .limit(10)
+      .orderBy('timestamp', 'desc') 
+      .limit(50) // Fetch a bit more to ensure we find enough videos
       .get()
       .then(snapshot => {
           container.innerHTML = '';
           
-          if(snapshot.empty) {
-              container.innerHTML = '<p style="color:white; text-align:center; padding-top:50%;">No reels yet.</p>';
-              return;
-          }
+          let videoCount = 0;
 
           snapshot.forEach(doc => {
-              container.appendChild(renderReelItem(doc));
+              const data = doc.data();
+              
+              // MANUAL FILTER: Only render if it has a videoUrl
+              if (data.videoUrl) {
+                  container.appendChild(renderReelItem(doc));
+                  videoCount++;
+              }
           });
 
-          // Attach observer to new elements
-          document.querySelectorAll('.reel-item').forEach(el => {
-              reelsObserver.observe(el);
-          });
+          if(videoCount === 0) {
+              container.innerHTML = '<p style="color:white; text-align:center; padding-top:50%;">No reels yet.</p>';
+          } else {
+              // Attach observer to the new elements
+              document.querySelectorAll('.reel-item').forEach(el => {
+                  reelsObserver.observe(el);
+              });
+          }
+      })
+      .catch(error => {
+          console.error("Error loading reels:", error);
+          container.innerHTML = '<p style="color:white; text-align:center; padding-top:50%;">Error loading reels.</p>';
       });
 }
 
