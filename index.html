@@ -5645,6 +5645,7 @@ function loadReels() {
     // Note: You need to update your upload logic to save `videoUrl`
     db.collection('posts')
       .where('videoUrl', '!=', null) 
+      .orderBy('timestamp', 'desc')
       .limit(10)
       .get()
       .then(snapshot => {
