@@ -2911,48 +2911,75 @@ function closeTrimModal() {
     // --- 1. NEW ROUTER SYSTEM ---
     
     // This function handles the actual UI changes based on the URL hash
-    function router() {
-        // Get the hash (remove the #) or default to 'feed'
-        const hash = window.location.hash.slice(1) || 'feed';
-        
-        // Hide all sections
-        document.querySelectorAll('.content-area').forEach(el => el.classList.add('hidden'));
-        
-        // Remove active class from all nav items
-        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-
-        // Handle specific screens
-        const activeSection = document.getElementById('section-' + hash);
-        
-        if (activeSection) {
-            // Show the section matching the hash
-            activeSection.classList.remove('hidden');
-            
-            // Highlight the corresponding Bottom Nav item (if it exists)
-            // We match based on the onclick attribute containing the hash name
-            const navBtn = document.querySelector(`.nav-item[onclick*="'${hash}'"]`);
-            if (navBtn) navBtn.classList.add('active');
-        } else {
-            // Fallback: If hash doesn't match any ID, go to feed
-            window.location.hash = 'feed';
-        }
-
-        // Special handling for Floating Action Button (Only show on feed)
-        const fab = document.querySelector('.floating-fab');
-        if (fab) {
-            fab.style.display = (hash === 'feed') ? 'flex' : 'none';
-        }
-
-        if (hash === 'reels') {
-    if(!reelsObserver) initReelsObserver();
+    // --- 1. NEW ROUTER SYSTEM (Enhanced) ---
+function router() {
+    // Get the hash (remove the #) or default to 'feed'
+    const newHash = window.location.hash.slice(1) || 'feed';
     
-    // Only load if empty to save data and keep position
-    const container = document.getElementById('reels-container');
-    if(container.children.length === 0) {
-        loadReels(false); // False = Fresh Load
+    // Check if we are "re-clicking" the feed tab
+    // We check if the previous hash was also 'feed' (or empty) AND the new one is 'feed'
+    const isReClickingFeed = (newHash === 'feed') && 
+                             (!window.currentHash || window.currentHash === 'feed');
+
+    // Update global tracker
+    window.currentHash = newHash;
+
+    // --- HANDLE FEED RE-CLICK (Scroll & Refresh) ---
+    if (isReClickingFeed) {
+        // 1. Scroll to top smoothly
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        
+        // 2. Refresh Feed (Only if scrolled down or just to be safe)
+        // We use a small timeout to let the scroll start first
+        setTimeout(() => {
+            loadFeed(false); // false = Fresh Load
+        }, 300);
+        
+        return; // Stop here, no need to toggle classes
+    }
+
+    // --- STANDARD TAB SWITCHING LOGIC ---
+    
+    // Hide all sections
+    document.querySelectorAll('.content-area').forEach(el => el.classList.add('hidden'));
+    
+    // Remove active class from all nav items
+    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+
+    // Handle specific screens
+    const activeSection = document.getElementById('section-' + newHash);
+    
+    if (activeSection) {
+        // Show the section matching the hash
+        activeSection.classList.remove('hidden');
+        
+        // Highlight the corresponding Bottom Nav item
+        const navBtn = document.querySelector(`.nav-item[onclick*="'${newHash}'"]`);
+        if (navBtn) navBtn.classList.add('active');
+        
+        // Scroll to top immediately when switching TABS (not re-clicking)
+        window.scrollTo(0, 0);
+
+    } else {
+        // Fallback
+        window.location.hash = 'feed';
+    }
+
+    // Special handling for Floating Action Button (Only show on feed)
+    const fab = document.querySelector('.floating-fab');
+    if (fab) {
+        fab.style.display = (newHash === 'feed') ? 'flex' : 'none';
+    }
+
+    if (newHash === 'reels') {
+        if(!reelsObserver) initReelsObserver();
+        
+        const container = document.getElementById('reels-container');
+        if(container.children.length === 0) {
+            loadReels(false); 
+        }
     }
 }
-    }
 
     // 1. User picks files from system -> Show Custom Grid
 function handleRawInput(input) {
