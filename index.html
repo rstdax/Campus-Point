@@ -66,14 +66,19 @@
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         
         body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--bg-main);
-            color: var(--text-primary);
-            overflow-y: auto;
-            min-height: 100vh;
-            -webkit-user-select: none; /* Safari */
-            -ms-user-select: none; /* IE 10 and IE 11 */
-            user-select: none; /* Standard syntax */
+            font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+        background-color: var(--bg-main);
+        color: var(--text-primary);
+        overflow-y: auto;
+        min-height: 100vh;
+        -webkit-user-select: none;
+        user-select: none;
+        /* Ambient Background Mesh */
+        background-image: 
+            radial-gradient(circle at 0% 0%, rgba(10, 132, 255, 0.15), transparent 40%),
+            radial-gradient(circle at 100% 0%, rgba(191, 90, 242, 0.15), transparent 40%),
+            radial-gradient(circle at 50% 100%, rgba(50, 215, 75, 0.1), transparent 50%);
+        background-attachment: fixed;
         }
 
         /* Allow selection in input fields so users can still type! */
