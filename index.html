@@ -2584,6 +2584,10 @@ let currentCropIndex = 0; // To track which image we are cropping in the queue
 
 let selectedVideoFile = null; // Stores the raw video file
 
+    let feedObserver = null;
+    let reelsObserver = null;
+    let currentPlayingVideo = null;
+
     // --- 1. NEW ROUTER SYSTEM ---
     
     // This function handles the actual UI changes based on the URL hash
@@ -5322,8 +5326,6 @@ function renderUserListItem(u) {
     `;
 }
 
-let feedObserver = null;
-
 function initFeedObserver() {
     const options = {
         root: null, // Use the browser viewport
@@ -5344,9 +5346,6 @@ function initFeedObserver() {
 }
 
 // --- REELS SYSTEM ---
-
-let reelsObserver = null;
-let currentPlayingVideo = null;
 
 // 1. Initialize Observer (Intersection API)
 // This detects which video is currently visible
