@@ -2188,7 +2188,7 @@ function showBoostAnimation() {
     // 2. Play Sound Effect
     // Using a free "pop" sound effect
     const audio = new Audio('https://campuspoint.netlify.app/boosted.mp3');
-    audio.volume = 0.6; // Adjust volume (0.0 to 1.0)
+    audio.volume = 1.0; // Adjust volume (0.0 to 1.0)
     audio.play().catch(error => console.log("Audio playback failed:", error));
 
     // 3. Hide after 1 second
