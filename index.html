@@ -1669,6 +1669,12 @@
     cursor: grab;
 }
 
+/* Chat Tab Switcher Styles */
+#tab-direct.active, #tab-groups.active {
+    background: var(--accent) !important;
+    color: white !important;
+}
+
 
     </style>
 </head>
@@ -1872,12 +1878,7 @@
         </div>
 </main>
 
-        <main id="section-chat-list" class="content-area hidden">
-            <h2 class="mono" style="margin-bottom:20px;">MESSAGES</h2>
-            <div id="chat-list-container">
-                <p style="text-align:center; color:var(--text-secondary)">Loading chats...</p>
-            </div>
-        </main>
+        
 
         <main id="section-create" class="content-area hidden">
     <h2 class="mono" style="margin-bottom: 20px;">NEW UPDATE</h2>
@@ -1968,14 +1969,31 @@
 </main>
 
 
-<main id="section-groups" class="content-area hidden">
-            <h2 class="mono" style="margin-bottom: 20px;">GROUP CHATS</h2>
-            <p style="color:var(--text-secondary); font-size:0.9rem; margin-bottom:30px;">Find people passionate about the same things.</p>
-            
-            <div id="group-list-container">
-                <p style="text-align:center; color:var(--text-secondary)">Loading available groups...</p>
+<main id="section-chat-list" class="content-area hidden">
+    <div class="h-flex" style="justify-content: space-between; margin-bottom: 20px;">
+        <h2 class="mono" style="margin: 0;">CHATS</h2>
+        <div style="background: var(--bg-input); border-radius: 50px; padding: 4px; display: flex; border: 1px solid var(--border);">
+            <div id="tab-direct" onclick="switchChatType('direct')" style="padding: 6px 20px; border-radius: 50px; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.2s; background: var(--accent); color: white;">
+                Direct
             </div>
-        </main>
+            <div id="tab-groups" onclick="switchChatType('groups')" style="padding: 6px 20px; border-radius: 50px; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.2s; color: var(--text-secondary);">
+                Groups
+            </div>
+        </div>
+    </div>
+
+    <div id="direct-chats-container">
+        <p style="text-align:center; color:var(--text-secondary)">Loading chats...</p>
+    </div>
+
+    <div id="group-chats-container" style="display: none;">
+        <p style="color:var(--text-secondary); font-size:0.9rem; margin-bottom:20px; text-align:center;">
+            Find people passionate about the same things.
+        </p>
+        <div id="group-list-content">
+            </div>
+    </div>
+</main>
 
         <main id="section-profile" class="content-area hidden" style="padding-top: 0;">
             <div class="profile-header-wrapper">
@@ -2057,8 +2075,9 @@
             <div class="nav-item active" onclick="switchTab('feed', this)"><i class="fa-solid fa-house"></i></div>
             <div class="nav-item" onclick="switchTab('reels', this)"><i class="fa-brands fa-youtube"></i></div>
             <div class="nav-item" onclick="switchTab('radar', this)"><i class="fa-regular fa-compass"></i></div>
-            <div class="nav-item" onclick="switchTab('groups', this)"><i class="fa-solid fa-users"></i></div>
+            
             <div class="nav-item" onclick="switchTab('chat-list', this)"><i class="fa-regular fa-comments"></i></div>
+            
             <div class="nav-item" onclick="switchTab('profile', this)"><i class="fa-regular fa-user"></i></div>
         </nav>
 
@@ -2443,12 +2462,15 @@ function showBoostAnimation() {
 // --- GROUP CHAT LOBBY LOGIC (index.html) ---
 
 function loadGroupLobby() {
-    const container = document.getElementById('group-list-container');
+    const container = document.getElementById('group-list-content'); // UPDATED ID
+    
+    // Prevent reloading if already populated
+    if (container.children.length > 0) return;
+
     container.innerHTML = '';
     
-    // Use the HOBBIES_LIST array to create rooms (HOBBIES_LIST should be global in index.html)
     HOBBIES_LIST.forEach(hobby => {
-        const details = getHobbyIcon(hobby); // Get both icon and color
+        const details = getHobbyIcon(hobby);
         
         container.innerHTML += `
             <div class="chat-item" onclick="checkGroupJoin('${hobby}')" style="cursor:pointer;">
@@ -2465,7 +2487,7 @@ function loadGroupLobby() {
                 </div>
                 <div>
                     <div style="font-weight:600;">#${hobby} Lounge</div>
-                    <div style="font-size:0.8rem; color:var(--text-secondary);">Live group chat for ${hobby} enthusiasts.</div>
+                    <div style="font-size:0.8rem; color:var(--text-secondary);">Live group chat.</div>
                 </div>
                 <button class="secondary-btn" style="
                     margin-top:0; 
@@ -2826,6 +2848,36 @@ function recordTrimmedClip(file, startTime, duration) {
         // Trigger the seek (which triggers the logic above)
         video.currentTime = startTime; 
     });
+}
+
+function switchChatType(type) {
+    const directContainer = document.getElementById('direct-chats-container');
+    const groupContainer = document.getElementById('group-chats-container');
+    const tabDirect = document.getElementById('tab-direct');
+    const tabGroups = document.getElementById('tab-groups');
+
+    if (type === 'direct') {
+        directContainer.style.display = 'block';
+        groupContainer.style.display = 'none';
+        
+        // Update Buttons
+        tabDirect.style.background = 'var(--accent)';
+        tabDirect.style.color = 'white';
+        tabGroups.style.background = 'transparent';
+        tabGroups.style.color = 'var(--text-secondary)';
+    } else {
+        directContainer.style.display = 'none';
+        groupContainer.style.display = 'block';
+        
+        // Update Buttons
+        tabGroups.style.background = 'var(--accent)';
+        tabGroups.style.color = 'white';
+        tabDirect.style.background = 'transparent';
+        tabDirect.style.color = 'var(--text-secondary)';
+        
+        // Ensure groups are loaded
+        loadGroupLobby(); 
+    }
 }
 
 function closeTrimModal() {
@@ -3528,7 +3580,7 @@ if(userData.futureGoal) {
 }
 
 startNotificationListener(); 
-loadGroupLobby();
+
 startStoryListener();
 
 // 3. Show Interests
@@ -4639,7 +4691,7 @@ function openNotifications() {
         db.collection('chats')
           .where('participants', 'array-contains', currentUser.uid)
           .onSnapshot(snap => {
-              const div = document.getElementById('chat-list-container');
+              const div = document.getElementById('direct-chats-container');
               div.innerHTML = '';
               if(snap.empty) {
                   div.innerHTML = "<div style='text-align:center; padding:20px; color:var(--text-secondary)'>No messages yet.</div>";
