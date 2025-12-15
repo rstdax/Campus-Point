@@ -1639,6 +1639,36 @@
     transform: scale(0.9);
 }
 
+/* Custom Range Slider for Trimming */
+#trim-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+    height: 40px;
+}
+
+#trim-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20%; /* Roughly represents 15s visually on a timeline, dynamic via JS is better but CSS is stable */
+    height: 44px;
+    background: rgba(0, 140, 255, 0.3);
+    border: 2px solid var(--accent);
+    border-radius: 6px;
+    cursor: grab;
+    box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    position: relative;
+}
+
+#trim-slider::-moz-range-thumb {
+    width: 20%;
+    height: 44px;
+    background: rgba(0, 140, 255, 0.3);
+    border: 2px solid var(--accent);
+    border-radius: 6px;
+    cursor: grab;
+}
+
 
     </style>
 </head>
@@ -2206,6 +2236,42 @@
         </div>
 </div>
 
+<div id="video-trim-modal" style="display:none; position:fixed; inset:0; background:black; z-index:11000; flex-direction:column;">
+    <div class="h-flex" style="padding:15px; justify-content:space-between; background:rgba(0,0,0,0.5);">
+        <i class="fa-solid fa-xmark" onclick="closeTrimModal()" style="color:white; font-size:1.5rem; cursor:pointer;"></i>
+        <div class="mono" style="font-weight:700; color:white;">TRIM REEL (15s)</div>
+        
+        <button class="action-btn" onclick="processAndConfirmTrim()" style="width:auto; margin:0; padding:8px 20px;">
+            Done <i class="fa-solid fa-check"></i>
+        </button>
+    </div>
+
+    <video id="hidden-processor-video" style="display:none;" muted playsinline></video>
+
+    <div style="flex:1; display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden;">
+        <video id="trim-video-preview" style="width:100%; max-height:60vh;" playsinline muted></video>
+        <div style="position:absolute; bottom:20px; color:rgba(255,255,255,0.7); font-size:0.9rem;">
+            Previewing selected clip
+        </div>
+    </div>
+
+    <div style="background:#1a1a1c; padding:20px 20px 40px 20px; border-top:1px solid #333;">
+        <div class="h-flex" style="justify-content:space-between; margin-bottom:10px; color:#aaa; font-size:0.8rem;">
+            <span id="trim-start-time">00:00</span>
+            <span id="trim-end-time">00:15</span>
+        </div>
+        <div style="position:relative; height:50px; display:flex; align-items:center;">
+            <div style="position:absolute; left:0; right:0; height:40px; background:#333; border-radius:6px; overflow:hidden;">
+                <div style="width:100%; height:100%; background: repeating-linear-gradient(90deg, #444 0px, #444 2px, transparent 2px, transparent 10px);"></div>
+            </div>
+            <input type="range" id="trim-slider" min="0" step="0.1" value="0" style="width:100%; position:relative; z-index:2; cursor:pointer;">
+        </div>
+        <p style="text-align:center; font-size:0.8rem; color:#666; margin-top:15px;">
+            Select the best 15 seconds. This will be processed before upload.
+        </p>
+    </div>
+</div>
+
     <script>
 
         // Pre-defined high quality banners (Unsplash)
@@ -2588,6 +2654,179 @@ let selectedVideoFile = null; // Stores the raw video file
     let reelsObserver = null;
     let currentPlayingVideo = null;
 
+let rawVideoFile = null; // Holds the huge original file
+let trimDuration = 15; // Target duration
+
+// 1. OPEN MODAL
+function openTrimModal(file, duration) {
+    rawVideoFile = file; // Save original
+    const modal = document.getElementById('video-trim-modal');
+    const video = document.getElementById('trim-video-preview');
+    const slider = document.getElementById('trim-slider');
+
+    // Configure Slider
+    slider.max = duration - trimDuration; 
+    slider.value = 0;
+
+    // Load Video
+    video.src = URL.createObjectURL(file);
+    
+    // UI Init
+    document.getElementById('trim-start-time').innerText = "00:00";
+    document.getElementById('trim-end-time').innerText = "00:15";
+    
+    modal.style.display = 'flex';
+    
+    // Preview Loop
+    startTrimPreviewLoop();
+}
+
+// 2. PREVIEW LOGIC (Looping the 15s)
+function startTrimPreviewLoop() {
+    const video = document.getElementById('trim-video-preview');
+    const slider = document.getElementById('trim-slider');
+
+    // Only play/loop while user is interacting
+    video.ontimeupdate = () => {
+        const start = parseFloat(slider.value);
+        const end = start + trimDuration;
+        if (video.currentTime >= end) {
+            video.currentTime = start;
+            video.play();
+        }
+    };
+
+    slider.oninput = () => {
+        const start = parseFloat(slider.value);
+        document.getElementById('trim-start-time').innerText = formatTime(start);
+        document.getElementById('trim-end-time').innerText = formatTime(start + trimDuration);
+        video.currentTime = start;
+    };
+}
+
+function formatTime(s) {
+    const m = Math.floor(s / 60);
+    const sec = Math.floor(s % 60);
+    return `${m}:${sec < 10 ? '0' : ''}${sec}`;
+}
+
+// 3. THE MAGIC: PROCESS & SAVE
+// This creates a NEW file that is physically only 15 seconds long
+async function processAndConfirmTrim() {
+    const slider = document.getElementById('trim-slider');
+    const startTime = parseFloat(slider.value);
+    
+    // Stop the preview video
+    const previewVideo = document.getElementById('trim-video-preview');
+    previewVideo.pause();
+
+    // Show Progress Modal (Reuse your upload modal)
+    showUploadModal("Cutting Video...");
+    document.getElementById('upload-subtext').innerText = "This takes about 15 seconds...";
+    
+    try {
+        // A. Create the Trimmed Blob
+        const trimmedBlob = await recordTrimmedClip(rawVideoFile, startTime, trimDuration);
+        
+        // B. Replace the 'selectedVideoFile' with this new small file
+        // We trick the app into thinking the user uploaded this small file directly
+        selectedVideoFile = new File([trimmedBlob], "trimmed-reel.mp4", { type: "video/mp4" });
+
+        // C. Update Preview in Create Screen
+        const container = document.getElementById('final-preview-container');
+        container.style.display = 'flex';
+        container.innerHTML = `
+            <div style="position:relative; width:100%;">
+                <video src="${URL.createObjectURL(selectedVideoFile)}" style="width:100%; max-height:200px; border-radius:8px; background:#000;" controls></video>
+                <div style="position:absolute; top:10px; right:10px; background:rgba(0,0,0,0.6); color:white; padding:5px 10px; border-radius:4px; font-size:0.8rem;">
+                    Trimmed (15s)
+                </div>
+            </div>
+        `;
+        document.getElementById('upload-type-indicator').style.display = 'block';
+
+        // D. Close Modals
+        hideUploadModal();
+        closeTrimModal();
+
+    } catch (e) {
+        console.error(e);
+        hideUploadModal();
+        alert("Error processing video. Please try a different file.");
+    }
+}
+
+// 4. RECORDER HELPER
+function recordTrimmedClip(file, startTime, duration) {
+    return new Promise((resolve, reject) => {
+        const video = document.getElementById('hidden-processor-video');
+        video.src = URL.createObjectURL(file);
+        video.currentTime = startTime;
+        video.muted = false; // Important: We need audio track, but keeping it muted in DOM prevents echo
+        video.volume = 1.0; 
+
+        // Cross-browser stream capture
+        let stream = null;
+        if (video.captureStream) {
+            stream = video.captureStream();
+        } else if (video.mozCaptureStream) {
+            stream = video.mozCaptureStream();
+        } else {
+            reject("Browser does not support video capture.");
+            return;
+        }
+
+        // Setup Recorder
+        const options = { mimeType: 'video/webm;codecs=vp9' }; // VP9 is standard for web recording
+        // If specific mimeType isn't supported, browser usually falls back to default
+        const recorder = new MediaRecorder(stream, MediaRecorder.isTypeSupported(options.mimeType) ? options : {});
+        
+        const chunks = [];
+        recorder.ondataavailable = (e) => {
+            if (e.data.size > 0) chunks.push(e.data);
+        };
+
+        recorder.onstop = () => {
+            const blob = new Blob(chunks, { type: 'video/mp4' });
+            resolve(blob);
+        };
+
+        // Start Logic
+        video.onseeked = () => {
+            // Once seek is done, start recording and playing
+            video.onseeked = null; // remove listener
+            recorder.start();
+            video.play();
+            
+            // Progress Bar Animation
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += 100 / (duration * 10); // rough update
+                updateProgressBar(Math.min(progress, 99));
+            }, 100);
+
+            // Stop after duration
+            setTimeout(() => {
+                clearInterval(interval);
+                recorder.stop();
+                video.pause();
+                video.src = ""; // Cleanup
+            }, duration * 1000); // 15000ms
+        };
+        
+        // Trigger the seek (which triggers the logic above)
+        video.currentTime = startTime; 
+    });
+}
+
+function closeTrimModal() {
+    document.getElementById('video-trim-modal').style.display = 'none';
+    const v = document.getElementById('trim-video-preview');
+    v.pause();
+    v.src = "";
+    v.ontimeupdate = null;
+}
+
     // --- 1. NEW ROUTER SYSTEM ---
     
     // This function handles the actual UI changes based on the URL hash
@@ -2644,41 +2883,54 @@ function handleRawInput(input) {
 
         if (isVideo) {
             // --- VIDEO FLOW ---
-            if (file.size > 50 * 1024 * 1024) { // 50MB Limit
-                alert("Video is too large. Max size is 50MB.");
+            if (file.size > 100 * 1024 * 1024) { // 100MB Limit
+                alert("Video is too large. Max size is 100MB.");
                 input.value = "";
                 return;
             }
 
-            selectedVideoFile = file; // Store the video file
-            
-            // Show Video Preview
-            const container = document.getElementById('final-preview-container');
-            container.style.display = 'flex';
-            container.innerHTML = `
-                <div style="position:relative; width:100%;">
-                    <video src="${URL.createObjectURL(file)}" style="width:100%; max-height:200px; border-radius:8px; background:#000;" controls></video>
-                    <div style="position:absolute; top:10px; right:10px; background:rgba(0,0,0,0.6); color:white; padding:5px 10px; border-radius:4px; font-size:0.8rem;">
-                        Reel Preview
-                    </div>
-                </div>
-            `;
-            
-            // Show indicator text
-            document.getElementById('upload-type-indicator').style.display = 'block';
+            // 1. Check Duration Logic
+            const tempVideo = document.createElement('video');
+            tempVideo.preload = 'metadata';
+            tempVideo.src = URL.createObjectURL(file);
+
+            tempVideo.onloadedmetadata = function() {
+                window.URL.revokeObjectURL(tempVideo.src);
+                const duration = tempVideo.duration;
+
+                if (duration > 15.5) { 
+                    // CASE A: Video is too long -> Open Trimmer
+                    // This function is already in your code, we just need to call it here
+                    openTrimModal(file, duration); 
+                } else {
+                    // CASE B: Video is short enough -> Accept immediately
+                    selectedVideoFile = file;
+                    
+                    // Show Preview
+                    const container = document.getElementById('final-preview-container');
+                    container.style.display = 'flex';
+                    container.innerHTML = `
+                        <div style="position:relative; width:100%;">
+                            <video src="${URL.createObjectURL(file)}" style="width:100%; max-height:200px; border-radius:8px; background:#000;" controls></video>
+                            <div style="position:absolute; top:10px; right:10px; background:rgba(0,0,0,0.6); color:white; padding:5px 10px; border-radius:4px; font-size:0.8rem;">
+                                Full Reel (${Math.round(duration)}s)
+                            </div>
+                        </div>
+                    `;
+                    document.getElementById('upload-type-indicator').style.display = 'block';
+                }
+            };
             
         } else {
-            // --- IMAGE FLOW (Default) ---
-            // Reset accept attribute back to default
+            // --- IMAGE FLOW (Existing Logic) ---
             document.getElementById('raw-gallery-input').accept = "image/*, video/mp4, video/quicktime";
-            
             rawFiles = Array.from(input.files);
             selectedIndices = []; 
-            renderGalleryGrid(); // Show your existing gallery grid
+            renderGalleryGrid();
             document.getElementById('gallery-picker-modal').style.display = 'flex';
         }
     }
-    input.value = ""; // Reset input so same file can be selected again if needed
+    input.value = ""; 
 }
 
 // 2. Render the Grid
