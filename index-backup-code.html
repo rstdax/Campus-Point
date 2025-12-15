@@ -1675,6 +1675,63 @@
     color: white !important;
 }
 
+/* --- AUTOCOMPLETE DROPDOWN STYLES --- */
+.input-group {
+    position: relative;
+    margin-bottom: 15px;
+}
+
+.autocomplete-list {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 0 0 8px 8px;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 1000;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    display: none; /* Hidden by default */
+}
+
+.autocomplete-list.show {
+    display: block;
+}
+
+.autocomplete-item {
+    padding: 12px 15px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    transition: background 0.2s;
+}
+
+.autocomplete-item:last-child {
+    border-bottom: none;
+}
+
+.autocomplete-item:hover {
+    background: var(--bg-input);
+    color: var(--accent);
+}
+
+.autocomplete-item strong {
+    color: var(--accent);
+}
+
+/* Style for the Select Dropdown (Year/Sem) */
+select.nexus-input {
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    background-size: 1em;
+}
+
 
     </style>
 </head>
@@ -1813,14 +1870,42 @@
         <label>FULL NAME</label>
         <input type="text" id="setup-name" class="nexus-input">
         
-        <label>INSTITUTION</label>
-        <input type="text" id="setup-university" class="nexus-input">
+        <label>INSTITUTION (University / College)</label>
+        <div class="input-group">
+            <input type="text" id="setup-university" class="nexus-input" placeholder="Search or type your college..." autocomplete="off">
+            <div id="uni-suggestions" class="autocomplete-list"></div>
+        </div>
         
-        <label>MAJOR</label>
-        <input type="text" id="setup-major" class="nexus-input">
+        <label>MAJOR / COURSE</label>
+        <div class="input-group">
+            <input type="text" id="setup-major" class="nexus-input" placeholder="e.g. Physics, B.Tech, Class 11..." autocomplete="off">
+            <div id="major-suggestions" class="autocomplete-list"></div>
+        </div>
         
-        <label>YEAR</label>
-        <input type="text" id="setup-year" class="nexus-input">
+        <label>YEAR / SEMESTER</label>
+        <select id="setup-year" class="nexus-input">
+            <option value="" disabled selected>Select current stage</option>
+            <optgroup label="Schooling">
+                <option value="11th Grade">11th Grade</option>
+                <option value="12th Grade">12th Grade</option>
+            </optgroup>
+            <optgroup label=" yearly">
+                <option value="1st Year">1st Year</option>
+                <option value="2nd Year">2nd Year</option>
+                <option value="3rd Year">3rd Year</option>
+                <option value="4th Year">4th Year</option>
+            </optgroup>
+            <optgroup label="Semester System">
+                <option value="1st Semester">1st Semester</option>
+                <option value="2nd Semester">2nd Semester</option>
+                <option value="3rd Semester">3rd Semester</option>
+                <option value="4th Semester">4th Semester</option>
+                <option value="5th Semester">5th Semester</option>
+                <option value="6th Semester">6th Semester</option>
+                <option value="7th Semester">7th Semester</option>
+                <option value="8th Semester">8th Semester</option>
+            </optgroup>
+        </select>
 
         <label>BIO <span id="bio-count" style="float:right; font-size:0.7rem;">0/150</span></label>
         <textarea id="setup-bio" class="nexus-input" rows="3" maxlength="150" oninput="updateBioCount()"></textarea>
@@ -2734,6 +2819,188 @@ function openTrimModal(file, duration) {
     startTrimPreviewLoop();
 }
 
+// --- DATA LISTS ---
+
+// 1. Comprehensive List of Assam Institutions
+const ASSAM_INSTITUTIONS = [
+    // Universities
+    "Nagaon University", // Replaced Nowgong College
+    "Gauhati University",
+    "Dibrugarh University",
+    "Tezpur University",
+    "Assam University (Silchar)",
+    "Cotton University",
+    "Bodoland University",
+    "Kumar Bhaskar Varma Sanskrit University",
+    "Assam Science and Technology University (ASTU)",
+    "Srimanta Sankaradeva University of Health Sciences",
+    "Assam Agricultural University",
+    "Krishna Kanta Handiqui State Open University",
+    "Madhabdev University",
+    "Bhattadev University",
+    "Rabindranath Tagore University",
+    "Majuli University of Culture",
+    "Birangana Sati Sadhani Rajyik Vishwavidyalaya",
+    
+    // Technical & Medical
+    "IIT Guwahati",
+    "IIIT Guwahati",
+    "NIT Silchar",
+    "CIT Kokrajhar",
+    "Gauhati Medical College",
+    "Assam Medical College (Dibrugarh)",
+    "Silchar Medical College",
+    "AIIMS Guwahati",
+    "Jorhat Engineering College",
+    "Assam Engineering College",
+    
+    // Private Universities
+    "Assam Don Bosco University",
+    "Royal Global University",
+    "Kaziranga University",
+    "Assam Down Town University",
+    "Mahapurusha Srimanta Sankaradeva Viswavidyalaya",
+    "Krishnaguru Adhyatmik Vishvavidyalaya",
+    "Girijananda Chowdhury University",
+
+    // Major Colleges (Add more as needed)
+    "Arya Vidyapeeth College",
+    "B. Borooah College",
+    "Handique Girls' College",
+    "Jagannath Barooah College (Autonomous)",
+    "Sibsagar College",
+    "North Lakhimpur College",
+    "Darrang College",
+    "Gurucharan College",
+    "Cachar College",
+    "Diphu Government College",
+    "Kokrajhar Govt. College",
+    "Tinsukia College",
+    "Biswanath College",
+    "Pub Kamrup College",
+    "Pandu College",
+    "Pragjyotish College"
+];
+
+// 2. List of Majors / Courses
+const COURSES_MAJORS = [
+    // Undergraduate Programs
+    "FYUGP (Four Year Under Graduate Programme)",
+    "B.A (Bachelor of Arts)",
+    "B.Sc (Bachelor of Science)",
+    "B.Com (Bachelor of Commerce)",
+    "B.Tech (Bachelor of Technology)",
+    "B.E (Bachelor of Engineering)",
+    "BCA (Bachelor of Computer Applications)",
+    "BBA (Bachelor of Business Administration)",
+    "MBBS",
+    "BDS (Dental)",
+    "B.Pharm",
+    "Nursing (B.Sc)",
+    
+    // Schooling
+    "11th Grade (Science)",
+    "11th Grade (Arts)",
+    "11th Grade (Commerce)",
+    "12th Grade (Science)",
+    "12th Grade (Arts)",
+    "12th Grade (Commerce)",
+    "Diploma in Engineering (Polytechnic)",
+    
+    // Post Graduate
+    "M.A (Master of Arts)",
+    "M.Sc (Master of Science)",
+    "M.Com",
+    "MCA (Master of Computer Applications)",
+    "MBA",
+    "M.Tech",
+    "PhD",
+
+    // Specific Subjects (Majors)
+    "Chemistry",
+    "Physics",
+    "Mathematics",
+    "Zoology",
+    "Botany",
+    "Computer Science",
+    "English",
+    "Assamese",
+    "Political Science",
+    "History",
+    "Education",
+    "Economics",
+    "Geography",
+    "Sociology",
+    "Philosophy",
+    "Psychology",
+    "Anthropology",
+    "Geology",
+    "Statistics",
+    "Biotechnology"
+];
+
+// --- AUTOCOMPLETE LOGIC ---
+
+function setupAutocomplete(inputId, listId, dataArray) {
+    const input = document.getElementById(inputId);
+    const list = document.getElementById(listId);
+
+    // 1. Filter and Show List
+    input.oninput = function() {
+        const val = this.value.toLowerCase();
+        list.innerHTML = '';
+        
+        if (!val) {
+            list.classList.remove('show');
+            return;
+        }
+
+        // Filter logic
+        const matches = dataArray.filter(item => 
+            item.toLowerCase().includes(val)
+        );
+
+        // If no matches, user can still type custom, so just hide list or show "add custom" hint
+        if (matches.length === 0) {
+            list.classList.remove('show');
+            return;
+        }
+
+        list.classList.add('show');
+
+        // Limit results to 5 for performance
+        matches.slice(0, 8).forEach(match => {
+            const div = document.createElement('div');
+            div.className = 'autocomplete-item';
+            // Highlight matching text
+            const regex = new RegExp(`(${val})`, "gi");
+            div.innerHTML = match.replace(regex, "<strong>$1</strong>");
+            
+            // Handle Click
+            div.onclick = function() {
+                input.value = match;
+                list.classList.remove('show');
+            };
+            
+            list.appendChild(div);
+        });
+    };
+
+    // 2. Hide when clicking outside
+    document.addEventListener('click', function(e) {
+        if (e.target !== input && e.target !== list) {
+            list.classList.remove('show');
+        }
+    });
+}
+
+// --- INITIALIZE SEARCHES ---
+// Call this function in your window.onload or initApp
+function initSearchFields() {
+    setupAutocomplete('setup-university', 'uni-suggestions', ASSAM_INSTITUTIONS);
+    setupAutocomplete('setup-major', 'major-suggestions', COURSES_MAJORS);
+}
+
 // 2. PREVIEW LOGIC (Looping the 15s)
 function startTrimPreviewLoop() {
     const video = document.getElementById('trim-video-preview');
@@ -3197,6 +3464,7 @@ function renderFinalPreviews() {
         auth = firebase.auth();
 
         initFeedObserver();
+        initSearchFields();
 
         const reelsContainer = document.getElementById('reels-container');
         reelsContainer.addEventListener('scroll', () => {
