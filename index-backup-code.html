@@ -27,26 +27,33 @@
 
     <style>
         :root {
-            /* --- ORIGINAL DESIGN VARIABLES --- */
-            --bg-main: #050505;
-            --bg-glass: rgba(20, 20, 21, 0.98);
-            --bg-card: #0F0F10;
-            --bg-input: #1A1A1C;
-            --border: #2A2A2E;
-            --text-primary: #EDEDED;
-            --text-secondary: #888888;
-            --accent: #008cff;
-            --accent-backup: #4dabf8;
-            --accent-glow: rgba(77, 107, 248, 0.4);
-            --boost-color: #FFD700;
-            --header-h: 60px;
-            --nav-h: 70px;
+            /* --- APPLE VISION / GLASS VARIABLES --- */
+        --bg-main: #000000;
+        --bg-glass: rgba(30, 30, 35, 0.85); /* Slightly darker for better contrast */
+        --bg-card: rgba(40, 40, 45, 0.60);
+        --bg-input: rgba(255, 255, 255, 0.12);
+        
+        --border: rgba(255, 255, 255, 0.15);
+        --border-light: rgba(255, 255, 255, 0.25);
+        
+        --text-primary: #FFFFFF;
+        --text-secondary: rgba(235, 235, 245, 0.6);
+        
+        --accent: #0A84FF;
+        --accent-glow: rgba(10, 132, 255, 0.5);
+        --boost-color: #FFD60A;
+        
+        --header-h: 60px;
+        --nav-h: 80px;
+        
+        --radius-l: 16px;
+        --radius-m: 16px;
         }
 
         [data-theme="light"] {
             --bg-main: #F2F4F8;
-            --bg-glass: rgba(255, 255, 255, 0.98);
-            --bg-card: #FFFFFF;
+            --bg-glass: rgba(255, 255, 255, 0.849);
+            --bg-card: #ffffffbc;
             --bg-input: #EAECEF;
             --border: #DDE1E6;
             --text-primary: #111111;
@@ -54,19 +61,30 @@
             --accent: #304FFE;
             --accent-glow: rgba(48, 79, 254, 0.2);
             --boost-color: #F9A825;
+
+            --header-h: 60px;
+        --nav-h: 80px;
+        
+        --radius-l: 16px;
+        --radius-m: 16px;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         
         body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--bg-main);
-            color: var(--text-primary);
-            overflow-y: auto;
-            min-height: 100vh;
-            -webkit-user-select: none; /* Safari */
-            -ms-user-select: none; /* IE 10 and IE 11 */
-            user-select: none; /* Standard syntax */
+            font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+        background-color: var(--bg-main);
+        color: var(--text-primary);
+        overflow-y: auto;
+        min-height: 100vh;
+        -webkit-user-select: none;
+        user-select: none;
+        /* Ambient Background Mesh */
+        background-image: 
+            radial-gradient(circle at 0% 0%, rgba(10, 132, 255, 0.15), transparent 40%),
+            radial-gradient(circle at 100% 0%, rgba(191, 90, 242, 0.15), transparent 40%),
+            radial-gradient(circle at 50% 100%, rgba(50, 215, 75, 0.1), transparent 50%);
+        background-attachment: fixed;
         }
 
         /* Allow selection in input fields so users can still type! */
@@ -83,7 +101,7 @@
         /* --- Header --- */
         .header {
             height: var(--header-h); padding: 0 20px;
-            background: var(--bg-glass); backdrop-filter: blur(12px);
+            background: var(--bg-glass); backdrop-filter: blur(20px);
             border-bottom: 1px solid var(--border);
             display: flex; align-items: center; justify-content: space-between;
             position: fixed; top: 0; left: 50%; transform: translateX(-50%);
@@ -100,7 +118,7 @@
         /* --- Forms & Inputs --- */
         .nexus-input {
             width: 100%; background: var(--bg-input); border: 1px solid var(--border);
-            padding: 14px; border-radius: 8px; color: var(--text-primary);
+            padding: 14px; border-radius: var(--radius-m); color: var(--text-primary);
             font-family: 'Inter', sans-serif; margin-bottom: 15px; outline: none;
             transition: border-color 0.3s;
         }
@@ -237,8 +255,13 @@
 
         /* --- Cards --- */
         .post-card, .chat-item {
-            background: var(--bg-card); border: 1px solid var(--border);
-            border-radius: 12px; padding: 18px; margin-bottom: 15px;
+            background: var(--bg-card);
+        backdrop-filter: blur(25px) saturate(180%);
+        -webkit-backdrop-filter: blur(25px) saturate(180%);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-l);
+        padding: 20px; margin-bottom: 20px;
+        box-shadow: 0 4px 24px -1px rgba(0, 0, 0, 0.2);
         }
         
         /* --- FEED IMAGE STYLES --- */
@@ -295,23 +318,27 @@
 
         /* --- Nav --- */
         .bottom-nav {
-            height: var(--nav-h); background: var(--bg-glass);
-            backdrop-filter: blur(12px); border-top: 1px solid var(--border);
-            display: flex; justify-content: space-around; align-items: center;
-            position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
-            width: 100%; max-width: 480px; z-index: 1000;
-        }
-        .nav-item { font-size: 1.3rem; color: var(--text-secondary); cursor: pointer; padding: 10px; }
-        .nav-item.active { color: var(--accent); }
+        height: 65px; 
+        background: var(--bg-glass);
+        backdrop-filter: blur(30px) saturate(180%); -webkit-backdrop-filter: blur(30px) saturate(180%);
+        border: 1px solid var(--border-light);
+        display: flex; justify-content: space-around; align-items: center;
+        position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+        width: 90%; max-width: 400px; z-index: 1000;
+        border-radius: 50px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+    .nav-item { font-size: 1.4rem; color: var(--text-secondary); cursor: pointer; padding: 10px; transition: color 0.2s; }
+    .nav-item.active { color: var(--accent); filter: drop-shadow(0 0 8px var(--accent-glow)); }
         
         /* --- Floating Action Button (FAB) --- */
         .floating-fab {
-            position: fixed; bottom: 90px; right: 20px;
-            width: 56px; height: 56px; background: var(--accent); color: white;
-            border-radius: 50%; display: flex; align-items: center; justify-content: center;
-            font-size: 1.5rem; box-shadow: 0 4px 20px var(--accent-glow);
-            z-index: 1100; cursor: pointer; transition: transform 0.2s;
-        }
+        position: fixed; bottom: 100px; right: 20px;
+        width: 56px; height: 56px; background: var(--accent); color: white;
+        border-radius: 50%; display: flex; align-items: center; justify-content: center;
+        font-size: 1.5rem; box-shadow: 0 4px 20px var(--accent-glow);
+        z-index: 1100; cursor: pointer; transition: transform 0.2s;
+        border: 1px solid rgba(255,255,255,0.2);
+    }
         .floating-fab:active { transform: scale(0.9); }
 
         /* --- Radar UI --- */
@@ -514,29 +541,16 @@
 
 /* --- STORY TRAY STYLES --- */
 .stories-wrapper {
-    /* 1. Layout & Scroll */
-    width: 100%;
-    overflow-x: auto;
-    overflow-y: hidden;
-    white-space: nowrap;
-    scrollbar-width: none; /* Firefox */
-    
-    /* 2. "Post Card" Styling */
-    background: var(--bg-card);
-    border: 1px solid var(--border); /* Full border all around */
-    border-radius: 12px;             /* Rounded corners like posts */
-    margin-bottom: 15px;             /* Space between stories and first post */
-    
-    /* 3. Internal Padding */
-    padding: 15px 0;                 /* Vertical spacing inside the card */
-}
+        width: 100%; overflow-x: auto; white-space: nowrap; scrollbar-width: none;
+        background: transparent; border: none; padding: 10px 0; margin-bottom: 10px;
+    }
 
 /* Hide scrollbar for Chrome/Safari */
 .stories-wrapper::-webkit-scrollbar { display: none; }
 
 .story-tray {
     display: inline-flex;
-    padding: 0 15px;
+    padding: 0px;
     gap: 15px;
 }
 
@@ -1061,7 +1075,7 @@
     background: var(--bg-card);
     width: 90%;
     max-width: 320px;
-    border-radius: 16px;
+    border-radius: var(--radius-l);
     padding: 20px;
     border: 1px solid var(--border);
     animation: scaleIn 0.2s ease-out;
@@ -1509,16 +1523,23 @@
     cursor: pointer;
 }
 
-/* Overlay Gradients & Info */
-.reel-overlay {
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 40%);
-    pointer-events: none; /* Let clicks pass through to video */
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
-    padding: 20px 20px 70px 20px; /* Padding bottom for nav bar */
+/* --- REELS OVERLAY (UPDATED: Top Left Position) --- */
+.reel-overlay { 
+    position: absolute; 
+    inset: 0; 
+    /* 1. Flip Gradient: Darken the top instead of the bottom so text is readable */
+    background: linear-gradient(to bottom, rgba(0,0,0,0.9) 0%, transparent 60%); 
+    pointer-events: none; 
+    
+    /* 2. Push content to the Top */
+    display: flex; 
+    flex-direction: column; 
+    justify-content: flex-start; 
+    
+    /* 3. Adjust Padding: 
+       Top: 90px (To clear the Header) 
+       Left/Right/Bottom: 20px */
+    padding: 90px 20px 20px 20px; 
 }
 
 .reel-info {
@@ -1547,7 +1568,7 @@
 /* Right Side Actions */
 .reel-actions {
     position: absolute;
-    bottom: 100px;
+    bottom: 150px;
     right: 15px;
     display: flex;
     flex-direction: column;
@@ -6481,14 +6502,13 @@ function renderReelItem(doc) {
 
         <div class="reel-overlay">
             <div class="reel-info">
+            
                 <div class="reel-username" onclick="openUserProfile('${data.uid}')">
                     <div class="avatar" style="background-image: url('${data.userPhoto}'); width:35px; height:35px;"></div>
                     ${data.userName}
                 </div>
                 <div class="reel-desc">${data.text || ''}</div>
-                <div style="font-size:0.8rem; margin-top:5px; opacity:0.8;">
-                    <i class="fa-solid fa-music"></i> Original Audio
-                </div>
+            
             </div>
         </div>
 
