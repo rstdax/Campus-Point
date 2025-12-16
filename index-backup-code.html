@@ -4034,7 +4034,7 @@ function updateBioCount() {
     function loadAppInterface(userData) {
         // Setup Header & My Profile
         document.getElementById('header-avatar').src = userData.photoURL;
-        document.getElementById('header-avatar').style.display = 'block';
+        document.getElementById('header-avatar').style.display = 'none';
         document.getElementById('profile-pic').src = userData.photoURL;
         document.getElementById('profile-name').innerText = userData.displayName;
         document.getElementById('profile-academic').innerText = `${userData.academic.major} • ${userData.academic.year}`;

@@ -1755,6 +1755,114 @@ select.nexus-input {
     background-size: 1em;
 }
 
+/* --- TINDER / SUGGESTION STYLES --- */
+.suggestion-container {
+    height: 65vh;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    margin-top: 10px;
+}
+
+.tinder-card {
+    position: absolute;
+    width: 90%;
+    max-width: 340px;
+    height: 100%;
+    background: var(--bg-card);
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    overflow: hidden;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    display: flex;
+    flex-direction: column;
+}
+
+.t-card-img {
+    width: 100%;
+    height: 60%;
+    object-fit: cover;
+    background-color: var(--bg-input);
+}
+
+.t-card-info {
+    padding: 15px;
+    flex: 1;
+    background: linear-gradient(to bottom, var(--bg-card), var(--bg-main));
+    position: relative;
+}
+
+.match-badge {
+    position: absolute;
+    top: -15px;
+    right: 20px;
+    background: var(--accent);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    box-shadow: 0 4px 10px var(--accent-glow);
+    border: 2px solid var(--bg-card);
+}
+
+.common-interests-row {
+    display: flex;
+    gap: 5px;
+    overflow-x: auto;
+    margin-top: 10px;
+    padding-bottom: 5px;
+}
+
+.common-chip {
+    font-size: 0.7rem;
+    padding: 4px 8px;
+    border-radius: 10px;
+    background: rgba(46, 204, 113, 0.15);
+    color: #2ecc71;
+    border: 1px solid rgba(46, 204, 113, 0.3);
+    white-space: nowrap;
+}
+
+.suggestion-controls {
+    display: flex;
+    justify-content: center;
+    gap: 25px;
+    margin-top: 20px;
+}
+
+.swipe-btn {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: transform 0.2s;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+
+.swipe-btn:active { transform: scale(0.9); }
+.swipe-btn.pass { color: #ff5555; border-color: rgba(255, 85, 85, 0.3); }
+.swipe-btn.connect { color: #00e676; border-color: rgba(0, 230, 118, 0.3); }
+
+/* Animation Classes */
+.slide-out-left {
+    transform: translateX(-150%) rotate(-20deg) !important;
+    opacity: 0 !important;
+}
+.slide-out-right {
+    transform: translateX(150%) rotate(20deg) !important;
+    opacity: 0 !important;
+}
+
 
     </style>
 </head>
@@ -2026,12 +2134,15 @@ select.nexus-input {
 
         <main id="section-radar" class="content-area hidden">
     
-    <div class="h-flex" style="justify-content: center; margin-bottom: 25px;">
-        <div style="background: var(--bg-input); border-radius: 50px; padding: 4px; display: flex; border: 1px solid var(--border); width: 220px;">
-            <div id="rtab-radar" onclick="switchRadarTab('radar')" style="flex:1; text-align:center; padding: 8px 0; border-radius: 50px; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.2s; background: var(--accent); color: white;">
+    <div class="h-flex" style="justify-content: center; margin-bottom: 15px;">
+        <div style="background: var(--bg-input); border-radius: 50px; padding: 4px; display: flex; border: 1px solid var(--border); width: 90%; max-width: 320px;">
+            <div id="rtab-radar" onclick="switchRadarTab('radar')" style="flex:1; text-align:center; padding: 8px 0; border-radius: 50px; font-size: 0.8rem; font-weight: 600; cursor: pointer; background: var(--accent); color: white;">
                 Radar
             </div>
-            <div id="rtab-search" onclick="switchRadarTab('search')" style="flex:1; text-align:center; padding: 8px 0; border-radius: 50px; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.2s; color: var(--text-secondary);">
+            <div id="rtab-suggestion" onclick="switchRadarTab('suggestion')" style="flex:1; text-align:center; padding: 8px 0; border-radius: 50px; font-size: 0.8rem; font-weight: 600; cursor: pointer; color: var(--text-secondary);">
+                Suggestions
+            </div>
+            <div id="rtab-search" onclick="switchRadarTab('search')" style="flex:1; text-align:center; padding: 8px 0; border-radius: 50px; font-size: 0.8rem; font-weight: 600; cursor: pointer; color: var(--text-secondary);">
                 Search
             </div>
         </div>
@@ -2039,26 +2150,13 @@ select.nexus-input {
 
     <div id="tab-content-radar">
         <div style="width: 100%; display: flex; justify-content: center; margin-bottom: 20px;">
-            <div id="gps-status-indicator" class="mono" style="font-size: 0.75rem; background: var(--bg-card); border: 1px solid var(--border); padding: 6px 16px; border-radius: 50px; color: var(--text-secondary); box-shadow: 0 4px 10px rgba(0,0,0,0.2);">
+            <div id="gps-status-indicator" class="mono" style="font-size: 0.75rem; background: var(--bg-card); border: 1px solid var(--border); padding: 6px 16px; border-radius: 50px; color: var(--text-secondary);">
                 <i class="fa-solid fa-satellite-dish"></i> GPS: CHECKING...
             </div>
         </div>
-
-        <div id="radar-permission-warning" class="hidden" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 50vh; text-align: center; padding: 0 20px;">
-            <div style="width: 70px; height: 70px; background: rgba(255, 85, 85, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 20px;">
-                <i class="fa-solid fa-map-location-dot" style="font-size: 1.8rem; color: #ff5555;"></i>
-            </div>
-            <h3 class="mono" style="margin-bottom: 10px; font-size: 1rem;">LOCATION REQUIRED</h3>
-            <p id="gps-msg" style="color: var(--text-secondary); max-width: 280px; margin-bottom: 25px; line-height: 1.5; font-size: 0.9rem;">
-                To see students nearby, CampusPoint needs access to your GPS location.
-            </p>
-            <button id="btn-gps-retry" class="action-btn" onclick="retryGPS()" style="width: auto; padding: 12px 30px;">
-                <i class="fa-solid fa-location-crosshairs"></i> Allow Location
-            </button>
-            <p id="gps-manual-instruction" class="hidden" style="font-size: 0.8rem; color: #ff5555; margin-top: 15px; border: 1px dashed #ff5555; padding: 10px; border-radius: 8px; background: rgba(255,85,85,0.05);">
-                <i class="fa-solid fa-lock"></i> <b>Permission Blocked</b><br>
-                Tap the <b>Lock Icon 🔒</b> in your browser address bar and hit "Reset Permission".
-            </p>
+        
+        <div id="radar-permission-warning" class="hidden" style="text-align: center; padding: 20px;">
+            <button class="action-btn" onclick="retryGPS()">Allow Location</button>
         </div>
 
         <div id="radar-content" class="hidden">
@@ -2072,17 +2170,27 @@ select.nexus-input {
         </div>
     </div>
 
+    <div id="tab-content-suggestion" style="display: none;">
+        <div id="suggestion-stack" class="suggestion-container">
+            <div class="loader-spinner"></div>
+        </div>
+
+        <div class="suggestion-controls">
+            <button class="swipe-btn pass" onclick="triggerSwipe('left')">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <button class="swipe-btn connect" onclick="triggerSwipe('right')">
+                <i class="fa-solid fa-heart"></i>
+            </button>
+        </div>
+    </div>
+
     <div id="tab-content-search" style="display: none; padding: 0 5px;">
         <div style="position:relative; margin-bottom: 20px;">
             <i class="fa-solid fa-magnifying-glass" style="position:absolute; left:15px; top:14px; color:var(--text-secondary);"></i>
-            <input type="text" id="global-search-input" class="nexus-input" style="padding-left: 45px; border-radius: 50px;" placeholder="Search students..." autocomplete="off" oninput="handleUserSearch(this.value)">
+            <input type="text" id="global-search-input" class="nexus-input" style="padding-left: 45px; border-radius: 50px;" placeholder="Search students..." oninput="handleUserSearch(this.value)">
         </div>
-
-        <div id="global-search-results">
-            <p style="text-align:center; color:var(--text-secondary); margin-top:30px; font-size: 0.9rem;">
-                Search for friends by name.
-            </p>
-        </div>
+        <div id="global-search-results"></div>
     </div>
 
 </main>
@@ -2532,35 +2640,231 @@ function hideInstallModal() {
 }
 
 // --- RADAR TAB SWITCHING ---
+
+// 1. UPDATE TAB SWITCHER
 function switchRadarTab(tab) {
     const radarContent = document.getElementById('tab-content-radar');
+    const suggestContent = document.getElementById('tab-content-suggestion');
     const searchContent = document.getElementById('tab-content-search');
     
     const btnRadar = document.getElementById('rtab-radar');
+    const btnSuggest = document.getElementById('rtab-suggestion');
     const btnSearch = document.getElementById('rtab-search');
+
+    // Reset Buttons
+    [btnRadar, btnSuggest, btnSearch].forEach(btn => {
+        btn.style.background = 'transparent';
+        btn.style.color = 'var(--text-secondary)';
+    });
+
+    // Hide All Content
+    radarContent.style.display = 'none';
+    suggestContent.style.display = 'none';
+    searchContent.style.display = 'none';
 
     if (tab === 'radar') {
         radarContent.style.display = 'block';
-        searchContent.style.display = 'none';
-
-        // Update Button Styles
         btnRadar.style.background = 'var(--accent)';
         btnRadar.style.color = 'white';
-        btnSearch.style.background = 'transparent';
-        btnSearch.style.color = 'var(--text-secondary)';
-    } else {
-        radarContent.style.display = 'none';
+    } 
+    else if (tab === 'suggestion') {
+        suggestContent.style.display = 'block';
+        btnSuggest.style.background = 'var(--accent)';
+        btnSuggest.style.color = 'white';
+        // Trigger Algorithm
+        if(suggestedUsers.length === 0) loadSuggestions();
+    } 
+    else {
         searchContent.style.display = 'block';
-        
-        // Focus on search input automatically
-        setTimeout(() => document.getElementById('global-search-input').focus(), 100);
-
-        // Update Button Styles
         btnSearch.style.background = 'var(--accent)';
         btnSearch.style.color = 'white';
-        btnRadar.style.background = 'transparent';
-        btnRadar.style.color = 'var(--text-secondary)';
+        setTimeout(() => document.getElementById('global-search-input').focus(), 100);
     }
+}
+
+// 2. THE ALGORITHM: MATCHING LOGIC
+function calculateMatchScore(me, other) {
+    let score = 0;
+    let commonInterests = [];
+
+    if (!other.academic) return { score: 0, common: [] };
+
+    // A. Institution Match (Exact match) - HIGH VALUE
+    if (me.academic.university === other.academic.university) {
+        score += 30;
+    }
+
+    // B. Course/Major Match (Partial or Exact) - MEDIUM VALUE
+    if (me.academic.major && other.academic.major) {
+        if (me.academic.major.toLowerCase() === other.academic.major.toLowerCase()) {
+            score += 20;
+        } else if (me.academic.major.toLowerCase().includes(other.academic.major.toLowerCase())) {
+            score += 10; // Partial match (e.g., "Computer Science" vs "Science")
+        }
+    }
+
+    // C. Common Interests - COMPOUNDING VALUE
+    const myInt = me.interests || [];
+    const theirInt = other.interests || [];
+    
+    myInt.forEach(i => {
+        if (theirInt.includes(i)) {
+            score += 15; // 15 points per common hobby
+            commonInterests.push(i);
+        }
+    });
+
+    // D. Goals Similarity (Simple text check)
+    if (me.futureGoal && other.futureGoal) {
+        // Very basic check: do they share words?
+        const myWords = me.futureGoal.toLowerCase().split(' ');
+        const theirWords = other.futureGoal.toLowerCase().split(' ');
+        const hasCommonWord = myWords.some(w => w.length > 3 && theirWords.includes(w));
+        if (hasCommonWord) score += 10;
+    }
+
+    // E. Location Boost (If within 10km)
+    if (myLocation && other.location) {
+        const dist = getDistanceFromLatLonInMeters(myLocation.lat, myLocation.lng, other.location.lat, other.location.lng);
+        if (dist < 10000) score += 15;
+    }
+
+    return { score, common: commonInterests };
+}
+
+// 3. LOAD & SORT USERS
+function loadSuggestions() {
+    const container = document.getElementById('suggestion-stack');
+    container.innerHTML = '<div class="loader-spinner"></div>';
+
+    // In a real app, use a Cloud Function for this. 
+    // For this prototype, we fetch latest 50 active users.
+    db.collection('users')
+      .orderBy('lastActive', 'desc')
+      .limit(50)
+      .get()
+      .then(snapshot => {
+          let candidates = [];
+
+          snapshot.forEach(doc => {
+              const u = doc.data();
+              // Don't suggest myself
+              if (u.uid !== currentUser.uid) {
+                  const matchData = calculateMatchScore(globalProfileData, u);
+                  // Only suggest if score > 0 (At least something in common)
+                  if(matchData.score > 0) {
+                      candidates.push({ ...u, matchScore: matchData.score, commonInterests: matchData.common });
+                  }
+              }
+          });
+
+          // Sort by Score (Highest first)
+          candidates.sort((a, b) => b.matchScore - a.matchScore);
+          suggestedUsers = candidates;
+          currentCardIndex = 0;
+
+          renderSwipeCard();
+      });
+}
+
+// 4. RENDER SINGLE CARD
+function renderSwipeCard() {
+    const container = document.getElementById('suggestion-stack');
+    container.innerHTML = ''; // Clear
+
+    if (currentCardIndex >= suggestedUsers.length) {
+        container.innerHTML = `
+            <div style="text-align:center;">
+                <div style="font-size:3rem;">🎉</div>
+                <h3>That's everyone!</h3>
+                <p style="color:var(--text-secondary)">Check back later for more suggestions.</p>
+                <button class="secondary-btn" onclick="loadSuggestions()">Refresh</button>
+            </div>
+        `;
+        return;
+    }
+
+    const u = suggestedUsers[currentCardIndex];
+    
+    // Generate Common Interest Chips
+    let interestHTML = '';
+    if (u.commonInterests.length > 0) {
+        interestHTML = `<div class="common-interests-row">
+            <span style="font-size:0.7rem; color:var(--text-secondary); align-self:center;">Common:</span>
+            ${u.commonInterests.map(i => `<div class="common-chip"><i class="fa-solid fa-check"></i> ${i}</div>`).join('')}
+        </div>`;
+    }
+
+    const cardHTML = `
+        <div id="active-card" class="tinder-card" onclick="openUserProfile('${u.uid}')">
+            <div class="match-badge">${u.matchScore}% Match</div>
+            <img src="${u.photoURL || 'default.png'}" class="t-card-img">
+            <div class="t-card-info">
+                <div class="h-flex" style="justify-content:space-between; align-items:flex-start;">
+                    <div>
+                        <div style="font-weight:700; font-size:1.4rem;">${u.displayName}</div>
+                        <div class="mono" style="color:var(--accent); font-size:0.85rem;">
+                            ${u.academic.major} • ${u.academic.year}
+                        </div>
+                    </div>
+                    <div style="text-align:right;">
+                        <i class="fa-solid fa-circle-info" style="font-size:1.5rem; color:var(--text-secondary);"></i>
+                    </div>
+                </div>
+                
+                <div style="font-size:0.85rem; color:var(--text-secondary); margin-top:5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                    <i class="fa-solid fa-building-columns"></i> ${u.academic.university}
+                </div>
+
+                ${interestHTML}
+
+                <div style="margin-top:10px; font-style:italic; font-size:0.9rem; color:var(--text-primary); opacity:0.8;">
+                    "${u.futureGoal || 'Ready to connect'}"
+                </div>
+            </div>
+        </div>
+    `;
+
+    container.innerHTML = cardHTML;
+}
+
+// 5. HANDLE SWIPE ACTION
+function triggerSwipe(direction) {
+    const card = document.getElementById('active-card');
+    if(!card) return;
+
+    if (direction === 'left') {
+        // PASS
+        card.classList.add('slide-out-left');
+    } else {
+        // CONNECT
+        card.classList.add('slide-out-right');
+        
+        // Execute Logic: Follow the user
+        const targetUid = suggestedUsers[currentCardIndex].uid;
+        
+        // Use existing follow logic (but quietly)
+        const myRef = db.collection('users').doc(currentUser.uid);
+        const otherRef = db.collection('users').doc(targetUid);
+        const timestamp = firebase.firestore.FieldValue.serverTimestamp();
+
+        // Add to following
+        myRef.collection('following').doc(targetUid).set({timestamp: timestamp});
+        otherRef.collection('followers').doc(currentUser.uid).set({timestamp: timestamp});
+        
+        // Send Notification
+        const myName = globalProfileData.displayName || currentUser.displayName;
+        sendAppNotification(targetUid, 'follow', 'found you via Suggestions!', null, null);
+
+        // Show a quick visual feedback
+        showBoostAnimation(); // Reuse the boost animation for match effect
+    }
+
+    // Wait for animation to finish then load next
+    setTimeout(() => {
+        currentCardIndex++;
+        renderSwipeCard();
+    }, 300);
 }
 
 // --- USER SEARCH LOGIC ---
@@ -2921,6 +3225,10 @@ let isFeedEnd = false;       // Stops fetching if no more posts exist
 let tempShareFile = null;
 
 let isGlobalMuted = true; // Default to true (Required for browser autoplay)
+
+// --- GLOBAL VARIABLES FOR SUGGESTIONS ---
+let suggestedUsers = [];
+let currentCardIndex = 0;
 
 window.currentHash = null; // Initialize global tracker
 
