@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campus Point - Realtime Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        .sidebar { background: #111827; color: #9ca3af; }
+        .sidebar a:hover, .sidebar a.active { background: #1f2937; color: #fff; }
+        .card { background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .loader { border: 3px solid #f3f3f3; border-top: 3px solid #4F46E5; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; display: inline-block; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        /* Modal Styles */
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 50; }
+        .modal-content { background: white; padding: 2rem; border-radius: 0.5rem; width: 90%; max-width: 400px; }
+    </style>
+</head>
+<body class="h-screen flex overflow-hidden">
+
+    <div id="login-modal" class="fixed inset-0 bg-gray-900 z-50 flex flex-col items-center justify-center">
+        <div class="bg-white p-8 rounded-xl shadow-xl w-96 text-center">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">Admin Login</h2>
+            <button onclick="googleLogin()" class="w-full flex items-center justify-center gap-3 bg-white border border-gray-300 text-gray-700 font-semibold py-3 px-4 rounded-lg hover:bg-gray-50 transition">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-5 h-5">
+                Sign in with Google
+            </button>
+            <p id="login-error" class="text-red-500 text-sm mt-4"></p>
+        </div>
+    </div>
+
+    <aside class="sidebar w-64 hidden md:flex flex-col">
+        <div class="h-16 flex items-center px-6 border-b border-gray-800">
+            <span class="text-white font-bold text-lg"><i class="fa-solid fa-shield-halved mr-2"></i> CP Admin</span>
+        </div>
+        <nav class="flex-1 px-4 py-6 space-y-1">
+            <a onclick="loadView('dashboard')" id="nav-dashboard" class="flex items-center px-4 py-3 text-sm font-medium rounded-md cursor-pointer active"><i class="fa-solid fa-chart-pie w-6"></i> Dashboard</a>
+            <a onclick="loadView('users')" id="nav-users" class="flex items-center px-4 py-3 text-sm font-medium rounded-md cursor-pointer"><i class="fa-solid fa-users w-6"></i> Users & Radar</a>
+            <a onclick="loadView('posts')" id="nav-posts" class="flex items-center px-4 py-3 text-sm font-medium rounded-md cursor-pointer"><i class="fa-solid fa-layer-group w-6"></i> Posts & Reels</a>
+            <a onclick="loadView('stories')" id="nav-stories" class="flex items-center px-4 py-3 text-sm font-medium rounded-md cursor-pointer"><i class="fa-solid fa-circle-notch w-6"></i> Stories</a>
+            <a onclick="loadView('reports')" id="nav-reports" class="flex items-center px-4 py-3 text-sm font-medium rounded-md cursor-pointer"><i class="fa-solid fa-flag w-6"></i> Reports</a>
+        </nav>
+        <div class="p-4 border-t border-gray-800">
+            <div class="flex items-center gap-3 mb-4">
+                <img id="admin-avatar" src="" class="w-8 h-8 rounded-full bg-gray-700">
+                <div class="text-xs">
+                    <p id="admin-name" class="text-white font-medium">Admin</p>
+                    <p class="text-gray-500">Online</p>
+                </div>
+            </div>
+            <button onclick="logout()" class="w-full text-left text-sm text-red-400 hover:text-red-300"><i class="fa-solid fa-right-from-bracket mr-2"></i> Logout</button>
+        </div>
+    </aside>
+
+    <main class="flex-1 flex flex-col h-screen overflow-hidden">
+        <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-8">
+            <h1 id="page-title" class="text-xl font-bold text-gray-800">Dashboard</h1>
+            <div class="flex gap-4">
+                <span id="status-indicator" class="text-xs bg-green-100 text-green-800 px-3 py-1 rounded-full flex items-center gap-2">
+                    <span class="w-2 h-2 bg-green-500 rounded-full"></span> Live Connection
+                </span>
+            </div>
+        </header>
+
+        <div id="main-view" class="flex-1 overflow-auto p-8">
+            <div class="flex items-center justify-center h-full text-gray-400">
+                <div class="loader mr-2"></div> Loading data...
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // --- 1. FIREBASE CONFIG (REAL DATA) ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyBg1m_bFN4xzl4yJ_JiG8E6UPDZjFks7PM",
+            authDomain: "campus-point-rst.firebaseapp.com",
+            projectId: "campus-point-rst",
+            storageBucket: "campus-point-rst.firebasestorage.app",
+            messagingSenderId: "877074516750",
+            appId: "1:877074516750:web:f485c45a1446c030afa55f",
+            measurementId: "G-M4WDE31CTL"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+        let currentUser = null;
+
+        // --- 2. AUTHENTICATION LOGIC ---
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                currentUser = user;
+                document.getElementById('login-modal').style.display = 'none';
+                document.getElementById('admin-avatar').src = user.photoURL || 'https://via.placeholder.com/150';
+                document.getElementById('admin-name').innerText = user.displayName || 'Admin';
+                loadView('dashboard'); // Initial Load
+            } else {
+                document.getElementById('login-modal').style.display = 'flex';
+            }
+        });
+
+        function googleLogin() {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            auth.signInWithPopup(provider).catch(err => {
+                document.getElementById('login-error').innerText = err.message;
+            });
+        }
+
+        function logout() {
+            auth.signOut();
+        }
+
+        // --- 3. VIEWS CONTROLLER ---
+        function loadView(viewName) {
+            // Update Sidebar UI
+            document.querySelectorAll('.sidebar a').forEach(el => el.classList.remove('active', 'bg-gray-800', 'text-white'));
+            const activeNav = document.getElementById('nav-' + viewName);
+            if(activeNav) activeNav.classList.add('active');
+
+            const container = document.getElementById('main-view');
+            container.innerHTML = '<div class="flex items-center justify-center h-full"><div class="loader mr-3"></div> Fetching Firestore...</div>';
+
+            const title = viewName.charAt(0).toUpperCase() + viewName.slice(1);
+            document.getElementById('page-title').innerText = title;
+
+            // Router
+            switch(viewName) {
+                case 'dashboard': renderDashboard(container); break;
+                case 'users': renderUsers(container); break;
+                case 'posts': renderPosts(container); break;
+                case 'stories': renderStories(container); break;
+                case 'reports': renderReports(container); break;
+            }
+        }
+
+        // --- 4. DASHBOARD VIEW ---
+        async function renderDashboard(container) {
+            try {
+                // Fetch counts in parallel
+                const [usersSnap, postsSnap, reportsSnap] = await Promise.all([
+                    db.collection('users').get(),
+                    db.collection('posts').get(),
+                    db.collection('reports').where('status', '==', 'pending').get()
+                ]);
+
+                container.innerHTML = `
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                        <div class="card p-6 border-l-4 border-indigo-500">
+                            <div class="text-gray-500 text-sm font-medium uppercase mb-1">Total Users</div>
+                            <div class="text-3xl font-bold text-gray-800">${usersSnap.size}</div>
+                        </div>
+                        <div class="card p-6 border-l-4 border-green-500">
+                            <div class="text-gray-500 text-sm font-medium uppercase mb-1">Posts & Reels</div>
+                            <div class="text-3xl font-bold text-gray-800">${postsSnap.size}</div>
+                        </div>
+                        <div class="card p-6 border-l-4 border-red-500">
+                            <div class="text-gray-500 text-sm font-medium uppercase mb-1">Pending Reports</div>
+                            <div class="text-3xl font-bold text-red-600">${reportsSnap.size}</div>
+                        </div>
+                    </div>
+                    <div class="card p-8 text-center text-gray-500">
+                        <i class="fa-solid fa-chart-line text-4xl mb-4 text-gray-300"></i>
+                        <p>Realtime Analytics Graph would go here.</p>
+                    </div>
+                `;
+            } catch (e) {
+                container.innerHTML = `<p class="text-red-500">Error loading dashboard: ${e.message}</p>`;
+            }
+        }
+
+        // --- 5. USERS & RADAR VIEW ---
+        async function renderUsers(container) {
+            const snapshot = await db.collection('users').orderBy('lastActive', 'desc').limit(50).get();
+            
+            let html = `
+                <div class="card overflow-hidden">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Academic</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location (Radar)</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+            `;
+
+            snapshot.forEach(doc => {
+                const u = doc.data();
+                const isBanned = u.banned === true;
+                
+                // Location Logic
+                let locationLink = `<span class="text-gray-400">Unknown</span>`;
+                if(u.location && u.location.lat) {
+                    const mapUrl = `https://www.google.com/maps/search/?api=1&query=${u.location.lat},${u.location.lng}`;
+                    locationLink = `
+                        <a href="${mapUrl}" target="_blank" class="text-indigo-600 hover:text-indigo-900 flex items-center gap-1">
+                            <i class="fa-solid fa-location-dot"></i> See on Map
+                        </a>
+                        <div class="text-xs text-gray-400">${u.location.lat.toFixed(4)}, ${u.location.lng.toFixed(4)}</div>
+                    `;
+                }
+
+                html += `
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0 h-10 w-10">
+                                    <img class="h-10 w-10 rounded-full object-cover" src="${u.photoURL || 'https://via.placeholder.com/40'}" alt="">
+                                </div>
+                                <div class="ml-4">
+                                    <div class="text-sm font-medium text-gray-900">${u.displayName || 'No Name'}</div>
+                                    <div class="text-sm text-gray-500">${u.email}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm text-gray-900">${u.academic ? u.academic.major : '-'}</div>
+                            <div class="text-xs text-gray-500">${u.academic ? u.academic.university : '-'}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            ${locationLink}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            ${isBanned 
+                                ? '<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Banned</span>' 
+                                : '<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Active</span>'}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <button onclick="toggleBanUser('${doc.id}', ${!isBanned})" class="text-red-600 hover:text-red-900 ml-4">
+                                ${isBanned ? '<i class="fa-solid fa-unlock"></i> Unban' : '<i class="fa-solid fa-ban"></i> Ban'}
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            html += `</tbody></table></div>`;
+            container.innerHTML = html;
+        }
+
+        // --- 6. POSTS & REELS VIEW ---
+        async function renderPosts(container) {
+            const snapshot = await db.collection('posts').orderBy('timestamp', 'desc').limit(50).get();
+            
+            let html = `<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">`;
+
+            snapshot.forEach(doc => {
+                const p = doc.data();
+                const type = p.videoUrl ? 'Reel' : 'Post';
+                const likes = p.boosts ? p.boosts.length : 0;
+                
+                // Media Preview
+                let mediaPrev = '';
+                if(p.videoUrl) mediaPrev = `<video src="${p.videoUrl}" class="w-full h-48 object-cover rounded-md bg-black" controls></video>`;
+                else if(p.imageUrl) mediaPrev = `<img src="${p.imageUrl}" class="w-full h-48 object-cover rounded-md">`;
+                else if(p.images && p.images.length > 0) mediaPrev = `<img src="${p.images[0]}" class="w-full h-48 object-cover rounded-md">`;
+                else mediaPrev = `<div class="w-full h-48 bg-gray-100 rounded-md flex items-center justify-center text-gray-400">Text Only</div>`;
+
+                html += `
+                    <div class="card p-4 flex flex-col gap-3">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <img src="${p.userPhoto}" class="w-8 h-8 rounded-full">
+                                <span class="text-sm font-bold text-gray-700">${p.userName}</span>
+                            </div>
+                            <span class="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">${type}</span>
+                        </div>
+                        
+                        ${mediaPrev}
+                        
+                        <p class="text-sm text-gray-600 line-clamp-2">${p.text || ''}</p>
+                        
+                        <div class="mt-auto flex items-center justify-between pt-2 border-t border-gray-100">
+                            <div class="text-xs text-gray-500 font-medium">
+                                <i class="fa-solid fa-bolt text-yellow-500"></i> ${likes} Boosts
+                            </div>
+                            <button onclick="deleteContent('posts', '${doc.id}')" class="text-red-500 text-xs hover:text-red-700">
+                                <i class="fa-solid fa-trash"></i> Delete
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+            html += `</div>`;
+            container.innerHTML = html;
+        }
+
+        // --- 7. STORIES VIEW ---
+        async function renderStories(container) {
+            // Group by user manually
+            const snapshot = await db.collection('stories').get();
+            const stories = [];
+            snapshot.forEach(doc => stories.push({ id: doc.id, ...doc.data() }));
+
+            if(stories.length === 0) {
+                container.innerHTML = '<p class="text-gray-500">No active stories.</p>';
+                return;
+            }
+
+            let html = `<div class="grid grid-cols-2 md:grid-cols-4 gap-6">`;
+            
+            stories.forEach(s => {
+                // Calculate expiry
+                const now = Date.now();
+                const isExpired = s.expiresAt < now;
+                
+                html += `
+                    <div class="card overflow-hidden relative group">
+                        <img src="${s.imageUrl}" class="w-full h-64 object-cover ${isExpired ? 'opacity-50 grayscale' : ''}">
+                        <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition flex items-center justify-center opacity-0 group-hover:opacity-100">
+                            <button onclick="deleteContent('stories', '${s.id}')" class="bg-red-600 text-white px-4 py-2 rounded-full text-sm font-bold">Delete</button>
+                        </div>
+                        <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-3">
+                            <div class="flex items-center gap-2">
+                                <img src="${s.userPhoto}" class="w-6 h-6 rounded-full border border-white">
+                                <span class="text-white text-xs font-bold truncate">${s.userName}</span>
+                            </div>
+                            <div class="text-white text-xs opacity-80 mt-1">
+                                ${isExpired ? 'Expired' : 'Active'} • <i class="fa-solid fa-eye"></i> ${s.viewers ? s.viewers.length : 0}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            html += `</div>`;
+            container.innerHTML = html;
+        }
+
+        // --- 8. REPORTS VIEW ---
+        async function renderReports(container) {
+            const snapshot = await db.collection('reports').orderBy('timestamp', 'desc').get();
+            
+            if(snapshot.empty) {
+                container.innerHTML = '<div class="text-center text-gray-500 mt-10">No reports found. Good job!</div>';
+                return;
+            }
+
+            let html = `<div class="space-y-4">`;
+            
+            snapshot.forEach(doc => {
+                const r = doc.data();
+                const statusColor = r.status === 'pending' ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-200';
+                
+                html += `
+                    <div class="card p-5 border ${statusColor} flex justify-between items-start">
+                        <div>
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="text-red-600 font-bold text-sm uppercase">Report: ${r.reason}</span>
+                                <span class="text-xs text-gray-400">• ${new Date(r.timestamp?.toDate()).toLocaleDateString()}</span>
+                            </div>
+                            <p class="text-sm text-gray-800 mb-1">
+                                <strong>Reported User:</strong> ${r.reportedUserName} (ID: ${r.reportedUserUid})
+                            </p>
+                            <p class="text-xs text-gray-500">
+                                Reported by: ${r.reporterName}
+                            </p>
+                            <div class="mt-2 text-xs bg-white px-2 py-1 rounded border border-gray-200 inline-block">Target ID: ${r.postId}</div>
+                        </div>
+                        <div class="flex flex-col gap-2">
+                            ${r.status === 'pending' ? `
+                                <button onclick="deleteContent('posts', '${r.postId}')" class="text-xs bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700">Delete Content</button>
+                                <button onclick="toggleBanUser('${r.reportedUserUid}', true)" class="text-xs bg-gray-800 text-white px-3 py-1 rounded hover:bg-gray-900">Ban User</button>
+                                <button onclick="resolveReport('${doc.id}')" class="text-xs border border-green-600 text-green-600 px-3 py-1 rounded hover:bg-green-50">Mark Resolved</button>
+                            ` : `<span class="text-green-600 text-sm font-bold"><i class="fa-solid fa-check"></i> Resolved</span>`}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += `</div>`;
+            container.innerHTML = html;
+        }
+
+        // --- ACTIONS ---
+
+        async function toggleBanUser(uid, shouldBan) {
+            if(!confirm(shouldBan ? "Ban this user? They will be logged out locally." : "Unban this user?")) return;
+            
+            try {
+                // We set a 'banned' flag in Firestore. The client app must listen for this.
+                await db.collection('users').doc(uid).update({
+                    banned: shouldBan
+                });
+                alert("User status updated. (Note: Ensure your app checks user.banned)");
+                loadView('users'); // Refresh
+            } catch(e) {
+                alert("Error: " + e.message);
+            }
+        }
+
+        async function deleteContent(collection, id) {
+            if(!confirm("Permanently delete this content?")) return;
+            try {
+                await db.collection(collection).doc(id).delete();
+                // Refresh current view
+                const current = document.querySelector('.sidebar a.active').id.replace('nav-', '');
+                loadView(current);
+            } catch(e) {
+                alert("Error deleting: " + e.message);
+            }
+        }
+
+        async function resolveReport(reportId) {
+            try {
+                await db.collection('reports').doc(reportId).update({ status: 'resolved' });
+                loadView('reports');
+            } catch(e) {
+                alert("Error: " + e.message);
+            }
+        }
+
+    </script>
+</body>
+</html>
