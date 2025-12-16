@@ -3,10 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Campus Point - Realtime Admin</title>
+    <title>Campus Point - Admin Secured</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
@@ -20,16 +22,23 @@
         .loader { border: 3px solid #f3f3f3; border-top: 3px solid #4F46E5; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; display: inline-block; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
-        /* Modal Styles */
-        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 50; }
-        .modal-content { background: white; padding: 2rem; border-radius: 0.5rem; width: 90%; max-width: 400px; }
+        /* Access Denied Overlay */
+        #denied-screen { display: none; position: fixed; inset: 0; background: #991b1b; z-index: 100; color: white; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
     </style>
 </head>
 <body class="h-screen flex overflow-hidden">
 
+    <div id="denied-screen">
+        <i class="fa-solid fa-ban text-6xl mb-4"></i>
+        <h1 class="text-3xl font-bold mb-2">ACCESS DENIED</h1>
+        <p class="max-w-md mx-auto mb-6">You do not have administrative privileges for this panel. This attempt has been logged.</p>
+        <button onclick="firebase.auth().signOut(); window.location.reload();" class="bg-white text-red-900 px-6 py-2 rounded-full font-bold hover:bg-gray-100 transition">Go Back</button>
+    </div>
+
     <div id="login-modal" class="fixed inset-0 bg-gray-900 z-50 flex flex-col items-center justify-center">
         <div class="bg-white p-8 rounded-xl shadow-xl w-96 text-center">
-            <h2 class="text-2xl font-bold text-gray-800 mb-6">Admin Login</h2>
+            <h2 class="text-2xl font-bold text-gray-800 mb-2">Campus Point Admin</h2>
+            <p class="text-xs text-gray-500 mb-6">Restricted Access • Authorized Personnel Only</p>
             <button onclick="googleLogin()" class="w-full flex items-center justify-center gap-3 bg-white border border-gray-300 text-gray-700 font-semibold py-3 px-4 rounded-lg hover:bg-gray-50 transition">
                 <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-5 h-5">
                 Sign in with Google
@@ -46,7 +55,6 @@
             <a onclick="loadView('dashboard')" id="nav-dashboard" class="flex items-center px-4 py-3 text-sm font-medium rounded-md cursor-pointer active"><i class="fa-solid fa-chart-pie w-6"></i> Dashboard</a>
             <a onclick="loadView('users')" id="nav-users" class="flex items-center px-4 py-3 text-sm font-medium rounded-md cursor-pointer"><i class="fa-solid fa-users w-6"></i> Users & Radar</a>
             <a onclick="loadView('posts')" id="nav-posts" class="flex items-center px-4 py-3 text-sm font-medium rounded-md cursor-pointer"><i class="fa-solid fa-layer-group w-6"></i> Posts & Reels</a>
-            <a onclick="loadView('stories')" id="nav-stories" class="flex items-center px-4 py-3 text-sm font-medium rounded-md cursor-pointer"><i class="fa-solid fa-circle-notch w-6"></i> Stories</a>
             <a onclick="loadView('reports')" id="nav-reports" class="flex items-center px-4 py-3 text-sm font-medium rounded-md cursor-pointer"><i class="fa-solid fa-flag w-6"></i> Reports</a>
         </nav>
         <div class="p-4 border-t border-gray-800">
@@ -54,7 +62,7 @@
                 <img id="admin-avatar" src="" class="w-8 h-8 rounded-full bg-gray-700">
                 <div class="text-xs">
                     <p id="admin-name" class="text-white font-medium">Admin</p>
-                    <p class="text-gray-500">Online</p>
+                    <p class="text-gray-500">rstrohan1@gmail.com</p>
                 </div>
             </div>
             <button onclick="logout()" class="w-full text-left text-sm text-red-400 hover:text-red-300"><i class="fa-solid fa-right-from-bracket mr-2"></i> Logout</button>
@@ -66,20 +74,22 @@
             <h1 id="page-title" class="text-xl font-bold text-gray-800">Dashboard</h1>
             <div class="flex gap-4">
                 <span id="status-indicator" class="text-xs bg-green-100 text-green-800 px-3 py-1 rounded-full flex items-center gap-2">
-                    <span class="w-2 h-2 bg-green-500 rounded-full"></span> Live Connection
+                    <span class="w-2 h-2 bg-green-500 rounded-full"></span> Secure Connection
                 </span>
             </div>
         </header>
 
         <div id="main-view" class="flex-1 overflow-auto p-8">
             <div class="flex items-center justify-center h-full text-gray-400">
-                <div class="loader mr-2"></div> Loading data...
+                <div class="loader mr-2"></div> Verifying Permissions...
             </div>
         </div>
     </main>
 
     <script>
-        // --- 1. FIREBASE CONFIG (REAL DATA) ---
+        // --- 1. CONFIGURATION ---
+        const ADMIN_EMAIL = "rstrohan1@gmail.com";
+        
         const firebaseConfig = {
             apiKey: "AIzaSyBg1m_bFN4xzl4yJ_JiG8E6UPDZjFks7PM",
             authDomain: "campus-point-rst.firebaseapp.com",
@@ -90,22 +100,36 @@
             measurementId: "G-M4WDE31CTL"
         };
 
-        // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
         const auth = firebase.auth();
         let currentUser = null;
+        let chartInstance = null; // Store chart to destroy before re-rendering
 
-        // --- 2. AUTHENTICATION LOGIC ---
+        // --- 2. SECURE AUTHENTICATION ---
         auth.onAuthStateChanged(user => {
             if (user) {
+                // SECURITY CHECK
+                if (user.email !== ADMIN_EMAIL) {
+                    // Unauthorized User
+                    document.getElementById('login-modal').style.display = 'none';
+                    document.getElementById('denied-screen').style.display = 'flex';
+                    // Force signout immediately
+                    setTimeout(() => auth.signOut(), 2000); 
+                    return;
+                }
+
+                // Authorized Admin
                 currentUser = user;
                 document.getElementById('login-modal').style.display = 'none';
-                document.getElementById('admin-avatar').src = user.photoURL || 'https://via.placeholder.com/150';
+                document.getElementById('denied-screen').style.display = 'none';
+                document.getElementById('admin-avatar').src = user.photoURL;
                 document.getElementById('admin-name').innerText = user.displayName || 'Admin';
-                loadView('dashboard'); // Initial Load
+                loadView('dashboard'); 
             } else {
+                // Not Logged In
                 document.getElementById('login-modal').style.display = 'flex';
+                document.getElementById('denied-screen').style.display = 'none';
             }
         });
 
@@ -117,41 +141,76 @@
         }
 
         function logout() {
-            auth.signOut();
+            auth.signOut().then(() => window.location.reload());
         }
 
-        // --- 3. VIEWS CONTROLLER ---
+        // --- 3. VIEW CONTROLLER ---
         function loadView(viewName) {
-            // Update Sidebar UI
             document.querySelectorAll('.sidebar a').forEach(el => el.classList.remove('active', 'bg-gray-800', 'text-white'));
             const activeNav = document.getElementById('nav-' + viewName);
             if(activeNav) activeNav.classList.add('active');
 
             const container = document.getElementById('main-view');
-            container.innerHTML = '<div class="flex items-center justify-center h-full"><div class="loader mr-3"></div> Fetching Firestore...</div>';
+            container.innerHTML = '<div class="flex items-center justify-center h-full"><div class="loader mr-3"></div> Fetching Data...</div>';
 
             const title = viewName.charAt(0).toUpperCase() + viewName.slice(1);
             document.getElementById('page-title').innerText = title;
 
-            // Router
+            if(chartInstance) {
+                chartInstance.destroy(); // Cleanup old graph
+                chartInstance = null;
+            }
+
             switch(viewName) {
                 case 'dashboard': renderDashboard(container); break;
                 case 'users': renderUsers(container); break;
                 case 'posts': renderPosts(container); break;
-                case 'stories': renderStories(container); break;
                 case 'reports': renderReports(container); break;
             }
         }
 
-        // --- 4. DASHBOARD VIEW ---
+        // --- 4. DASHBOARD & GRAPH ---
         async function renderDashboard(container) {
             try {
-                // Fetch counts in parallel
+                // Fetch Data for Counters
                 const [usersSnap, postsSnap, reportsSnap] = await Promise.all([
                     db.collection('users').get(),
                     db.collection('posts').get(),
                     db.collection('reports').where('status', '==', 'pending').get()
                 ]);
+
+                // --- DATA PROCESSING FOR GRAPH ---
+                // We will group users by "Last Active" date to show recent engagement
+                // Since "registration date" might not exist on all docs, active is a good proxy for "growth/retention"
+                const activityMap = {};
+                const today = new Date();
+                
+                // Initialize last 7 days with 0
+                for(let i=6; i>=0; i--) {
+                    const d = new Date();
+                    d.setDate(today.getDate() - i);
+                    const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                    activityMap[dateStr] = 0;
+                }
+
+                usersSnap.forEach(doc => {
+                    const u = doc.data();
+                    if(u.lastActive) {
+                        const d = u.lastActive.toDate();
+                        // Only count if within last 7 days
+                        const diffTime = Math.abs(today - d);
+                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+                        if(diffDays <= 7) {
+                            const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                            if(activityMap[dateStr] !== undefined) {
+                                activityMap[dateStr]++;
+                            }
+                        }
+                    }
+                });
+
+                const labels = Object.keys(activityMap);
+                const dataPoints = Object.values(activityMap);
 
                 container.innerHTML = `
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -160,25 +219,58 @@
                             <div class="text-3xl font-bold text-gray-800">${usersSnap.size}</div>
                         </div>
                         <div class="card p-6 border-l-4 border-green-500">
-                            <div class="text-gray-500 text-sm font-medium uppercase mb-1">Posts & Reels</div>
+                            <div class="text-gray-500 text-sm font-medium uppercase mb-1">Content Count</div>
                             <div class="text-3xl font-bold text-gray-800">${postsSnap.size}</div>
                         </div>
                         <div class="card p-6 border-l-4 border-red-500">
-                            <div class="text-gray-500 text-sm font-medium uppercase mb-1">Pending Reports</div>
+                            <div class="text-gray-500 text-sm font-medium uppercase mb-1">Actionable Reports</div>
                             <div class="text-3xl font-bold text-red-600">${reportsSnap.size}</div>
                         </div>
                     </div>
-                    <div class="card p-8 text-center text-gray-500">
-                        <i class="fa-solid fa-chart-line text-4xl mb-4 text-gray-300"></i>
-                        <p>Realtime Analytics Graph would go here.</p>
+
+                    <div class="card p-6">
+                        <h3 class="text-lg font-bold text-gray-700 mb-4">Active Users (Last 7 Days)</h3>
+                        <div class="h-64">
+                            <canvas id="userGrowthChart"></canvas>
+                        </div>
                     </div>
                 `;
+
+                // --- RENDER CHART.JS ---
+                const ctx = document.getElementById('userGrowthChart').getContext('2d');
+                chartInstance = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Active Students',
+                            data: dataPoints,
+                            borderColor: '#4F46E5',
+                            backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                            borderWidth: 2,
+                            tension: 0.4,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: { beginAtZero: true, ticks: { stepSize: 1 } }
+                        },
+                        plugins: {
+                            legend: { display: false }
+                        }
+                    }
+                });
+
             } catch (e) {
-                container.innerHTML = `<p class="text-red-500">Error loading dashboard: ${e.message}</p>`;
+                container.innerHTML = `<p class="text-red-500 p-4">Error loading analytics: ${e.message}</p>`;
+                console.error(e);
             }
         }
 
-        // --- 5. USERS & RADAR VIEW ---
+        // --- 5. USERS & RADAR ---
         async function renderUsers(container) {
             const snapshot = await db.collection('users').orderBy('lastActive', 'desc').limit(50).get();
             
@@ -187,11 +279,10 @@
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Academic</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location (Radar)</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">User</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Academic</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Location</th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
@@ -201,135 +292,72 @@
                 const u = doc.data();
                 const isBanned = u.banned === true;
                 
-                // Location Logic
-                let locationLink = `<span class="text-gray-400">Unknown</span>`;
+                // Exact Map Link
+                let locHtml = `<span class="text-gray-400 text-xs">Off Radar</span>`;
                 if(u.location && u.location.lat) {
-                    const mapUrl = `https://www.google.com/maps/search/?api=1&query=${u.location.lat},${u.location.lng}`;
-                    locationLink = `
-                        <a href="${mapUrl}" target="_blank" class="text-indigo-600 hover:text-indigo-900 flex items-center gap-1">
-                            <i class="fa-solid fa-location-dot"></i> See on Map
+                    const mapsLink = `https://www.google.com/maps/search/?api=1&query=${u.location.lat},${u.location.lng}`;
+                    locHtml = `
+                        <a href="${mapsLink}" target="_blank" class="text-indigo-600 hover:text-indigo-900 text-xs font-semibold flex items-center gap-1">
+                            <i class="fa-solid fa-map-pin"></i> View Map
                         </a>
-                        <div class="text-xs text-gray-400">${u.location.lat.toFixed(4)}, ${u.location.lng.toFixed(4)}</div>
+                        <div class="text-[10px] text-gray-400 mt-1">${u.location.lat.toFixed(4)}, ${u.location.lng.toFixed(4)}</div>
                     `;
                 }
 
                 html += `
                     <tr>
-                        <td class="px-6 py-4 whitespace-nowrap">
+                        <td class="px-6 py-4">
                             <div class="flex items-center">
-                                <div class="flex-shrink-0 h-10 w-10">
-                                    <img class="h-10 w-10 rounded-full object-cover" src="${u.photoURL || 'https://via.placeholder.com/40'}" alt="">
-                                </div>
+                                <img class="h-10 w-10 rounded-full object-cover bg-gray-200" src="${u.photoURL || ''}" onerror="this.src='https://via.placeholder.com/40'">
                                 <div class="ml-4">
-                                    <div class="text-sm font-medium text-gray-900">${u.displayName || 'No Name'}</div>
-                                    <div class="text-sm text-gray-500">${u.email}</div>
+                                    <div class="text-sm font-medium text-gray-900">${u.displayName || 'Unknown'}</div>
+                                    <div class="text-xs text-gray-500">${u.email}</div>
                                 </div>
                             </div>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
+                        <td class="px-6 py-4">
                             <div class="text-sm text-gray-900">${u.academic ? u.academic.major : '-'}</div>
                             <div class="text-xs text-gray-500">${u.academic ? u.academic.university : '-'}</div>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            ${locationLink}
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            ${isBanned 
-                                ? '<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Banned</span>' 
-                                : '<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Active</span>'}
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <button onclick="toggleBanUser('${doc.id}', ${!isBanned})" class="text-red-600 hover:text-red-900 ml-4">
-                                ${isBanned ? '<i class="fa-solid fa-unlock"></i> Unban' : '<i class="fa-solid fa-ban"></i> Ban'}
+                        <td class="px-6 py-4">${locHtml}</td>
+                        <td class="px-6 py-4 text-right">
+                            <button onclick="toggleBanUser('${doc.id}', ${!isBanned})" class="text-xs font-bold px-3 py-1 rounded ${isBanned ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}">
+                                ${isBanned ? 'Unban' : 'Ban Access'}
                             </button>
                         </td>
                     </tr>
                 `;
             });
-
             html += `</tbody></table></div>`;
             container.innerHTML = html;
         }
 
-        // --- 6. POSTS & REELS VIEW ---
+        // --- 6. POSTS & REELS ---
         async function renderPosts(container) {
-            const snapshot = await db.collection('posts').orderBy('timestamp', 'desc').limit(50).get();
-            
+            const snapshot = await db.collection('posts').orderBy('timestamp', 'desc').limit(40).get();
             let html = `<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">`;
 
             snapshot.forEach(doc => {
                 const p = doc.data();
-                const type = p.videoUrl ? 'Reel' : 'Post';
-                const likes = p.boosts ? p.boosts.length : 0;
+                const isReel = !!p.videoUrl;
                 
-                // Media Preview
-                let mediaPrev = '';
-                if(p.videoUrl) mediaPrev = `<video src="${p.videoUrl}" class="w-full h-48 object-cover rounded-md bg-black" controls></video>`;
-                else if(p.imageUrl) mediaPrev = `<img src="${p.imageUrl}" class="w-full h-48 object-cover rounded-md">`;
-                else if(p.images && p.images.length > 0) mediaPrev = `<img src="${p.images[0]}" class="w-full h-48 object-cover rounded-md">`;
-                else mediaPrev = `<div class="w-full h-48 bg-gray-100 rounded-md flex items-center justify-center text-gray-400">Text Only</div>`;
+                let media = `<div class="h-48 bg-gray-100 flex items-center justify-center text-gray-400">Text Only</div>`;
+                if(isReel) media = `<video src="${p.videoUrl}" class="w-full h-48 object-cover bg-black" controls></video>`;
+                else if(p.imageUrl) media = `<img src="${p.imageUrl}" class="w-full h-48 object-cover">`;
+                else if(p.images && p.images[0]) media = `<img src="${p.images[0]}" class="w-full h-48 object-cover">`;
 
                 html += `
-                    <div class="card p-4 flex flex-col gap-3">
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-2">
-                                <img src="${p.userPhoto}" class="w-8 h-8 rounded-full">
-                                <span class="text-sm font-bold text-gray-700">${p.userName}</span>
-                            </div>
-                            <span class="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">${type}</span>
+                    <div class="card overflow-hidden">
+                        <div class="p-3 flex items-center justify-between bg-gray-50">
+                            <span class="text-xs font-bold text-gray-600 truncate max-w-[150px]">${p.userName}</span>
+                            <span class="text-[10px] px-2 py-1 rounded bg-gray-200">${isReel ? 'REEL' : 'POST'}</span>
                         </div>
-                        
-                        ${mediaPrev}
-                        
-                        <p class="text-sm text-gray-600 line-clamp-2">${p.text || ''}</p>
-                        
-                        <div class="mt-auto flex items-center justify-between pt-2 border-t border-gray-100">
-                            <div class="text-xs text-gray-500 font-medium">
-                                <i class="fa-solid fa-bolt text-yellow-500"></i> ${likes} Boosts
-                            </div>
-                            <button onclick="deleteContent('posts', '${doc.id}')" class="text-red-500 text-xs hover:text-red-700">
-                                <i class="fa-solid fa-trash"></i> Delete
-                            </button>
-                        </div>
-                    </div>
-                `;
-            });
-            html += `</div>`;
-            container.innerHTML = html;
-        }
-
-        // --- 7. STORIES VIEW ---
-        async function renderStories(container) {
-            // Group by user manually
-            const snapshot = await db.collection('stories').get();
-            const stories = [];
-            snapshot.forEach(doc => stories.push({ id: doc.id, ...doc.data() }));
-
-            if(stories.length === 0) {
-                container.innerHTML = '<p class="text-gray-500">No active stories.</p>';
-                return;
-            }
-
-            let html = `<div class="grid grid-cols-2 md:grid-cols-4 gap-6">`;
-            
-            stories.forEach(s => {
-                // Calculate expiry
-                const now = Date.now();
-                const isExpired = s.expiresAt < now;
-                
-                html += `
-                    <div class="card overflow-hidden relative group">
-                        <img src="${s.imageUrl}" class="w-full h-64 object-cover ${isExpired ? 'opacity-50 grayscale' : ''}">
-                        <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition flex items-center justify-center opacity-0 group-hover:opacity-100">
-                            <button onclick="deleteContent('stories', '${s.id}')" class="bg-red-600 text-white px-4 py-2 rounded-full text-sm font-bold">Delete</button>
-                        </div>
-                        <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-3">
-                            <div class="flex items-center gap-2">
-                                <img src="${s.userPhoto}" class="w-6 h-6 rounded-full border border-white">
-                                <span class="text-white text-xs font-bold truncate">${s.userName}</span>
-                            </div>
-                            <div class="text-white text-xs opacity-80 mt-1">
-                                ${isExpired ? 'Expired' : 'Active'} • <i class="fa-solid fa-eye"></i> ${s.viewers ? s.viewers.length : 0}
+                        ${media}
+                        <div class="p-3">
+                            <p class="text-sm text-gray-600 line-clamp-2 mb-2">${p.text || ''}</p>
+                            <div class="flex justify-between items-center border-t pt-2">
+                                <span class="text-xs text-gray-500"><i class="fa-solid fa-bolt text-yellow-500"></i> ${p.boosts ? p.boosts.length : 0}</span>
+                                <button onclick="deletePost('${doc.id}')" class="text-red-500 hover:text-red-700 text-xs font-bold">DELETE</button>
                             </div>
                         </div>
                     </div>
@@ -339,87 +367,67 @@
             container.innerHTML = html;
         }
 
-        // --- 8. REPORTS VIEW ---
+        // --- 7. REPORTS ---
         async function renderReports(container) {
             const snapshot = await db.collection('reports').orderBy('timestamp', 'desc').get();
-            
-            if(snapshot.empty) {
-                container.innerHTML = '<div class="text-center text-gray-500 mt-10">No reports found. Good job!</div>';
-                return;
-            }
+            if(snapshot.empty) { container.innerHTML = '<div class="text-center text-gray-500 mt-10">No active reports.</div>'; return; }
 
-            let html = `<div class="space-y-4">`;
-            
+            let html = `<div class="space-y-4 max-w-4xl mx-auto">`;
             snapshot.forEach(doc => {
                 const r = doc.data();
-                const statusColor = r.status === 'pending' ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-200';
+                const isResolved = r.status === 'resolved';
                 
                 html += `
-                    <div class="card p-5 border ${statusColor} flex justify-between items-start">
-                        <div>
-                            <div class="flex items-center gap-2 mb-2">
-                                <span class="text-red-600 font-bold text-sm uppercase">Report: ${r.reason}</span>
-                                <span class="text-xs text-gray-400">• ${new Date(r.timestamp?.toDate()).toLocaleDateString()}</span>
+                    <div class="card p-5 border-l-4 ${isResolved ? 'border-green-500 opacity-60' : 'border-red-500'}">
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <span class="text-xs font-bold uppercase tracking-wider ${isResolved ? 'text-green-600' : 'text-red-600'}">
+                                    ${r.reason}
+                                </span>
+                                <span class="text-xs text-gray-400 ml-2">${r.timestamp ? new Date(r.timestamp.toDate()).toLocaleString() : ''}</span>
                             </div>
-                            <p class="text-sm text-gray-800 mb-1">
-                                <strong>Reported User:</strong> ${r.reportedUserName} (ID: ${r.reportedUserUid})
-                            </p>
-                            <p class="text-xs text-gray-500">
-                                Reported by: ${r.reporterName}
-                            </p>
-                            <div class="mt-2 text-xs bg-white px-2 py-1 rounded border border-gray-200 inline-block">Target ID: ${r.postId}</div>
+                            ${!isResolved ? `<button onclick="resolveReport('${doc.id}')" class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">Mark Resolved</button>` : ''}
                         </div>
-                        <div class="flex flex-col gap-2">
-                            ${r.status === 'pending' ? `
-                                <button onclick="deleteContent('posts', '${r.postId}')" class="text-xs bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700">Delete Content</button>
-                                <button onclick="toggleBanUser('${r.reportedUserUid}', true)" class="text-xs bg-gray-800 text-white px-3 py-1 rounded hover:bg-gray-900">Ban User</button>
-                                <button onclick="resolveReport('${doc.id}')" class="text-xs border border-green-600 text-green-600 px-3 py-1 rounded hover:bg-green-50">Mark Resolved</button>
-                            ` : `<span class="text-green-600 text-sm font-bold"><i class="fa-solid fa-check"></i> Resolved</span>`}
-                        </div>
+                        <p class="text-sm text-gray-800"><strong>Target:</strong> ${r.reportedUserName} (ID: ${r.reportedUserUid})</p>
+                        <p class="text-xs text-gray-500 mb-3">Reported by: ${r.reporterName}</p>
+                        
+                        ${!isResolved ? `
+                            <div class="flex gap-3 mt-3">
+                                <button onclick="deletePost('${r.postId}')" class="text-xs bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700">Delete Content</button>
+                                <button onclick="toggleBanUser('${r.reportedUserUid}', true)" class="text-xs bg-gray-800 text-white px-3 py-1 rounded hover:bg-black">Ban User</button>
+                            </div>
+                        ` : ''}
                     </div>
                 `;
             });
-            
             html += `</div>`;
             container.innerHTML = html;
         }
 
         // --- ACTIONS ---
-
         async function toggleBanUser(uid, shouldBan) {
-            if(!confirm(shouldBan ? "Ban this user? They will be logged out locally." : "Unban this user?")) return;
-            
+            if(!confirm(shouldBan ? "BAN USER? They will lose access immediately." : "RESTORE USER?")) return;
             try {
-                // We set a 'banned' flag in Firestore. The client app must listen for this.
-                await db.collection('users').doc(uid).update({
-                    banned: shouldBan
-                });
-                alert("User status updated. (Note: Ensure your app checks user.banned)");
-                loadView('users'); // Refresh
-            } catch(e) {
-                alert("Error: " + e.message);
-            }
+                await db.collection('users').doc(uid).update({ banned: shouldBan });
+                alert("User status updated.");
+                loadView('users');
+            } catch(e) { alert(e.message); }
         }
 
-        async function deleteContent(collection, id) {
+        async function deletePost(pid) {
             if(!confirm("Permanently delete this content?")) return;
             try {
-                await db.collection(collection).doc(id).delete();
-                // Refresh current view
-                const current = document.querySelector('.sidebar a.active').id.replace('nav-', '');
-                loadView(current);
-            } catch(e) {
-                alert("Error deleting: " + e.message);
-            }
+                await db.collection('posts').doc(pid).delete();
+                alert("Deleted.");
+                loadView('posts'); // Refresh might depend on current view logic, simple reload for now
+            } catch(e) { alert(e.message); }
         }
 
-        async function resolveReport(reportId) {
+        async function resolveReport(rid) {
             try {
-                await db.collection('reports').doc(reportId).update({ status: 'resolved' });
+                await db.collection('reports').doc(rid).update({ status: 'resolved' });
                 loadView('reports');
-            } catch(e) {
-                alert("Error: " + e.message);
-            }
+            } catch(e) { alert(e.message); }
         }
 
     </script>
