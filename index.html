@@ -1920,6 +1920,54 @@ select.nexus-input {
     opacity: 0 !important;
 }
 
+/* --- OVERLAY BUTTON STYLES --- */
+.t-overlay-controls {
+    position: absolute;
+    bottom: 15px; /* Spacing from bottom of image */
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: space-between; /* Pushes buttons to edges */
+    padding: 0 25px; /* Side padding */
+    z-index: 20;
+    pointer-events: none; /* Allows clicks to pass through the empty space between buttons */
+}
+
+.t-action-btn {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.6rem;
+    
+    /* Glassmorphism Effect */
+    background: rgba(0, 0, 0, 0.6); 
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+    cursor: pointer;
+    transition: transform 0.2s, background 0.2s;
+    pointer-events: auto; /* Re-enable clicking for just the buttons */
+}
+
+.t-action-btn.pass {
+    color: #ff5555; /* Red X */
+}
+
+.t-action-btn.like {
+    color: #00e676; /* Green Heart */
+    background: rgba(0, 230, 118, 0.15); /* Slight green tint background */
+    border-color: rgba(0, 230, 118, 0.4);
+}
+
+.t-action-btn:active {
+    transform: scale(0.9);
+}
+
 
     </style>
 </head>
@@ -2232,14 +2280,7 @@ select.nexus-input {
             <div class="loader-spinner"></div>
         </div>
 
-        <div class="suggestion-controls">
-            <button class="swipe-btn pass" onclick="triggerSwipe('left')">
-                <i class="fa-solid fa-xmark"></i>
-            </button>
-            <button class="swipe-btn connect" onclick="triggerSwipe('right')">
-                <i class="fa-solid fa-heart"></i>
-            </button>
-        </div>
+    
     </div>
 
     <div id="tab-content-search" style="display: none; padding: 0 5px;">
@@ -2827,13 +2868,15 @@ function loadSuggestions() {
 // 4. RENDER SINGLE CARD
 // --- UPDATED CARD RENDERER ---
 
+// --- UPDATED CARD RENDERER WITH OVERLAY BUTTONS ---
+
 function renderSwipeCard() {
     const container = document.getElementById('suggestion-stack');
-    container.innerHTML = ''; // Clear
+    container.innerHTML = ''; // Clear previous
 
     if (currentCardIndex >= suggestedUsers.length) {
         container.innerHTML = `
-            <div style="text-align:center; padding: 20px;">
+            <div style="text-align:center; padding: 20px; animation: scaleIn 0.3s ease;">
                 <div style="font-size:3rem; margin-bottom:10px;">🎉</div>
                 <h3>All Caught Up!</h3>
                 <p style="color:var(--text-secondary); margin-bottom:20px;">Check back later for more suggestions.</p>
@@ -2862,7 +2905,16 @@ function renderSwipeCard() {
                 <div class="match-badge">${u.matchScore}% Match</div>
                 <img src="${u.photoURL || 'default.png'}" class="t-card-img">
                 <div class="t-card-overlay"></div>
-            </div>
+
+                <div class="t-overlay-controls">
+                    <div class="t-action-btn pass" onclick="event.stopPropagation(); triggerSwipe('left')">
+                        <i class="fa-solid fa-xmark"></i>
+                    </div>
+                    <div class="t-action-btn like" onclick="event.stopPropagation(); triggerSwipe('right')">
+                        <i class="fa-solid fa-heart"></i>
+                    </div>
+                </div>
+                </div>
 
             <div class="t-card-info">
                 <div class="t-name-row">
