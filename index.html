@@ -1756,110 +1756,167 @@ select.nexus-input {
 }
 
 /* --- TINDER / SUGGESTION STYLES --- */
+/* --- IMPROVED SUGGESTION CARD STYLES --- */
 .suggestion-container {
-    height: 65vh;
+    height: 70vh; /* Taller area for better visibility */
     position: relative;
     display: flex;
     justify-content: center;
     align-items: center;
-    overflow: hidden;
     margin-top: 10px;
+    perspective: 1000px; /* Adds 3D depth for swipes */
 }
 
 .tinder-card {
     position: absolute;
-    width: 90%;
-    max-width: 340px;
+    width: 95%; /* Slightly wider for mobile */
+    max-width: 360px;
     height: 100%;
     background: var(--bg-card);
-    border-radius: 20px;
+    border-radius: 24px; /* Softer corners */
     border: 1px solid var(--border);
-    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    box-shadow: 0 15px 40px rgba(0,0,0,0.4);
     overflow: hidden;
-    transition: transform 0.3s ease, opacity 0.3s ease;
+    transform-origin: 50% 100%;
+    transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), opacity 0.3s;
     display: flex;
     flex-direction: column;
 }
 
-.t-card-img {
+/* Image Section (70% of card) */
+.t-card-img-container {
     width: 100%;
-    height: 60%;
-    object-fit: cover;
+    height: 70%;
+    position: relative;
     background-color: var(--bg-input);
 }
 
-.t-card-info {
-    padding: 15px;
-    flex: 1;
-    background: linear-gradient(to bottom, var(--bg-card), var(--bg-main));
-    position: relative;
+.t-card-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
 }
 
+/* Gradient Overlay for Text Visibility on Image */
+.t-card-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 40%;
+    background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+    z-index: 1;
+}
+
+/* Match Badge (Floating top right) */
 .match-badge {
     position: absolute;
-    top: -15px;
+    top: 20px;
     right: 20px;
-    background: var(--accent);
+    background: rgba(10, 132, 255, 0.9); /* Accent color */
     color: white;
-    padding: 6px 12px;
-    border-radius: 20px;
+    padding: 6px 14px;
+    border-radius: 50px;
     font-weight: 700;
-    font-size: 0.9rem;
-    box-shadow: 0 4px 10px var(--accent-glow);
-    border: 2px solid var(--bg-card);
+    font-size: 0.85rem;
+    backdrop-filter: blur(4px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    z-index: 10;
+    border: 1px solid rgba(255,255,255,0.2);
 }
 
+/* Info Section (30% of card) */
+.t-card-info {
+    flex: 1;
+    padding: 15px 20px;
+    background: var(--bg-card);
+    position: relative;
+    z-index: 2;
+    border-top: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    justify-content: center; /* Vertically center content */
+}
+
+/* Typography Fixes */
+.t-name-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 4px;
+}
+
+.t-name {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.2;
+}
+
+.t-details {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    color: var(--accent);
+    margin-bottom: 8px;
+}
+
+.t-uni {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 12px;
+}
+
+/* Common Interests Row */
 .common-interests-row {
     display: flex;
-    gap: 5px;
+    gap: 8px;
     overflow-x: auto;
-    margin-top: 10px;
+    scrollbar-width: none; /* Firefox */
     padding-bottom: 5px;
+    mask-image: linear-gradient(to right, black 90%, transparent 100%); /* Fade out end */
+    -webkit-mask-image: linear-gradient(to right, black 90%, transparent 100%);
 }
+.common-interests-row::-webkit-scrollbar { display: none; }
 
 .common-chip {
-    font-size: 0.7rem;
-    padding: 4px 8px;
-    border-radius: 10px;
-    background: rgba(46, 204, 113, 0.15);
-    color: #2ecc71;
-    border: 1px solid rgba(46, 204, 113, 0.3);
+    font-size: 0.75rem;
+    padding: 6px 12px;
+    border-radius: 12px;
+    background: rgba(46, 204, 113, 0.1);
+    color: #2ecc71; /* Green for match */
+    border: 1px solid rgba(46, 204, 113, 0.2);
     white-space: nowrap;
-}
-
-.suggestion-controls {
     display: flex;
-    justify-content: center;
-    gap: 25px;
-    margin-top: 20px;
+    align-items: center;
+    gap: 5px;
 }
 
-.swipe-btn {
-    width: 60px;
-    height: 60px;
+/* Info Button */
+.t-info-btn {
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
+    background: var(--bg-input);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.5rem;
-    background: var(--bg-card);
-    border: 1px solid var(--border);
+    color: var(--text-secondary);
     cursor: pointer;
-    transition: transform 0.2s;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    transition: background 0.2s;
 }
-
-.swipe-btn:active { transform: scale(0.9); }
-.swipe-btn.pass { color: #ff5555; border-color: rgba(255, 85, 85, 0.3); }
-.swipe-btn.connect { color: #00e676; border-color: rgba(0, 230, 118, 0.3); }
+.t-info-btn:active { background: var(--border); color: var(--text-primary); }
 
 /* Animation Classes */
 .slide-out-left {
-    transform: translateX(-150%) rotate(-20deg) !important;
+    transform: translateX(-150%) rotate(-15deg) !important;
     opacity: 0 !important;
 }
 .slide-out-right {
-    transform: translateX(150%) rotate(20deg) !important;
+    transform: translateX(150%) rotate(15deg) !important;
     opacity: 0 !important;
 }
 
@@ -2768,17 +2825,19 @@ function loadSuggestions() {
 }
 
 // 4. RENDER SINGLE CARD
+// --- UPDATED CARD RENDERER ---
+
 function renderSwipeCard() {
     const container = document.getElementById('suggestion-stack');
     container.innerHTML = ''; // Clear
 
     if (currentCardIndex >= suggestedUsers.length) {
         container.innerHTML = `
-            <div style="text-align:center;">
-                <div style="font-size:3rem;">🎉</div>
-                <h3>That's everyone!</h3>
-                <p style="color:var(--text-secondary)">Check back later for more suggestions.</p>
-                <button class="secondary-btn" onclick="loadSuggestions()">Refresh</button>
+            <div style="text-align:center; padding: 20px;">
+                <div style="font-size:3rem; margin-bottom:10px;">🎉</div>
+                <h3>All Caught Up!</h3>
+                <p style="color:var(--text-secondary); margin-bottom:20px;">Check back later for more suggestions.</p>
+                <button class="secondary-btn" onclick="loadSuggestions()" style="width:auto;">Refresh Radar</button>
             </div>
         `;
         return;
@@ -2790,37 +2849,39 @@ function renderSwipeCard() {
     let interestHTML = '';
     if (u.commonInterests.length > 0) {
         interestHTML = `<div class="common-interests-row">
-            <span style="font-size:0.7rem; color:var(--text-secondary); align-self:center;">Common:</span>
             ${u.commonInterests.map(i => `<div class="common-chip"><i class="fa-solid fa-check"></i> ${i}</div>`).join('')}
         </div>`;
+    } else {
+        interestHTML = `<div class="common-interests-row"><div class="common-chip" style="border-style:dashed; color:var(--text-secondary); border-color:var(--border);">No common tags</div></div>`;
     }
 
     const cardHTML = `
-        <div id="active-card" class="tinder-card" onclick="openUserProfile('${u.uid}')">
-            <div class="match-badge">${u.matchScore}% Match</div>
-            <img src="${u.photoURL || 'default.png'}" class="t-card-img">
+        <div id="active-card" class="tinder-card">
+            
+            <div class="t-card-img-container" onclick="openUserProfile('${u.uid}')">
+                <div class="match-badge">${u.matchScore}% Match</div>
+                <img src="${u.photoURL || 'default.png'}" class="t-card-img">
+                <div class="t-card-overlay"></div>
+            </div>
+
             <div class="t-card-info">
-                <div class="h-flex" style="justify-content:space-between; align-items:flex-start;">
-                    <div>
-                        <div style="font-weight:700; font-size:1.4rem;">${u.displayName}</div>
-                        <div class="mono" style="color:var(--accent); font-size:0.85rem;">
-                            ${u.academic.major} • ${u.academic.year}
-                        </div>
-                    </div>
-                    <div style="text-align:right;">
-                        <i class="fa-solid fa-circle-info" style="font-size:1.5rem; color:var(--text-secondary);"></i>
+                <div class="t-name-row">
+                    <div class="t-name">${u.displayName.split(' ')[0]}</div>
+                    <div class="t-info-btn" onclick="openUserProfile('${u.uid}')">
+                        <i class="fa-solid fa-info"></i>
                     </div>
                 </div>
                 
-                <div style="font-size:0.85rem; color:var(--text-secondary); margin-top:5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                    <i class="fa-solid fa-building-columns"></i> ${u.academic.university}
+                <div class="t-details">
+                    ${u.academic.major || 'Student'} • ${u.academic.year || '1st Year'}
+                </div>
+
+                <div class="t-uni">
+                    <i class="fa-solid fa-building-columns" style="color:var(--text-secondary);"></i> 
+                    ${u.academic.university}
                 </div>
 
                 ${interestHTML}
-
-                <div style="margin-top:10px; font-style:italic; font-size:0.9rem; color:var(--text-primary); opacity:0.8;">
-                    "${u.futureGoal || 'Ready to connect'}"
-                </div>
             </div>
         </div>
     `;
@@ -4100,39 +4161,36 @@ function requestGPS() {
     }
 }
 
+// --- UPDATED GPS LOGIC ---
+
 function handlePermissionState(state) {
     const statusEl = document.getElementById('gps-status-indicator');
     const warningDiv = document.getElementById('radar-permission-warning');
     const contentDiv = document.getElementById('radar-content');
     const msg = document.getElementById('gps-msg');
-    const manualInst = document.getElementById('gps-manual-instruction');
     const retryBtn = document.getElementById('btn-gps-retry');
 
-    // Reset UI visibility
-    contentDiv.classList.add('hidden');
-    warningDiv.classList.remove('hidden');
-    warningDiv.style.display = 'flex';
-    manualInst.classList.add('hidden');
+    // ONLY reset UI if we haven't already successfully loaded the radar
+    // This prevents the "Allow" button from flickering back if permission state changes oddly
+    if (!myLocation) {
+        contentDiv.classList.add('hidden');
+        warningDiv.classList.remove('hidden');
+        warningDiv.style.display = 'flex';
+    }
 
     if (state === 'granted') {
-        // PERMISSION GRANTED: Go ahead
         statusEl.innerHTML = 'STATUS: <span style="color:#4dabf8">ACTIVE</span>';
-        warningDiv.classList.add('hidden');
-        contentDiv.classList.remove('hidden');
-        attemptGeoFetch(); // Actually get the coords
+        attemptGeoFetch(); // The callback inside this function will handle the UI switch
     } 
     else if (state === 'prompt') {
-        // PROMPT: User hasn't decided yet
         statusEl.innerHTML = 'STATUS: <span style="color:#FFD700">WAITING</span>';
         msg.innerText = "Please tap 'Allow' when the browser popup appears.";
         retryBtn.style.display = 'block';
     } 
     else if (state === 'denied') {
-        // DENIED: User blocked it. Button won't work.
         statusEl.innerHTML = 'STATUS: <span style="color:#ff5555">BLOCKED</span>';
-        msg.innerText = "Location access is blocked. We cannot open the popup again.";
-        manualInst.classList.remove('hidden'); // Show instruction how to fix
-        retryBtn.style.display = 'none'; // Hide button since it won't work
+        msg.innerText = "Location access is blocked. Check site settings.";
+        retryBtn.style.display = 'none';
     }
 }
 
@@ -4141,26 +4199,31 @@ function attemptGeoFetch() {
 
     navigator.geolocation.getCurrentPosition(
         (position) => {
-            // SUCCESS
+            // --- SUCCESS: FORCE UI UPDATE HERE ---
             const lat = position.coords.latitude;
             const lng = position.coords.longitude;
             myLocation = { lat, lng };
 
+            // 1. Force Hide Warning / Show Content
+            document.getElementById('radar-permission-warning').classList.add('hidden');
+            document.getElementById('radar-permission-warning').style.display = 'none'; // Double assurance
+            document.getElementById('radar-content').classList.remove('hidden');
+
+            // 2. Update Status
+            document.getElementById('gps-status-indicator').innerHTML = 'STATUS: <span style="color:#00e676">ONLINE</span>';
+
+            // 3. Save to DB
             db.collection('users').doc(currentUser.uid).update({
                 location: { lat, lng },
                 lastActive: firebase.firestore.FieldValue.serverTimestamp()
             });
             
-            // Ensure UI is correct (in case Permissions API wasn't supported)
-            document.getElementById('radar-permission-warning').classList.add('hidden');
-            document.getElementById('radar-content').classList.remove('hidden');
-            
+            // 4. Load Data
             loadNearbyUsers();
         },
         (error) => {
-            // ERROR (Denied or Timeout)
             console.warn("GPS Error", error);
-            // If error is PERMISSION_DENIED (code 1), force denied state UI
+            // Only show denied UI if we truly failed
             if(error.code === 1) handlePermissionState('denied');
         },
         { enableHighAccuracy: true, timeout: 10000 }
