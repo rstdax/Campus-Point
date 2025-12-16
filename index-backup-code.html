@@ -5602,7 +5602,9 @@ function reportPost(pid, reportedUid, reportedName) {
         
         <div class="post-actions">
             <div class="action-item ${isBoosted ? 'boosted' : ''}" onclick="toggleBoost('${pid}')">
-                <i class="fa-solid fa-bolt"></i><span>Boost (${boosts.length})</span>
+                <i id="post-boost-icon-${pid}" class="fa-solid fa-bolt" style="transition: transform 0.2s; ${isBoosted ? 'color: var(--boost-color); transform: scale(1.3);' : ''}"></i>
+                
+                <span>Boost (<span id="post-boost-count-${pid}">${boosts.length}</span>)</span>
             </div>
             <div class="action-item" onclick="toggleDiscussion('${pid}')">
                 <i class="fa-regular fa-comment-dots"></i><span>Discussion</span>
@@ -5814,36 +5816,51 @@ function updateCarouselDots(pid, count) {
 
     function toggleBoost(pid, isReel = false) {
     // 1. OPTIMISTIC UI UPDATE (Real-time feel)
-    // Identify elements based on context
     let icon, countSpan;
-    
+
     if (isReel) {
+        // Target elements for Reels
         icon = document.getElementById(`reel-boost-icon-${pid}`);
         countSpan = document.getElementById(`reel-boost-count-${pid}`);
     } else {
-        // Fallback logic for feed posts (assuming they just use generic classes inside the post element)
-        // Note: For best results, Feed posts should also have unique IDs, but we can try to find them:
-        // This part assumes standard DOM structure for feed posts.
-        // Ideally, update renderPost to add IDs: id="post-boost-icon-${pid}"
+        // FIX: Target elements for Feed Posts (Added IDs)
+        icon = document.getElementById(`post-boost-icon-${pid}`);
+        countSpan = document.getElementById(`post-boost-count-${pid}`);
     }
 
     // Determine state
     let isCurrentlyBoosted = false;
-    
+
     if (icon) {
-        // Check current color to determine state
-        isCurrentlyBoosted = icon.style.color === 'var(--boost-color)'; // Gold color
-        
+        // Check current state by color or class
+        // (Using class is safer than relying solely on computed color strings)
+        isCurrentlyBoosted = icon.style.color === 'var(--boost-color)' || icon.classList.contains('boosted-active');
+
         // Toggle State Visually
         if (isCurrentlyBoosted) {
-            icon.style.color = 'white';
+            // UN-BOOST ACTION
+            icon.style.color = ''; // Remove inline color to revert to CSS default
+            icon.classList.remove('boosted-active');
             icon.style.transform = 'scale(1)';
-            if(countSpan) countSpan.innerText = Math.max(0, parseInt(countSpan.innerText) - 1);
+            
+            if (countSpan) {
+                let currentCount = parseInt(countSpan.innerText) || 0;
+                countSpan.innerText = Math.max(0, currentCount - 1);
+            }
         } else {
-            icon.style.color = 'var(--boost-color)';
+            // BOOST ACTION
+            icon.style.color = 'var(--boost-color)'; // Apply Gold Color
+            icon.classList.add('boosted-active');
+            
+            // Animation
             icon.style.transform = 'scale(1.3)';
             setTimeout(() => icon.style.transform = 'scale(1)', 200); // Pulse effect
-            if(countSpan) countSpan.innerText = parseInt(countSpan.innerText) + 1;
+            
+            if (countSpan) {
+                let currentCount = parseInt(countSpan.innerText) || 0;
+                countSpan.innerText = currentCount + 1;
+            }
+            
             showBoostAnimation(); // Trigger the GIF overlay
         }
     }
@@ -5857,19 +5874,19 @@ function updateCarouselDots(pid, count) {
             const data = doc.data();
             const boosts = data.boosts || [];
             const dbIsBoosted = boosts.includes(currentUser.uid);
-            
+
             // Extract needed data for notification
-            const postAuthorUid = data.uid; 
+            const postAuthorUid = data.uid;
             const postImage = data.imageUrl || null;
 
-            t.update(ref, { 
-                boosts: dbIsBoosted 
-                    ? firebase.firestore.FieldValue.arrayRemove(currentUser.uid) 
-                    : firebase.firestore.FieldValue.arrayUnion(currentUser.uid) 
+            t.update(ref, {
+                boosts: dbIsBoosted
+                    ? firebase.firestore.FieldValue.arrayRemove(currentUser.uid)
+                    : firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
             });
-            
-            return { 
-                wasBoosted: !dbIsBoosted, 
+
+            return {
+                wasBoosted: !dbIsBoosted,
                 authorUid: postAuthorUid,
                 image: postImage
             };
@@ -5880,14 +5897,22 @@ function updateCarouselDots(pid, count) {
         }
     }).catch(error => {
         console.error("Boost failed:", error);
-        // Revert UI if DB fails (Optional, prevents desync)
+        
+        // Revert UI if DB fails (Prevents desync)
         if (icon) {
-            if (icon.style.color === 'white') {
-                icon.style.color = 'var(--boost-color)';
-                if(countSpan) countSpan.innerText = parseInt(countSpan.innerText) + 1;
+            // If the icon is currently colored gold (meaning we optimistically boosted it), revert it
+            const isActiveNow = icon.style.color === 'var(--boost-color)';
+            
+            if (isActiveNow) {
+                // Revert to Un-boosted
+                icon.style.color = '';
+                icon.classList.remove('boosted-active');
+                if(countSpan) countSpan.innerText = Math.max(0, parseInt(countSpan.innerText) - 1);
             } else {
-                icon.style.color = 'white';
-                if(countSpan) countSpan.innerText = parseInt(countSpan.innerText) - 1;
+                // Revert to Boosted
+                icon.style.color = 'var(--boost-color)';
+                icon.classList.add('boosted-active');
+                if(countSpan) countSpan.innerText = parseInt(countSpan.innerText) + 1;
             }
         }
     });
