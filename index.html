@@ -3868,16 +3868,40 @@ function retryGPS() {
     }
 
     function checkUserProfile(user) {
-        db.collection('users').doc(user.uid).get().then(doc => {
-            if (doc.exists) {
-                globalProfileData = doc.data();
-                loadAppInterface(globalProfileData);
-            } else {
-                document.getElementById('setup-name').value = user.displayName;
-                switchTab('setup', null);
+    // We use onSnapshot so if you ban them while they are online,
+    // they get redirected immediately without needing to refresh.
+    db.collection('users').doc(user.uid).onSnapshot(doc => {
+        if (doc.exists) {
+            const userData = doc.data();
+
+            // --- 🛑 SECURITY: BAN CHECK START ---
+            if (userData.banned === true) {
+                console.log("User is banned. Redirecting...");
+                
+                // 1. Force Firebase Logout (Security requirement)
+                auth.signOut().then(() => {
+                    // 2. Redirect to the Ban Page
+                    window.location.href = 'ban.html';
+                });
+                return; // Stop the app from loading further
             }
-        });
-    }
+            // --- SECURITY: BAN CHECK END ---
+
+            globalProfileData = userData;
+
+            // Only load the interface if it's not already loaded
+            // (This prevents the app from flickering if the user just updates their bio)
+            const nav = document.getElementById('main-nav');
+            if (nav.classList.contains('hidden')) {
+                loadAppInterface(globalProfileData);
+            }
+        } else {
+            // New User Setup Flow
+            document.getElementById('setup-name').value = user.displayName;
+            switchTab('setup', null);
+        }
+    });
+}
 
     async function completeSetup() {
     const name = document.getElementById('setup-name').value;
