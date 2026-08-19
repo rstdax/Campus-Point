@@ -1022,6 +1022,20 @@
     border: 1px solid var(--bg-glass);
 }
 
+/* --- DYNAMIC UI VISIBILITY --- */
+        body.hide-header .header {
+            display: none !important;
+        }
+        
+        /* Adds safe-area top padding so content doesn't get stuck under the mobile status bar when the header is hidden */
+        body.hide-header .content-area:not(#section-profile):not(#section-other-profile):not(#section-setup) {
+            padding-top: 40px !important; 
+        }
+
+        body.hide-nav #main-nav {
+            display: none !important;
+        }
+
 .notif-item {
     display: flex;
     align-items: center;
@@ -3888,6 +3902,23 @@ function router() {
         // Fallback if ID doesn't exist
         window.location.hash = 'feed';
         return;
+    }
+
+    // --- NEW: DYNAMIC HEADER VISIBILITY ---
+    // The top header should ONLY be visible on the Home ('feed') page
+    if (newHash === 'feed') {
+        document.body.classList.remove('hide-header');
+    } else {
+        document.body.classList.add('hide-header');
+    }
+
+    // --- NEW: DYNAMIC BOTTOM NAV VISIBILITY ---
+    // The bottom nav should ONLY be visible on the 5 primary tabs
+    const mainTabs = ['feed', 'radar', 'create', 'chat-list', 'profile'];
+    if (mainTabs.includes(newHash)) {
+        document.body.classList.remove('hide-nav');
+    } else {
+        document.body.classList.add('hide-nav');
     }
 
     // 5. FAB Visibility
