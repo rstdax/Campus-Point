@@ -2429,10 +2429,10 @@ select.nexus-input {
         </div>
 
         <div class="result-tabs">
-            <div class="result-tab">All</div>
-            <div class="result-tab active">People</div>
-            <div class="result-tab">Services</div>
-            <div class="result-tab">Posts</div>
+            <div class="result-tab" onclick="switchSearchTab('all', this)">All</div>
+            <div class="result-tab active" onclick="switchSearchTab('people', this)">People</div>
+            <div class="result-tab" onclick="switchSearchTab('services', this)">Services</div>
+            <div class="result-tab" onclick="switchSearchTab('posts', this)">Posts</div>
         </div>
 
         <div class="distance-slider-container">
@@ -3008,6 +3008,7 @@ function calculateMatchScore(me, other) {
 // --- NEW SEARCH & EXPLORE SYSTEM ---
 
 let searchMaxRange = 5000; // Default 5 km (in meters)
+let activeSearchTab = 'people'; // Default tab
 
 function openSearchResults(initialQuery) {
     document.getElementById('search-home-view').classList.add('hidden');
@@ -3031,6 +3032,16 @@ function updateMaxDistance(val) {
     triggerRadarSearch(document.getElementById('active-search-input').value);
 }
 
+function switchSearchTab(tabName, element) {
+    // 1. Update UI Tabs
+    document.querySelectorAll('.result-tab').forEach(el => el.classList.remove('active'));
+    element.classList.add('active');
+    
+    // 2. Set State & Trigger Search
+    activeSearchTab = tabName;
+    triggerRadarSearch(document.getElementById('active-search-input').value);
+}
+
 function triggerRadarSearch(query) {
     const resultsContainer = document.getElementById('global-search-results');
     const radar = document.getElementById('radar-loading');
@@ -3038,120 +3049,145 @@ function triggerRadarSearch(query) {
     resultsContainer.innerHTML = '';
     radar.classList.remove('hidden'); // Show Animation
     
-    // Fake a loading delay to let the radar spin (1.5 seconds)
+    // Fake a loading delay to let the radar spin (1.2 seconds)
     setTimeout(() => {
         radar.classList.add('hidden'); // Hide Animation
-        
-        if(query && query.trim() !== '') {
-            executeTextSearch(query);
-        } else {
-            loadNearbyUsers();
-        }
-    }, 1500);
+        performSearchLogic(query ? query.toLowerCase() : '');
+    }, 1200);
 }
 
 let searchTimeout = null;
 function handleUserSearch(query) {
     if (searchTimeout) clearTimeout(searchTimeout);
     
-    // If they delete the text, just load nearby default
-    if (!query || query.trim() === '') {
-        triggerRadarSearch('');
-        return;
-    }
-
     // Standard debounce for typing
     searchTimeout = setTimeout(() => {
-        executeTextSearch(query);
+        const container = document.getElementById('global-search-results');
+        container.innerHTML = '<div class="loader-spinner" style="margin: 20px auto;"></div>';
+        performSearchLogic(query ? query.toLowerCase() : '');
     }, 500);
 }
 
-function executeTextSearch(query) {
+// Unified Search Engine for Location, Skills, Interests, and Posts
+function performSearchLogic(query) {
     const container = document.getElementById('global-search-results');
-    container.innerHTML = '<div class="loader-spinner" style="margin: 20px auto;"></div>';
+    container.innerHTML = ''; // Clear container
+
+    // --- SEARCH PEOPLE / SERVICES ---
+    if (activeSearchTab === 'people' || activeSearchTab === 'services' || activeSearchTab === 'all') {
+        
+        db.collection('users').orderBy('lastActive', 'desc').limit(50).get().then(snap => {
+            let matches = [];
+            
+            snap.forEach(doc => {
+                const u = doc.data();
+                if (u.uid === currentUser.uid) return; // Skip self
+
+                // 1. Distance Filter
+                let dist = null;
+                let distText = 'Unknown';
+                if (myLocation && u.location) {
+                    dist = getDistanceFromLatLonInMeters(myLocation.lat, myLocation.lng, u.location.lat, u.location.lng);
+                    distText = (dist / 1000).toFixed(1) + ' km away';
+                }
+                if (dist !== null && dist > searchMaxRange) return; // Skip if outside slider range
+
+                // 2. Text Query Filter (Checks Name, Skill, AND Interests)
+                let matchesQuery = true;
+                if (query) {
+                    const nameMatch = u.displayName && u.displayName.toLowerCase().includes(query);
+                    const skillMatch = u.skill && u.skill.toLowerCase().includes(query);
+                    const interestMatch = u.interests && u.interests.some(i => i.toLowerCase().includes(query));
+                    
+                    matchesQuery = nameMatch || skillMatch || interestMatch;
+                }
+                if (!matchesQuery) return; // Skip if doesn't match typing
+
+                // 3. Tab Specific Filter (Services tab requires a skill and a rate)
+                if (activeSearchTab === 'services') {
+                    if (!u.skill || !u.rate) return; 
+                }
+
+                matches.push({ ...u, distance: dist, distText: distText });
+            });
+
+            // Sort by closest distance
+            matches.sort((a, b) => (a.distance || 0) - (b.distance || 0));
+
+            // Render Results
+            let htmlString = "";
+            if (activeSearchTab === 'all' && matches.length > 0) {
+                htmlString += '<h4 style="margin: 15px 0 10px; font-size: 0.9rem; color: var(--text-secondary); padding: 0 15px;">PEOPLE & SERVICES</h4>';
+            }
+
+            if (matches.length === 0 && (activeSearchTab === 'people' || activeSearchTab === 'services')) {
+                htmlString += `<p style="text-align:center; color:var(--text-secondary); margin-top:20px;">No ${activeSearchTab} found within ${searchMaxRange/1000} km.</p>`;
+            } else {
+                // Limit to 3 if "All" tab, otherwise show 20
+                const limit = activeSearchTab === 'all' ? 3 : 20;
+                matches.slice(0, limit).forEach(u => {
+                    htmlString += renderFreelancerCard(u, u.distText);
+                });
+            }
+            
+            // Append HTML securely
+            container.insertAdjacentHTML('beforeend', htmlString);
+
+            // If tab is "All", fire off the post search next
+            if (activeSearchTab === 'all') searchPosts(query, container, 3);
+        });
+    } 
     
-    db.collection('users')
-      .where('displayName', '>=', query)
-      .where('displayName', '<=', query + '\uf8ff')
-      .limit(15)
-      .get()
-      .then(snapshot => {
-          container.innerHTML = '';
-          if (snapshot.empty) {
-              container.innerHTML = '<p style="text-align:center; color:var(--text-secondary); margin-top:20px;">No exact matches found.</p>';
-              return;
-          }
-          snapshot.forEach(doc => {
-              const u = doc.data();
-              if(u.uid !== currentUser.uid) {
-                  // Calculate mock distance if available
-                  let distText = 'Unknown';
-                  if(myLocation && u.location) {
-                      const d = getDistanceFromLatLonInMeters(myLocation.lat, myLocation.lng, u.location.lat, u.location.lng);
-                      distText = (d / 1000).toFixed(1) + ' km away';
-                  }
-                  container.innerHTML += renderFreelancerCard(u, distText);
-              }
-          });
-      })
-      .catch(err => {
-          console.error(err);
-          container.innerHTML = '<p style="text-align:center; color:#ff5555;">Search error.</p>';
-      });
+    // --- SEARCH POSTS ONLY ---
+    if (activeSearchTab === 'posts') {
+        searchPosts(query, container, 20);
+    }
 }
 
-function loadNearbyUsers() {
-    const list = document.getElementById('global-search-results');
-    
-    db.collection('users').orderBy('lastActive', 'desc').limit(20).get().then(snap => {
-        list.innerHTML = '';
-        let usersWithDistance = [];
+function searchPosts(query, container, limitCount) {
+    db.collection('posts').orderBy('timestamp', 'desc').limit(30).get().then(snap => {
+        let matchedPosts = [];
         
         snap.forEach(doc => {
-            const u = doc.data();
-            if(u.uid !== currentUser.uid) {
-                let dist = null;
-                if(myLocation && u.location) {
-                    dist = getDistanceFromLatLonInMeters(myLocation.lat, myLocation.lng, u.location.lat, u.location.lng);
-                }
-                // Filter by Max Range Slider Value
-                if (dist !== null && dist <= searchMaxRange) {
-                    usersWithDistance.push({ ...u, distance: dist });
-                }
+            const p = doc.data();
+            if (query) {
+                // Search text body and goal tags
+                const textMatch = p.text && p.text.toLowerCase().includes(query);
+                const goalMatch = p.goal && p.goal.toLowerCase().includes(query);
+                if (textMatch || goalMatch) matchedPosts.push(doc);
+            } else {
+                matchedPosts.push(doc); // No query = return recent posts
             }
         });
 
-        if(usersWithDistance.length === 0) { 
-            list.innerHTML = '<p style="color:var(--text-secondary); text-align:center; margin-top:20px;">No students found within ' + (searchMaxRange/1000) + ' km.</p>'; 
-            return; 
+        if (activeSearchTab === 'all' && matchedPosts.length > 0) {
+            container.insertAdjacentHTML('beforeend', '<h4 style="margin: 25px 0 10px; font-size: 0.9rem; color: var(--text-secondary); padding: 0 15px;">POSTS</h4>');
         }
 
-        usersWithDistance.sort((a, b) => a.distance - b.distance);
-
-        usersWithDistance.forEach(u => {
-            let distText = (u.distance / 1000).toFixed(1) + ' km away';
-            list.innerHTML += renderFreelancerCard(u, distText);
-        });
+        if (matchedPosts.length === 0 && activeSearchTab === 'posts') {
+            container.insertAdjacentHTML('beforeend', `<p style="text-align:center; color:var(--text-secondary); margin-top:20px;">No posts found.</p>`);
+        } else {
+            // Uses your existing renderPost element builder!
+            matchedPosts.slice(0, limitCount).forEach(doc => {
+                container.appendChild(renderPost(doc, 'search'));
+            });
+        }
     });
 }
 
 // Generates the UI card matching the screenshot design
 function renderFreelancerCard(u, distanceText) {
-    // Generate Mock Data for Ratings/Prices (Since it's a student app without real payments yet)
-    // We use the UID length/characters to generate a consistent "random" number for the UI.
-    const mockPrice = (u.uid.charCodeAt(1) % 5) * 50 + 200;
-
-    // Mock Ratings (Keep this since reviews aren't built yet)
+    // Generate Mock Data for Ratings (Since it's a student app without real payments yet)
     const mockRating = ((u.uid.length % 5) * 0.1 + 4.5).toFixed(1); 
     const mockReviews = (u.uid.charCodeAt(0) % 50) + 12;
     
-    // USE REAL DATA from the database
+    // Use Real Data
     const price = u.rate || "250"; 
     const role = u.skill || u.academic?.major || 'Student';
     const locName = u.academic?.university ? u.academic.university.split(' ')[0] : 'Campus';
 
     return `
-        <div class="freelancer-card" onclick="openUserProfile('${u.uid}')">
+        <div class="freelancer-card" onclick="openUserProfile('${u.uid}')" style="padding: 16px 15px;">
             <div class="avatar" style="background-image: url('${u.photoURL || 'default.png'}'); width: 50px; height: 50px; border-radius: 50%;"></div>
             <div class="freelancer-info">
                 <div class="h-flex" style="justify-content: space-between;">
@@ -3167,7 +3203,7 @@ function renderFreelancerCard(u, distanceText) {
                         <span style="font-weight: 600; color: var(--text-primary);">${mockRating}</span>
                         <span style="color: var(--text-secondary);">(${mockReviews})</span>
                     </div>
-                    <div style="font-weight: 700; font-size: 0.95rem; color: #10b981;">₹${mockPrice} <span style="font-size:0.75rem; font-weight:normal; color:var(--text-secondary);">/hr</span></div>
+                    <div style="font-weight: 700; font-size: 0.95rem; color: #10b981;">₹${price} <span style="font-size:0.75rem; font-weight:normal; color:var(--text-secondary);">/hr</span></div>
                 </div>
                 
                 <div class="h-flex" style="justify-content: space-between; margin-top: 6px; font-size: 0.8rem; color: var(--text-secondary);">
