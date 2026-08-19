@@ -2281,8 +2281,14 @@ select.nexus-input {
         <label>INTERESTS</label>
         <div id="setup-interests" class="interests-container"></div>
 
-        <label>FUTURE VISION</label>
-        <input type="text" id="setup-goal" class="nexus-input">
+        <label>PRIMARY SKILL / TITLE</label>
+        <div class="input-group">
+            <input type="text" id="setup-skill" class="nexus-input" placeholder="e.g. Web Developer, Video Editor..." autocomplete="off">
+            <div id="skill-suggestions" class="autocomplete-list"></div>
+        </div>
+
+        <label>HOURLY RATE (₹)</label>
+        <input type="number" id="setup-rate" class="nexus-input" placeholder="e.g. 300">
         
         <button id="btn-save-profile" class="action-btn" onclick="completeSetup()">SAVE PROFILE</button>
         <button class="secondary-btn" onclick="cancelSetup()" style="width:100%;">Cancel</button>
@@ -2506,10 +2512,9 @@ select.nexus-input {
                 <p id="profile-uni" style="color: var(--text-secondary); font-size: 0.8rem; margin-bottom: 15px;"></p>
 
                 <div id="profile-bio" class="bio-text"></div>
-<div id="profile-goal-container" style="display:none;">
-    <div class="future-goal-display">
-        <i class="fa-solid fa-rocket"></i> 5y Goal: <span id="profile-goal"></span>
-    </div>
+<div id="profile-skill-container" style="display:none; margin-bottom: 15px;">
+    <div style="font-weight: 600; font-size: 1.1rem; color: var(--text-primary);" id="profile-skill"></div>
+    <div style="font-size: 0.9rem; color: #10b981; font-weight: 700; margin-top: 5px;">₹<span id="profile-rate"></span> /hr</div>
 </div>
 <div id="profile-interests" class="interests-container"></div>
                 
@@ -2539,10 +2544,9 @@ select.nexus-input {
         
         <div id="other-bio" class="bio-text"></div>
         
-        <div id="other-goal-container" style="display:none;">
-            <div class="future-goal-display">
-                <i class="fa-solid fa-rocket"></i> 5y Goal: <span id="other-goal"></span>
-            </div>
+        <div id="other-skill-container" style="display:none; margin-bottom: 15px;">
+            <div style="font-weight: 600; font-size: 1.1rem; color: var(--text-primary);" id="other-skill"></div>
+            <div style="font-size: 0.9rem; color: #10b981; font-weight: 700; margin-top: 5px;">₹<span id="other-rate"></span> /hr</div>
         </div>
         
         <div id="other-interests" class="interests-container"></div>
@@ -3135,13 +3139,15 @@ function loadNearbyUsers() {
 function renderFreelancerCard(u, distanceText) {
     // Generate Mock Data for Ratings/Prices (Since it's a student app without real payments yet)
     // We use the UID length/characters to generate a consistent "random" number for the UI.
-    const mockRating = ((u.uid.length % 5) * 0.1 + 4.5).toFixed(1); 
-    const mockReviews = (u.uid.charCodeAt(0) % 50) + 12;
     const mockPrice = (u.uid.charCodeAt(1) % 5) * 50 + 200;
 
-    // Use Major or fallback to 'Student'
-    const role = u.academic?.major || 'Student';
-    // Use University/City fallback
+    // Mock Ratings (Keep this since reviews aren't built yet)
+    const mockRating = ((u.uid.length % 5) * 0.1 + 4.5).toFixed(1); 
+    const mockReviews = (u.uid.charCodeAt(0) % 50) + 12;
+    
+    // USE REAL DATA from the database
+    const price = u.rate || "250"; 
+    const role = u.skill || u.academic?.major || 'Student';
     const locName = u.academic?.university ? u.academic.university.split(' ')[0] : 'Campus';
 
     return `
@@ -3633,6 +3639,13 @@ const COURSES_MAJORS = [
     "Biotechnology"
 ];
 
+const SKILLS_LIST = [
+    "Web Developer", "Graphic Designer", "Video Editor", "Maths Tutor", 
+    "English Tutor", "Music Teacher", "Photographer", "Fitness Trainer",
+    "React JS Developer", "Python Tutor", "Content Writer", "UI/UX Designer",
+    "App Developer", "Social Media Manager", "Data Analyst"
+];
+
 // --- AUTOCOMPLETE LOGIC ---
 
 function setupAutocomplete(inputId, listId, dataArray) {
@@ -3693,6 +3706,7 @@ function setupAutocomplete(inputId, listId, dataArray) {
 function initSearchFields() {
     setupAutocomplete('setup-university', 'uni-suggestions', ASSAM_INSTITUTIONS);
     setupAutocomplete('setup-major', 'major-suggestions', COURSES_MAJORS);
+    setupAutocomplete('setup-skill', 'skill-suggestions', SKILLS_LIST); // ADDED THIS LINE
 }
 
 // 2. PREVIEW LOGIC (Looping the 15s)
@@ -4440,7 +4454,8 @@ function retryGPS() {
     const major = document.getElementById('setup-major').value;
     const year = document.getElementById('setup-year').value;
     const bio = document.getElementById('setup-bio').value;
-    const futureGoal = document.getElementById('setup-goal').value;
+    const skill = document.getElementById('setup-skill').value;
+    const rate = document.getElementById('setup-rate').value;
     
     // NEW: Get the file
     const fileInput = document.getElementById('setup-file-input');
@@ -4479,7 +4494,8 @@ function retryGPS() {
             bannerUrl: selectedBannerUrl,
             academic: { university: uni, major: major, year: year },
             bio: bio,
-            futureGoal: futureGoal,
+            skill: skill,
+            rate: rate,
             interests: Array.from(selectedHobbies),
             lastActive: firebase.firestore.FieldValue.serverTimestamp()
         };
@@ -4569,13 +4585,14 @@ function updateBioCount() {
         document.getElementById('profile-bio').innerText = userData.bio || "";
         document.getElementById('profile-banner').src = userData.bannerUrl || DEFAULT_BANNER;
 
-        // 2. Show Goal
-if(userData.futureGoal) {
-    document.getElementById('profile-goal').innerText = userData.futureGoal;
-    document.getElementById('profile-goal-container').style.display = 'block';
-} else {
-    document.getElementById('profile-goal-container').style.display = 'none';
-}
+// 2. Show Skill & Rate
+        if(userData.skill) {
+            document.getElementById('profile-skill').innerText = userData.skill;
+            document.getElementById('profile-rate').innerText = userData.rate || "0";
+            document.getElementById('profile-skill-container').style.display = 'block';
+        } else {
+            document.getElementById('profile-skill-container').style.display = 'none';
+        }
 
 startNotificationListener(); 
 
@@ -5463,12 +5480,13 @@ function openUserProfile(uid) {
 
         document.getElementById('other-bio').innerText = u.bio || "No bio.";
 
-        // Goals
-        if (u.futureGoal) {
-            document.getElementById('other-goal').innerText = u.futureGoal;
-            document.getElementById('other-goal-container').style.display = 'block';
+        // Skills
+        if (u.skill) {
+            document.getElementById('other-skill').innerText = u.skill;
+            document.getElementById('other-rate').innerText = u.rate || "0";
+            document.getElementById('other-skill-container').style.display = 'block';
         } else {
-            document.getElementById('other-goal-container').style.display = 'none';
+            document.getElementById('other-skill-container').style.display = 'none';
         }
 
         // --- FIXED INTERESTS RENDERING WITH COLORS ---
@@ -6675,7 +6693,8 @@ function addCommentToDB(pid, text) {
     document.getElementById('setup-major').value = globalProfileData.academic.major || "";
     document.getElementById('setup-year').value = globalProfileData.academic.year || "";
     document.getElementById('setup-bio').value = globalProfileData.bio || "";
-    document.getElementById('setup-goal').value = globalProfileData.futureGoal || "";
+    document.getElementById('setup-skill').value = globalProfileData.skill || "";
+    document.getElementById('setup-rate').value = globalProfileData.rate || "";
     updateBioCount();
 
     // NEW: Load current profile picture into the preview
