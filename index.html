@@ -2016,6 +2016,82 @@ select.nexus-input {
 }
 
 
+
+/* --- NEW SEARCH / EXPLORE UI STYLES --- */
+        .search-chip {
+            padding: 8px 16px;
+            border-radius: 20px;
+            background: var(--bg-input);
+            font-size: 0.85rem;
+            color: var(--text-primary);
+            cursor: pointer;
+            border: 1px solid var(--border);
+            white-space: nowrap;
+        }
+        
+        .recent-search-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 0;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+        
+        .category-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 0;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 500;
+        }
+        .category-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            margin-right: 15px;
+            font-size: 1.1rem;
+        }
+
+        .result-tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 15px;
+        }
+        .result-tab {
+            padding: 10px 15px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            font-weight: 600;
+            font-size: 0.9rem;
+            flex: 1;
+            text-align: center;
+        }
+        .result-tab.active {
+            color: var(--accent);
+            border-bottom: 2px solid var(--accent);
+        }
+
+        .freelancer-card {
+            display: flex;
+            padding: 16px 0;
+            border-bottom: 1px solid var(--border);
+            align-items: flex-start;
+        }
+        .freelancer-info {
+            flex: 1;
+            margin-left: 12px;
+        }
+        .distance-slider-container {
+            padding: 10px 5px;
+            margin-bottom: 10px;
+        }
+
     </style>
 </head>
 <body>
@@ -2266,59 +2342,105 @@ select.nexus-input {
 </main>
 
         <main id="section-radar" class="content-area hidden">
-    
-    <div class="h-flex" style="justify-content: center; margin-bottom: 15px;">
-        <div style="background: var(--bg-input); border-radius: 50px; padding: 4px; display: flex; border: 1px solid var(--border); width: 90%; max-width: 320px;">
-            <div id="rtab-radar" onclick="switchRadarTab('radar')" style="flex:1; text-align:center; padding: 8px 0; border-radius: 50px; font-size: 0.8rem; font-weight: 600; cursor: pointer; background: var(--accent); color: white;">
-                Radar
+    <!-- HOME VIEW (Default Search Dashboard) -->
+    <div id="search-home-view">
+        <h2 style="font-weight: 700; font-size: 1.6rem; margin-bottom: 20px;">Search</h2>
+        
+        <div style="position:relative; margin-bottom: 25px;">
+            <i class="fa-solid fa-magnifying-glass" style="position:absolute; left:15px; top:14px; color:var(--text-secondary);"></i>
+            <input type="text" class="nexus-input" style="padding-left: 45px; border-radius: 50px; margin-bottom:0;" placeholder="Search for skills, services or people..." onfocus="openSearchResults('')">
+            <i class="fa-solid fa-sliders" style="position:absolute; right:15px; top:14px; color:var(--text-secondary); cursor:pointer;"></i>
+        </div>
+
+        <h3 style="font-size: 0.95rem; font-weight: 600; margin-bottom: 12px;">Popular Searches</h3>
+        <div style="display:flex; flex-wrap:wrap; gap:10px; margin-bottom: 30px;">
+            <div class="search-chip" onclick="openSearchResults('Web Developer')">Web Developer</div>
+            <div class="search-chip" onclick="openSearchResults('Graphic Designer')">Graphic Designer</div>
+            <div class="search-chip" onclick="openSearchResults('Video Editor')">Video Editor</div>
+            <div class="search-chip" onclick="openSearchResults('Maths Tutor')">Maths Tutor</div>
+            <div class="search-chip" onclick="openSearchResults('English Tutor')">English Tutor</div>
+        </div>
+
+        <h3 style="font-size: 0.95rem; font-weight: 600; margin-bottom: 5px;">Recent Searches</h3>
+        <div style="margin-bottom: 30px;">
+            <div class="recent-search-item" onclick="openSearchResults('React JS Developer')">
+                <i class="fa-regular fa-clock" style="margin-right:15px;"></i>
+                <span style="flex:1;">React JS Developer</span>
+                <i class="fa-solid fa-xmark" style="font-size: 0.8rem;"></i>
             </div>
-            <div id="rtab-suggestion" onclick="switchRadarTab('suggestion')" style="flex:1; text-align:center; padding: 8px 0; border-radius: 50px; font-size: 0.8rem; font-weight: 600; cursor: pointer; color: var(--text-secondary);">
-                Suggestions
+            <div class="recent-search-item" onclick="openSearchResults('Python Tutor')">
+                <i class="fa-regular fa-clock" style="margin-right:15px;"></i>
+                <span style="flex:1;">Python Tutor</span>
+                <i class="fa-solid fa-xmark" style="font-size: 0.8rem;"></i>
             </div>
-            <div id="rtab-search" onclick="switchRadarTab('search')" style="flex:1; text-align:center; padding: 8px 0; border-radius: 50px; font-size: 0.8rem; font-weight: 600; cursor: pointer; color: var(--text-secondary);">
-                Search
+        </div>
+
+        <h3 style="font-size: 0.95rem; font-weight: 600; margin-bottom: 10px; display:flex; justify-content:space-between;">
+            Browse by Categories <span style="color:var(--accent); font-size:0.8rem; cursor:pointer;">See all</span>
+        </h3>
+        <div>
+            <div class="category-item" onclick="openSearchResults('Development')">
+                <div class="category-icon" style="background:#3b82f6;"><i class="fa-solid fa-code"></i></div>
+                <span style="flex:1;">Development</span>
+                <i class="fa-solid fa-chevron-right" style="color:var(--text-secondary); font-size:0.8rem;"></i>
+            </div>
+            <div class="category-item" onclick="openSearchResults('Design')">
+                <div class="category-icon" style="background:#8b5cf6;"><i class="fa-solid fa-pen-nib"></i></div>
+                <span style="flex:1;">Design & Creative</span>
+                <i class="fa-solid fa-chevron-right" style="color:var(--text-secondary); font-size:0.8rem;"></i>
+            </div>
+            <div class="category-item" onclick="openSearchResults('Tutor')">
+                <div class="category-icon" style="background:#10b981;"><i class="fa-solid fa-graduation-cap"></i></div>
+                <span style="flex:1;">Education & Tutoring</span>
+                <i class="fa-solid fa-chevron-right" style="color:var(--text-secondary); font-size:0.8rem;"></i>
             </div>
         </div>
     </div>
 
-    <div id="tab-content-radar">
-        <div style="width: 100%; display: flex; justify-content: center; margin-bottom: 20px;">
-            <div id="gps-status-indicator" class="mono" style="font-size: 0.75rem; background: var(--bg-card); border: 1px solid var(--border); padding: 6px 16px; border-radius: 50px; color: var(--text-secondary);">
-                <i class="fa-solid fa-satellite-dish"></i> GPS: CHECKING...
+    <!-- RESULTS VIEW (List & Radar) -->
+    <div id="search-results-view" class="hidden">
+        <div class="h-flex" style="gap:15px; margin-bottom: 15px;">
+            <i class="fa-solid fa-arrow-left" onclick="closeSearchResults()" style="font-size: 1.2rem; cursor:pointer; color:var(--text-primary);"></i>
+            <div style="position:relative; flex:1;">
+                <i class="fa-solid fa-magnifying-glass" style="position:absolute; left:15px; top:13px; color:var(--text-secondary);"></i>
+                <input type="text" id="active-search-input" class="nexus-input" style="padding-left: 45px; border-radius: 50px; margin-bottom:0; padding-top:12px; padding-bottom:12px;" placeholder="Search..." oninput="handleUserSearch(this.value)">
             </div>
-        </div>
-        
-        <div id="radar-permission-warning" class="hidden" style="text-align: center; padding: 20px;">
-            <button class="action-btn" onclick="retryGPS()">Allow Location</button>
+            <i class="fa-solid fa-filter" style="font-size: 1.2rem; cursor:pointer; color:var(--text-secondary);"></i>
         </div>
 
-        <div id="radar-content" class="hidden">
-            <div class="radar-view">
+        <div class="result-tabs">
+            <div class="result-tab">All</div>
+            <div class="result-tab active">People</div>
+            <div class="result-tab">Services</div>
+            <div class="result-tab">Posts</div>
+        </div>
+
+        <div class="distance-slider-container">
+            <div class="h-flex" style="justify-content: space-between; margin-bottom: 8px;">
+                <span style="font-size:0.85rem; color:var(--text-secondary); font-weight:500;">Max Distance</span>
+                <span id="distance-val" style="font-size:0.85rem; font-weight:700; color:var(--accent);">5 km</span>
+            </div>
+            <input type="range" id="distance-slider" min="1" max="50" value="5" style="width:100%; accent-color: var(--accent);" onchange="updateMaxDistance(this.value)">
+        </div>
+
+        <!-- Radar Loading Animation -->
+        <div id="radar-loading" class="hidden" style="margin-top:50px; margin-bottom:40px;">
+            <div class="radar-view" style="height: 250px;">
                 <div class="radar-circle">
                     <div class="radar-sweep"></div>
                 </div>
             </div>
-            <h3 class="mono" style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 15px; text-align: center;">NEARBY STUDENTS</h3>
-            <div id="user-list"></div>
-        </div>
-    </div>
-
-    <div id="tab-content-suggestion" style="display: none;">
-        <div id="suggestion-stack" class="suggestion-container">
-            <div class="loader-spinner"></div>
+            <p style="text-align:center; color:var(--text-secondary); font-weight:500;">Searching nearby...</p>
         </div>
 
-    
-    </div>
-
-    <div id="tab-content-search" style="display: none; padding: 0 5px;">
-        <div style="position:relative; margin-bottom: 20px;">
-            <i class="fa-solid fa-magnifying-glass" style="position:absolute; left:15px; top:14px; color:var(--text-secondary);"></i>
-            <input type="text" id="global-search-input" class="nexus-input" style="padding-left: 45px; border-radius: 50px;" placeholder="Search students..." oninput="handleUserSearch(this.value)">
-        </div>
         <div id="global-search-results"></div>
+        
+        <div style="background: var(--bg-input); border-radius: 16px; padding: 20px; margin-top: 30px; text-align:center;">
+            <h4 style="margin-bottom: 5px; font-size:1rem;">Can't find the right person?</h4>
+            <p style="font-size:0.8rem; color:var(--text-secondary); margin-bottom: 15px;">Post a request and get offers directly.</p>
+            <button class="action-btn" style="width: auto; padding: 10px 20px; margin:0; font-size:0.9rem;">Post a Request</button>
+        </div>
     </div>
-
 </main>
 
 <main id="section-notifications" class="content-area hidden">
@@ -2858,208 +2980,188 @@ function calculateMatchScore(me, other) {
     return { score, common: commonInterests };
 }
 
-// 3. LOAD & SORT USERS
-function loadSuggestions() {
-    const container = document.getElementById('suggestion-stack');
-    container.innerHTML = '<div class="loader-spinner"></div>';
 
-    // In a real app, use a Cloud Function for this. 
-    // For this prototype, we fetch latest 50 active users.
-    db.collection('users')
-      .orderBy('lastActive', 'desc')
-      .limit(50)
-      .get()
-      .then(snapshot => {
-          let candidates = [];
-
-          snapshot.forEach(doc => {
-              const u = doc.data();
-              // Don't suggest myself
-              if (u.uid !== currentUser.uid) {
-                  const matchData = calculateMatchScore(globalProfileData, u);
-                  // Only suggest if score > 0 (At least something in common)
-                  if(matchData.score > 0) {
-                      candidates.push({ ...u, matchScore: matchData.score, commonInterests: matchData.common });
-                  }
-              }
-          });
-
-          // Sort by Score (Highest first)
-          candidates.sort((a, b) => b.matchScore - a.matchScore);
-          suggestedUsers = candidates;
-          currentCardIndex = 0;
-
-          renderSwipeCard();
-      });
-}
 
 // 4. RENDER SINGLE CARD
 // --- UPDATED CARD RENDERER ---
 
 // --- UPDATED CARD RENDERER WITH OVERLAY BUTTONS ---
 
-function renderSwipeCard() {
-    const container = document.getElementById('suggestion-stack');
-    container.innerHTML = ''; // Clear previous
+// --- NEW SEARCH & EXPLORE SYSTEM ---
 
-    if (currentCardIndex >= suggestedUsers.length) {
-        container.innerHTML = `
-            <div style="text-align:center; padding: 20px; animation: scaleIn 0.3s ease;">
-                <div style="font-size:3rem; margin-bottom:10px;">🎉</div>
-                <h3>All Caught Up!</h3>
-                <p style="color:var(--text-secondary); margin-bottom:20px;">Check back later for more suggestions.</p>
-                <button class="secondary-btn" onclick="loadSuggestions()" style="width:auto;">Refresh Radar</button>
-            </div>
-        `;
+let searchMaxRange = 5000; // Default 5 km (in meters)
+
+function openSearchResults(initialQuery) {
+    document.getElementById('search-home-view').classList.add('hidden');
+    document.getElementById('search-results-view').classList.remove('hidden');
+    
+    const input = document.getElementById('active-search-input');
+    input.value = initialQuery || '';
+    
+    // Always show radar animation first
+    triggerRadarSearch(initialQuery);
+}
+
+function closeSearchResults() {
+    document.getElementById('search-results-view').classList.add('hidden');
+    document.getElementById('search-home-view').classList.remove('hidden');
+}
+
+function updateMaxDistance(val) {
+    document.getElementById('distance-val').innerText = val + ' km';
+    searchMaxRange = val * 1000; // Convert km to meters
+    triggerRadarSearch(document.getElementById('active-search-input').value);
+}
+
+function triggerRadarSearch(query) {
+    const resultsContainer = document.getElementById('global-search-results');
+    const radar = document.getElementById('radar-loading');
+    
+    resultsContainer.innerHTML = '';
+    radar.classList.remove('hidden'); // Show Animation
+    
+    // Fake a loading delay to let the radar spin (1.5 seconds)
+    setTimeout(() => {
+        radar.classList.add('hidden'); // Hide Animation
+        
+        if(query && query.trim() !== '') {
+            executeTextSearch(query);
+        } else {
+            loadNearbyUsers();
+        }
+    }, 1500);
+}
+
+let searchTimeout = null;
+function handleUserSearch(query) {
+    if (searchTimeout) clearTimeout(searchTimeout);
+    
+    // If they delete the text, just load nearby default
+    if (!query || query.trim() === '') {
+        triggerRadarSearch('');
         return;
     }
 
-    const u = suggestedUsers[currentCardIndex];
+    // Standard debounce for typing
+    searchTimeout = setTimeout(() => {
+        executeTextSearch(query);
+    }, 500);
+}
+
+function executeTextSearch(query) {
+    const container = document.getElementById('global-search-results');
+    container.innerHTML = '<div class="loader-spinner" style="margin: 20px auto;"></div>';
     
-    // Generate Common Interest Chips
-    let interestHTML = '';
-    if (u.commonInterests.length > 0) {
-        interestHTML = `<div class="common-interests-row">
-            ${u.commonInterests.map(i => `<div class="common-chip"><i class="fa-solid fa-check"></i> ${i}</div>`).join('')}
-        </div>`;
-    } else {
-        interestHTML = `<div class="common-interests-row"><div class="common-chip" style="border-style:dashed; color:var(--text-secondary); border-color:var(--border);">No common tags</div></div>`;
-    }
+    db.collection('users')
+      .where('displayName', '>=', query)
+      .where('displayName', '<=', query + '\uf8ff')
+      .limit(15)
+      .get()
+      .then(snapshot => {
+          container.innerHTML = '';
+          if (snapshot.empty) {
+              container.innerHTML = '<p style="text-align:center; color:var(--text-secondary); margin-top:20px;">No exact matches found.</p>';
+              return;
+          }
+          snapshot.forEach(doc => {
+              const u = doc.data();
+              if(u.uid !== currentUser.uid) {
+                  // Calculate mock distance if available
+                  let distText = 'Unknown';
+                  if(myLocation && u.location) {
+                      const d = getDistanceFromLatLonInMeters(myLocation.lat, myLocation.lng, u.location.lat, u.location.lng);
+                      distText = (d / 1000).toFixed(1) + ' km away';
+                  }
+                  container.innerHTML += renderFreelancerCard(u, distText);
+              }
+          });
+      })
+      .catch(err => {
+          console.error(err);
+          container.innerHTML = '<p style="text-align:center; color:#ff5555;">Search error.</p>';
+      });
+}
 
-    const cardHTML = `
-        <div id="active-card" class="tinder-card">
-            
-            <div class="t-card-img-container" onclick="openUserProfile('${u.uid}')">
-                <div class="match-badge">${u.matchScore}% Match</div>
-                <img src="${u.photoURL || 'default.png'}" class="t-card-img">
-                <div class="t-card-overlay"></div>
+function loadNearbyUsers() {
+    const list = document.getElementById('global-search-results');
+    
+    db.collection('users').orderBy('lastActive', 'desc').limit(20).get().then(snap => {
+        list.innerHTML = '';
+        let usersWithDistance = [];
+        
+        snap.forEach(doc => {
+            const u = doc.data();
+            if(u.uid !== currentUser.uid) {
+                let dist = null;
+                if(myLocation && u.location) {
+                    dist = getDistanceFromLatLonInMeters(myLocation.lat, myLocation.lng, u.location.lat, u.location.lng);
+                }
+                // Filter by Max Range Slider Value
+                if (dist !== null && dist <= searchMaxRange) {
+                    usersWithDistance.push({ ...u, distance: dist });
+                }
+            }
+        });
 
-                <div class="t-overlay-controls">
-                    <div class="t-action-btn pass" onclick="event.stopPropagation(); triggerSwipe('left')">
-                        <i class="fa-solid fa-xmark"></i>
-                    </div>
-                    <div class="t-action-btn like" onclick="event.stopPropagation(); triggerSwipe('right')">
-                        <i class="fa-solid fa-heart"></i>
-                    </div>
-                </div>
-                </div>
+        if(usersWithDistance.length === 0) { 
+            list.innerHTML = '<p style="color:var(--text-secondary); text-align:center; margin-top:20px;">No students found within ' + (searchMaxRange/1000) + ' km.</p>'; 
+            return; 
+        }
 
-            <div class="t-card-info">
-                <div class="t-name-row">
-                    <div class="t-name">${u.displayName.split(' ')[0]}</div>
-                    <div class="t-info-btn" onclick="openUserProfile('${u.uid}')">
-                        <i class="fa-solid fa-info"></i>
-                    </div>
+        usersWithDistance.sort((a, b) => a.distance - b.distance);
+
+        usersWithDistance.forEach(u => {
+            let distText = (u.distance / 1000).toFixed(1) + ' km away';
+            list.innerHTML += renderFreelancerCard(u, distText);
+        });
+    });
+}
+
+// Generates the UI card matching the screenshot design
+function renderFreelancerCard(u, distanceText) {
+    // Generate Mock Data for Ratings/Prices (Since it's a student app without real payments yet)
+    // We use the UID length/characters to generate a consistent "random" number for the UI.
+    const mockRating = ((u.uid.length % 5) * 0.1 + 4.5).toFixed(1); 
+    const mockReviews = (u.uid.charCodeAt(0) % 50) + 12;
+    const mockPrice = (u.uid.charCodeAt(1) % 5) * 50 + 200;
+
+    // Use Major or fallback to 'Student'
+    const role = u.academic?.major || 'Student';
+    // Use University/City fallback
+    const locName = u.academic?.university ? u.academic.university.split(' ')[0] : 'Campus';
+
+    return `
+        <div class="freelancer-card" onclick="openUserProfile('${u.uid}')">
+            <div class="avatar" style="background-image: url('${u.photoURL || 'default.png'}'); width: 50px; height: 50px; border-radius: 50%;"></div>
+            <div class="freelancer-info">
+                <div class="h-flex" style="justify-content: space-between;">
+                    <div style="font-weight: 700; font-size: 1.05rem; color: var(--text-primary);">${u.displayName}</div>
+                    <i class="fa-regular fa-heart" style="color: var(--text-secondary); font-size: 1.2rem;" onclick="event.stopPropagation(); this.classList.toggle('fa-solid'); this.classList.toggle('fa-regular'); this.style.color = this.classList.contains('fa-solid') ? '#ff3b30' : 'var(--text-secondary)';"></i>
                 </div>
                 
-                <div class="t-details">
-                    ${u.academic.major || 'Student'} • ${u.academic.year || '1st Year'}
+                <div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px;">${role}</div>
+                
+                <div class="freelancer-stats">
+                    <div class="h-flex" style="gap: 5px; font-size: 0.85rem;">
+                        <i class="fa-solid fa-star" style="color: #FF9500; font-size: 0.8rem;"></i>
+                        <span style="font-weight: 600; color: var(--text-primary);">${mockRating}</span>
+                        <span style="color: var(--text-secondary);">(${mockReviews})</span>
+                    </div>
+                    <div style="font-weight: 700; font-size: 0.95rem; color: #10b981;">₹${mockPrice} <span style="font-size:0.75rem; font-weight:normal; color:var(--text-secondary);">/hr</span></div>
                 </div>
-
-                <div class="t-uni">
-                    <i class="fa-solid fa-building-columns" style="color:var(--text-secondary);"></i> 
-                    ${u.academic.university}
+                
+                <div class="h-flex" style="justify-content: space-between; margin-top: 6px; font-size: 0.8rem; color: var(--text-secondary);">
+                    <div class="h-flex" style="gap: 5px;">
+                        <i class="fa-solid fa-location-dot"></i> ${locName}
+                    </div>
+                    <div>• ${distanceText}</div>
                 </div>
-
-                ${interestHTML}
             </div>
         </div>
     `;
-
-    container.innerHTML = cardHTML;
 }
 
-// 5. HANDLE SWIPE ACTION
-function triggerSwipe(direction) {
-    const card = document.getElementById('active-card');
-    if(!card) return;
 
-    if (direction === 'left') {
-        // PASS
-        card.classList.add('slide-out-left');
-    } else {
-        // CONNECT
-        card.classList.add('slide-out-right');
-        
-        // Execute Logic: Follow the user
-        const targetUid = suggestedUsers[currentCardIndex].uid;
-        
-        // Use existing follow logic (but quietly)
-        const myRef = db.collection('users').doc(currentUser.uid);
-        const otherRef = db.collection('users').doc(targetUid);
-        const timestamp = firebase.firestore.FieldValue.serverTimestamp();
-
-        // Add to following
-        myRef.collection('following').doc(targetUid).set({timestamp: timestamp});
-        otherRef.collection('followers').doc(currentUser.uid).set({timestamp: timestamp});
-        
-        // Send Notification
-        const myName = globalProfileData.displayName || currentUser.displayName;
-        sendAppNotification(targetUid, 'follow', 'found you via Suggestions!', null, null);
-
-        // Show a quick visual feedback
-        showBoostAnimation(); // Reuse the boost animation for match effect
-    }
-
-    // Wait for animation to finish then load next
-    setTimeout(() => {
-        currentCardIndex++;
-        renderSwipeCard();
-    }, 300);
-}
-
-// --- USER SEARCH LOGIC ---
-let searchTimeout = null;
-
-function handleUserSearch(query) {
-    const container = document.getElementById('global-search-results');
-    
-    // Clear debounce timer
-    if (searchTimeout) clearTimeout(searchTimeout);
-
-    // If empty
-    if (!query || query.trim() === '') {
-        container.innerHTML = '<p style="text-align:center; color:var(--text-secondary); margin-top:30px; font-size: 0.9rem;">Search for friends by name.</p>';
-        return;
-    }
-
-    // Debounce (Wait 300ms after typing stops)
-    searchTimeout = setTimeout(() => {
-        container.innerHTML = '<div class="loader-spinner" style="margin: 20px auto;"></div>';
-        
-        // Case-insensitive simulation using >= and <=
-        // Note: Firestore is case-sensitive by default. 
-        // For a robust app, store a lowercase version of name ('searchName') in DB.
-        // Assuming 'displayName' is stored as typed:
-        
-        db.collection('users')
-          .where('displayName', '>=', query)
-          .where('displayName', '<=', query + '\uf8ff')
-          .limit(10)
-          .get()
-          .then(snapshot => {
-              container.innerHTML = '';
-              
-              if (snapshot.empty) {
-                  container.innerHTML = '<p style="text-align:center; color:var(--text-secondary); margin-top:20px;">No users found.</p>';
-                  return;
-              }
-
-              snapshot.forEach(doc => {
-                  const u = doc.data();
-                  // Don't show myself
-                  if(u.uid !== currentUser.uid) {
-                      // Reuse your existing list item renderer!
-                      container.innerHTML += renderUserListItem(u);
-                  }
-              });
-          })
-          .catch(err => {
-              console.error(err);
-              container.innerHTML = '<p style="text-align:center; color:#ff5555;">Search error.</p>';
-          });
-    }, 300);
-}
 
 // Rename your existing function to match the call above
 function hideInstallPrompt() {
@@ -5744,90 +5846,7 @@ function openNotifications() {
     // --- POSTS & RADAR (With Blips) ---
 // Find this function and replace it:
 
-function loadNearbyUsers() {
-    const list = document.getElementById('user-list');
-    const radarCircle = document.querySelector('.radar-circle');
-    const MAX_RANGE = 5000; // 5000 meters (5 km)
-    
-    // Display the range prominently (in the GPS status indicator area)
-    const statusEl = document.getElementById('gps-status-indicator');
-    statusEl.innerHTML = `<i class="fa-solid fa-satellite-dish"></i> RANGE: <span style="color:#4dabf8">${MAX_RANGE / 1000} KM</span>`;
 
-    db.collection('users').orderBy('lastActive', 'desc').limit(20).onSnapshot(snap => {
-        list.innerHTML = '';
-        const oldBlips = radarCircle.querySelectorAll('.radar-blip, .blip-tooltip');
-        oldBlips.forEach(el => el.remove());
-        
-        let usersWithDistance = [];
-        snap.forEach(doc => {
-            const u = doc.data();
-            if(u.uid !== currentUser.uid) {
-                let dist = null;
-                // Only calculate distance if myLocation and user location exist
-                if(myLocation && u.location) {
-                    dist = getDistanceFromLatLonInMeters(myLocation.lat, myLocation.lng, u.location.lat, u.location.lng);
-                }
-                
-                // IMPORTANT: Filter out users immediately if distance is unknown or outside MAX_RANGE
-                if (dist !== null && dist <= MAX_RANGE) {
-                    usersWithDistance.push({ ...u, distance: dist });
-                }
-            }
-        });
-
-        if(usersWithDistance.length === 0) { 
-            list.innerHTML = '<p class="mono" style="color:var(--text-secondary); text-align:center;">No students found within range.</p>'; 
-            return; 
-        }
-
-        usersWithDistance.sort((a, b) => a.distance - b.distance);
-
-        usersWithDistance.forEach(u => {
-            let distText = `${Math.round(u.distance)}m`;
-            
-            // --- 1. Populate the User List (List View) ---
-            list.innerHTML += `
-                <div class="user-list-item" onclick="openUserProfile('${u.uid}')">
-                    <div class="avatar" style="background-image: url('${u.photoURL || ''}')"></div>
-                    <div style="flex:1;">
-                        <div class="h-flex" style="justify-content:space-between;">
-                            <div style="font-weight:600;">${u.displayName}</div>
-                            <div class="mono" style="font-size:0.7rem; color:var(--accent);">${distText}</div>
-                        </div>
-                        <div style="font-size:0.8rem; color:var(--text-secondary);">${u.academic?.major || 'Student'}</div>
-                    </div>
-                </div>
-            `;
-
-            // --- 2. Populate the Radar View (Blips) ---
-            if(u.distance !== null) {
-                const blip = document.createElement('div');
-                blip.className = 'radar-blip';
-                
-                // Calculate position based on distance: map 0m to 0% and MAX_RANGE to 45% radial distance
-                // We use 45% to keep the blip inside the radar circle boundary.
-                const percentFromCenter = (u.distance / MAX_RANGE) * 45; 
-                
-                // Keep random angle to distribute blips realistically
-                const randomAngle = Math.random() * 2 * Math.PI;
-                const top = 50 + (percentFromCenter * Math.sin(randomAngle));
-                const left = 50 + (percentFromCenter * Math.cos(randomAngle));
-                
-                blip.style.top = top + '%'; blip.style.left = left + '%';
-                blip.onclick = (e) => { e.stopPropagation(); openUserProfile(u.uid); };
-                
-                const tooltip = document.createElement('div');
-                tooltip.className = 'blip-tooltip';
-                tooltip.innerText = u.displayName.split(' ')[0] + ` (${distText})`;
-                tooltip.style.top = top + '%';
-                tooltip.style.left = left + '%';
-                
-                radarCircle.appendChild(tooltip);
-                radarCircle.appendChild(blip);
-            }
-        });
-    });
-}
 
     // --- MENU FUNCTIONS ---
 
