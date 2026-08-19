@@ -53,41 +53,34 @@
         }
 
         [data-theme="light"] {
-            --bg-main: #F2F4F8;
-            --bg-glass: rgba(255, 255, 255, 0.849);
-            --bg-card: #fffffff4;
-            --bg-card: #fffffff8;
-            --bg-input: #eaecef34;
-            --border: #DDE1E6;
-            --text-primary: #111111;
-            --text-secondary: #555555;
-            --accent: #304FFE;
-            --accent-glow: rgba(48, 79, 254, 0.2);
-            --boost-color: #F9A825;
+            --bg-main: #FFFFFF; /* Pure white background */
+            --bg-glass: rgba(255, 255, 255, 0.95);
+            --bg-card: #FFFFFF;
+            --bg-input: #EFEFEF; /* Clean grey for the thick post dividers */
+            --border: #DBDBDB; /* Standard Instagram border color */
+            --text-primary: #000000;
+            --text-secondary: #737373;
+            --accent: #0095F6; /* Instagram-style blue */
+            --accent-glow: rgba(0, 149, 246, 0.2);
+            --boost-color: #FF3040;
 
             --header-h: 60px;
-        --nav-h: 80px;
-        
-        --radius-l: 16px;
-        --radius-m: 16px;
+            --nav-h: 80px;
+            
+            --radius-l: 16px;
+            --radius-m: 16px;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
-        background-color: var(--bg-main);
-        color: var(--text-primary);
-        overflow-y: auto;
-        min-height: 100vh;
-        -webkit-user-select: none;
-        user-select: none;
-        /* Ambient Background Mesh */
-        background-image: 
-            radial-gradient(circle at 0% 0%, rgba(10, 132, 255, 0.15), transparent 40%),
-            radial-gradient(circle at 100% 0%, rgba(191, 90, 242, 0.15), transparent 40%),
-            radial-gradient(circle at 50% 100%, rgba(50, 215, 75, 0.1), transparent 50%);
-        background-attachment: fixed;
+            background-color: var(--bg-main);
+            color: var(--text-primary);
+            overflow-y: auto;
+            min-height: 100vh;
+            -webkit-user-select: none;
+            user-select: none;
         }
 
         /* Allow selection in input fields so users can still type! */
@@ -588,9 +581,15 @@
 
 /* --- STORY TRAY STYLES --- */
 .stories-wrapper {
-        width: 100%; overflow-x: auto; white-space: nowrap; scrollbar-width: none;
-        background: transparent; border: none; padding: 10px 0; margin-bottom: 10px;
-    }
+            width: 100%; 
+            overflow-x: auto; 
+            white-space: nowrap; 
+            scrollbar-width: none;
+            background: var(--bg-main); 
+            padding: 10px 0 15px 0; 
+            margin-bottom: 0px;
+            border-bottom: 1px solid var(--border);
+        }
 
 /* Hide scrollbar for Chrome/Safari */
 .stories-wrapper::-webkit-scrollbar { display: none; }
@@ -4485,7 +4484,7 @@ function updateBioCount() {
         document.getElementById('profile-uni').innerText = userData.academic.university;
         document.getElementById('profile-bio').innerText = userData.bio || "";
         document.getElementById('profile-banner').src = userData.bannerUrl || DEFAULT_BANNER;
-        
+
         // 2. Show Goal
 if(userData.futureGoal) {
     document.getElementById('profile-goal').innerText = userData.futureGoal;
