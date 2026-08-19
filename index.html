@@ -22,9 +22,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+<script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&callback=initMap" async defer></script>
     
-<script src="[https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&callback=initMap](https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&callback=initMap)" async defer></script>
-
 
 
     <style>
@@ -2391,7 +2390,7 @@ select.nexus-input {
         <nav class="bottom-nav hidden" id="main-nav">
             <div class="nav-item active" onclick="switchTab('feed', this)"><i class="fa-solid fa-house"></i></div>
         
-            <div class="nav-item" onclick="switchTab('radar', this)"><i class="fa-regular fa-compass"></i></div>
+            <div class="nav-item" onclick="switchTab('explore', this)"><i class="fa-solid fa-map-location-dot"></i></div>
 
             <div class="nav-item" onclick="switchTab('reels', this)"><i class="fa-duotone fa-solid fa-circle-play"></i></div>
             
@@ -2667,6 +2666,10 @@ function isIOS() {
     || (navigator.userAgent.includes("Mac") && "ontouchend" in document);
 }
 
+let map;
+let exploreSearchTimeout = null;
+let markers = [];
+
 // 3. Logic to Show Install Prompt
 let deferredPrompt;
 const installModal = document.getElementById('install-modal');
@@ -2718,9 +2721,6 @@ function showInstallModal(platform) {
 function hideInstallModal() {
     installModal.style.display = 'none';
 }
-
-let exploreSearchTimeout = null;
-let markers = [];
 
 function initMap() {
     const centerLoc = myLocation || { lat: 26.1445, lng: 91.7362 }; 
@@ -2788,8 +2788,7 @@ function loadExploreUsers(searchQuery = "") {
     });
 }
 
-// 2. THE ALGORITHM: MATCHING LOGIC
-function calculateMatchScore(me, other) {
+
     let score = 0;
     let commonInterests = [];
 
@@ -2836,157 +2835,84 @@ function calculateMatchScore(me, other) {
     }
 
     return { score, common: commonInterests };
+
+
+function initMap() {
+    const centerLoc = myLocation || { lat: 26.1445, lng: 91.7362 }; // Default location
+    map = new google.maps.Map(document.getElementById("explore-map"), {
+        zoom: 12,
+        center: centerLoc,
+        disableDefaultUI: true
+    });
+    loadExploreUsers(); 
 }
 
-// 3. LOAD & SORT USERS
-function loadSuggestions() {
-    const container = document.getElementById('suggestion-stack');
-    container.innerHTML = '<div class="loader-spinner"></div>';
-
-    // In a real app, use a Cloud Function for this. 
-    // For this prototype, we fetch latest 50 active users.
-    db.collection('users')
-      .orderBy('lastActive', 'desc')
-      .limit(50)
-      .get()
-      .then(snapshot => {
-          let candidates = [];
-
-          snapshot.forEach(doc => {
-              const u = doc.data();
-              // Don't suggest myself
-              if (u.uid !== currentUser.uid) {
-                  const matchData = calculateMatchScore(globalProfileData, u);
-                  // Only suggest if score > 0 (At least something in common)
-                  if(matchData.score > 0) {
-                      candidates.push({ ...u, matchScore: matchData.score, commonInterests: matchData.common });
-                  }
-              }
-          });
-
-          // Sort by Score (Highest first)
-          candidates.sort((a, b) => b.matchScore - a.matchScore);
-          suggestedUsers = candidates;
-          currentCardIndex = 0;
-
-          renderSwipeCard();
-      });
-}
-
-// 4. RENDER SINGLE CARD
-// --- UPDATED CARD RENDERER ---
-
-// --- UPDATED CARD RENDERER WITH OVERLAY BUTTONS ---
-
-function renderSwipeCard() {
-    const container = document.getElementById('suggestion-stack');
-    container.innerHTML = ''; // Clear previous
-
-    if (currentCardIndex >= suggestedUsers.length) {
-        container.innerHTML = `
-            <div style="text-align:center; padding: 20px; animation: scaleIn 0.3s ease;">
-                <div style="font-size:3rem; margin-bottom:10px;">🎉</div>
-                <h3>All Caught Up!</h3>
-                <p style="color:var(--text-secondary); margin-bottom:20px;">Check back later for more suggestions.</p>
-                <button class="secondary-btn" onclick="loadSuggestions()" style="width:auto;">Refresh Radar</button>
-            </div>
-        `;
-        return;
-    }
-
-    const u = suggestedUsers[currentCardIndex];
-    
-    // Generate Common Interest Chips
-    let interestHTML = '';
-    if (u.commonInterests.length > 0) {
-        interestHTML = `<div class="common-interests-row">
-            ${u.commonInterests.map(i => `<div class="common-chip"><i class="fa-solid fa-check"></i> ${i}</div>`).join('')}
-        </div>`;
-    } else {
-        interestHTML = `<div class="common-interests-row"><div class="common-chip" style="border-style:dashed; color:var(--text-secondary); border-color:var(--border);">No common tags</div></div>`;
-    }
-
-    const cardHTML = `
-        <div id="active-card" class="tinder-card">
-            
-            <div class="t-card-img-container" onclick="openUserProfile('${u.uid}')">
-                <div class="match-badge">${u.matchScore}% Match</div>
-                <img src="${u.photoURL || 'default.png'}" class="t-card-img">
-                <div class="t-card-overlay"></div>
-
-                <div class="t-overlay-controls">
-                    <div class="t-action-btn pass" onclick="event.stopPropagation(); triggerSwipe('left')">
-                        <i class="fa-solid fa-xmark"></i>
-                    </div>
-                    <div class="t-action-btn like" onclick="event.stopPropagation(); triggerSwipe('right')">
-                        <i class="fa-solid fa-heart"></i>
-                    </div>
-                </div>
-                </div>
-
-            <div class="t-card-info">
-                <div class="t-name-row">
-                    <div class="t-name">${u.displayName.split(' ')[0]}</div>
-                    <div class="t-info-btn" onclick="openUserProfile('${u.uid}')">
-                        <i class="fa-solid fa-info"></i>
-                    </div>
-                </div>
-                
-                <div class="t-details">
-                    ${u.academic.major || 'Student'} • ${u.academic.year || '1st Year'}
-                </div>
-
-                <div class="t-uni">
-                    <i class="fa-solid fa-building-columns" style="color:var(--text-secondary);"></i> 
-                    ${u.academic.university}
-                </div>
-
-                ${interestHTML}
-            </div>
-        </div>
-    `;
-
-    container.innerHTML = cardHTML;
-}
-
-// 5. HANDLE SWIPE ACTION
-function triggerSwipe(direction) {
-    const card = document.getElementById('active-card');
-    if(!card) return;
-
-    if (direction === 'left') {
-        // PASS
-        card.classList.add('slide-out-left');
-    } else {
-        // CONNECT
-        card.classList.add('slide-out-right');
-        
-        // Execute Logic: Follow the user
-        const targetUid = suggestedUsers[currentCardIndex].uid;
-        
-        // Use existing follow logic (but quietly)
-        const myRef = db.collection('users').doc(currentUser.uid);
-        const otherRef = db.collection('users').doc(targetUid);
-        const timestamp = firebase.firestore.FieldValue.serverTimestamp();
-
-        // Add to following
-        myRef.collection('following').doc(targetUid).set({timestamp: timestamp});
-        otherRef.collection('followers').doc(currentUser.uid).set({timestamp: timestamp});
-        
-        // Send Notification
-        const myName = globalProfileData.displayName || currentUser.displayName;
-        sendAppNotification(targetUid, 'follow', 'found you via Suggestions!', null, null);
-
-        // Show a quick visual feedback
-        showBoostAnimation(); // Reuse the boost animation for match effect
-    }
-
-    // Wait for animation to finish then load next
-    setTimeout(() => {
-        currentCardIndex++;
-        renderSwipeCard();
+function handleExploreSearch(query) {
+    if (exploreSearchTimeout) clearTimeout(exploreSearchTimeout);
+    exploreSearchTimeout = setTimeout(() => {
+        loadExploreUsers(query.toLowerCase());
     }, 300);
 }
+
+function loadExploreUsers(searchQuery = "") {
+    const list = document.getElementById('explore-user-list');
+    list.innerHTML = '<div class="loader-spinner" style="margin: 20px auto;"></div>';
+
+    db.collection('users').limit(50).get().then(snap => {
+        list.innerHTML = '';
+        
+        // Clear old map markers
+        markers.forEach(m => m.setMap(null));
+        markers = [];
+
+        let usersFound = false;
+
+        snap.forEach(doc => {
+            const u = doc.data();
+            if(u.uid !== currentUser.uid) {
+                
+                // Filter by Search Query
+                let matchesSearch = true;
+                if (searchQuery) {
+                    const nameMatch = u.displayName?.toLowerCase().includes(searchQuery);
+                    const nicheMatch = u.niche?.toLowerCase().includes(searchQuery);
+                    matchesSearch = nameMatch || nicheMatch;
+                }
+
+                if (matchesSearch) {
+                    usersFound = true;
+                    // Render List Item
+                    list.innerHTML += `
+                        <div class="explore-user-card" style="display:flex; align-items:center; padding:15px; background:var(--bg-glass); border:1px solid var(--border); border-radius:16px; margin-bottom:12px; cursor:pointer;" onclick="openUserProfile('${u.uid}')">
+                            <div class="avatar" style="background-image: url('${u.photoURL}'); width:55px; height:55px; border-radius:12px;"></div>
+                            <div style="flex:1; margin-left: 12px;">
+                                <div style="font-weight: 700; font-size: 1.05rem;">${u.displayName}</div>
+                                <div style="font-size: 0.85rem; color: var(--accent); font-family:'JetBrains Mono', monospace;">${u.niche || 'Professional'}</div>
+                            </div>
+                        </div>
+                    `;
+
+                    // Render Map Marker
+                    if (u.location && u.location.lat && map) {
+                        const marker = new google.maps.Marker({
+                            position: { lat: u.location.lat, lng: u.location.lng },
+                            map: map,
+                            title: u.displayName,
+                            icon: { url: u.photoURL, scaledSize: new google.maps.Size(40, 40) }
+                        });
+                        marker.addListener("click", () => openUserProfile(u.uid));
+                        markers.push(marker);
+                    }
+                }
+            }
+        });
+
+        if(!usersFound) {
+            list.innerHTML = '<p style="text-align:center; color:var(--text-secondary); margin-top:20px;">No professionals found.</p>';
+        }
+    });
+}
+
 
 // --- USER SEARCH LOGIC ---
 let searchTimeout = null;
@@ -5758,91 +5684,6 @@ function openNotifications() {
 
     // --- POSTS & RADAR (With Blips) ---
 // Find this function and replace it:
-
-function loadNearbyUsers() {
-    const list = document.getElementById('user-list');
-    const radarCircle = document.querySelector('.radar-circle');
-    const MAX_RANGE = 5000; // 5000 meters (5 km)
-    
-    // Display the range prominently (in the GPS status indicator area)
-    const statusEl = document.getElementById('gps-status-indicator');
-    statusEl.innerHTML = `<i class="fa-solid fa-satellite-dish"></i> RANGE: <span style="color:#4dabf8">${MAX_RANGE / 1000} KM</span>`;
-
-    db.collection('users').orderBy('lastActive', 'desc').limit(20).onSnapshot(snap => {
-        list.innerHTML = '';
-        const oldBlips = radarCircle.querySelectorAll('.radar-blip, .blip-tooltip');
-        oldBlips.forEach(el => el.remove());
-        
-        let usersWithDistance = [];
-        snap.forEach(doc => {
-            const u = doc.data();
-            if(u.uid !== currentUser.uid) {
-                let dist = null;
-                // Only calculate distance if myLocation and user location exist
-                if(myLocation && u.location) {
-                    dist = getDistanceFromLatLonInMeters(myLocation.lat, myLocation.lng, u.location.lat, u.location.lng);
-                }
-                
-                // IMPORTANT: Filter out users immediately if distance is unknown or outside MAX_RANGE
-                if (dist !== null && dist <= MAX_RANGE) {
-                    usersWithDistance.push({ ...u, distance: dist });
-                }
-            }
-        });
-
-        if(usersWithDistance.length === 0) { 
-            list.innerHTML = '<p class="mono" style="color:var(--text-secondary); text-align:center;">No students found within range.</p>'; 
-            return; 
-        }
-
-        usersWithDistance.sort((a, b) => a.distance - b.distance);
-
-        usersWithDistance.forEach(u => {
-            let distText = `${Math.round(u.distance)}m`;
-            
-            // --- 1. Populate the User List (List View) ---
-            list.innerHTML += `
-                <div class="user-list-item" onclick="openUserProfile('${u.uid}')">
-                    <div class="avatar" style="background-image: url('${u.photoURL || ''}')"></div>
-                    <div style="flex:1;">
-                        <div class="h-flex" style="justify-content:space-between;">
-                            <div style="font-weight:600;">${u.displayName}</div>
-                            <div class="mono" style="font-size:0.7rem; color:var(--accent);">${distText}</div>
-                        </div>
-                        <div style="font-size:0.8rem; color:var(--text-secondary);">${u.academic?.major || 'Student'}</div>
-                    </div>
-                </div>
-            `;
-
-            // --- 2. Populate the Radar View (Blips) ---
-            if(u.distance !== null) {
-                const blip = document.createElement('div');
-                blip.className = 'radar-blip';
-                
-                // Calculate position based on distance: map 0m to 0% and MAX_RANGE to 45% radial distance
-                // We use 45% to keep the blip inside the radar circle boundary.
-                const percentFromCenter = (u.distance / MAX_RANGE) * 45; 
-                
-                // Keep random angle to distribute blips realistically
-                const randomAngle = Math.random() * 2 * Math.PI;
-                const top = 50 + (percentFromCenter * Math.sin(randomAngle));
-                const left = 50 + (percentFromCenter * Math.cos(randomAngle));
-                
-                blip.style.top = top + '%'; blip.style.left = left + '%';
-                blip.onclick = (e) => { e.stopPropagation(); openUserProfile(u.uid); };
-                
-                const tooltip = document.createElement('div');
-                tooltip.className = 'blip-tooltip';
-                tooltip.innerText = u.displayName.split(' ')[0] + ` (${distText})`;
-                tooltip.style.top = top + '%';
-                tooltip.style.left = left + '%';
-                
-                radarCircle.appendChild(tooltip);
-                radarCircle.appendChild(blip);
-            }
-        });
-    });
-}
 
     // --- MENU FUNCTIONS ---
 
