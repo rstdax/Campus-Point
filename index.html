@@ -4479,15 +4479,13 @@ function updateBioCount() {
 
     function loadAppInterface(userData) {
         // Setup Header & My Profile
-        document.getElementById('header-avatar').src = userData.photoURL;
-        document.getElementById('header-avatar').style.display = 'none';
         document.getElementById('profile-pic').src = userData.photoURL;
         document.getElementById('profile-name').innerText = userData.displayName;
         document.getElementById('profile-academic').innerText = `${userData.academic.major} • ${userData.academic.year}`;
         document.getElementById('profile-uni').innerText = userData.academic.university;
         document.getElementById('profile-bio').innerText = userData.bio || "";
         document.getElementById('profile-banner').src = userData.bannerUrl || DEFAULT_BANNER;
-
+        
         // 2. Show Goal
 if(userData.futureGoal) {
     document.getElementById('profile-goal').innerText = userData.futureGoal;
