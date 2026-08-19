@@ -4,6 +4,7 @@
     <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#050505">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 
 <meta name="apple-mobile-web-app-title" content="CampusPoint">
@@ -2046,7 +2047,7 @@ select.nexus-input {
                 <div id="auth-loader" class="loader-spinner"></div>
 
                 <button id="google-btn" class="pinterest-google-btn hidden" onclick="googleLogin()">
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/1024px-Google_%22G%22_logo.svg.png" style="width:20px; height:20px;">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" style="width:20px; height:20px;">
                     Continue with Google
                 </button>
 
@@ -4000,13 +4001,7 @@ function renderFinalPreviews() {
         initFeedObserver();
         initSearchFields();
 
-        const reelsContainer = document.getElementById('reels-container');
-        reelsContainer.addEventListener('scroll', () => {
-            // Check if user is near the bottom (within 300px)
-            if(reelsContainer.scrollTop + reelsContainer.clientHeight >= reelsContainer.scrollHeight - 300) {
-                loadReels(true); // Load Next Page
-            }
-        });
+        
 
         window.addEventListener('scroll', () => {
             // Check if we are on the Feed tab
@@ -5868,7 +5863,7 @@ function reportPost(pid, reportedUid, reportedName) {
 
     function loadFeed(isNextPage = false) {
     // 1. Safety Checks
-    if (isFeedLoading || isFeedEnd) return;
+    if (!currentUser || isFeedLoading || isFeedEnd) return;
     
     const container = document.getElementById('feed-container');
 
