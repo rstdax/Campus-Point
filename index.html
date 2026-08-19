@@ -22,7 +22,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
-<script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&callback=initMap" async defer></script>
     
 
 
@@ -2107,58 +2106,42 @@ select.nexus-input {
         <label>FULL NAME</label>
         <input type="text" id="setup-name" class="nexus-input">
         
-        <label>MAIN NICHE / PROFESSION (e.g., Video Editor)</label>
-<input type="text" id="setup-niche" class="nexus-input" placeholder="What are you best at?">
-
-<label>LOCATION</label>
-<div class="h-flex" style="gap: 10px;">
-    <input type="text" id="setup-country" class="nexus-input" placeholder="Country">
-    <input type="text" id="setup-city" class="nexus-input" placeholder="City">
-</div>
-
-<label>EMPLOYMENT STATUS</label>
-<select id="setup-emp-status" class="nexus-input" onchange="toggleEmpFields()">
-    <option value="student" selected>Student</option>
-    <option value="professional">Not a Student</option>
-</select>
-
-<div id="fields-student">
-    <label>SCHOOL / UNIVERSITY</label>
-    <div class="input-group">
-        <input type="text" id="setup-university" class="nexus-input" autocomplete="off">
-    </div>
-    <label>MAJOR / COURSE</label>
-    <div class="input-group">
-        <input type="text" id="setup-major" class="nexus-input" autocomplete="off">
-    </div>
-</div>
-
-<div id="fields-professional" style="display: none;">
-    <label>MOST RECENT JOB TITLE</label>
-    <input type="text" id="setup-job-title" class="nexus-input">
-    <label>EMPLOYMENT TYPE</label>
-    <select id="setup-job-type" class="nexus-input">
-        <option value="Full-time">Full-time</option>
-        <option value="Part-time">Part-time</option>
-        <option value="Freelance">Freelance</option>
-    </select>
-    <label>MOST RECENT COMPANY</label>
-    <input type="text" id="setup-company" class="nexus-input">
-</div>
-
-<label>JOB SEARCH INTENT</label>
-<select id="setup-job-intent" class="nexus-input" onchange="toggleIntentFields()">
-    <option value="no">No, not interested.</option>
-    <option value="open">Not actively looking, but open.</option>
-    <option value="yes">Yes, actively looking.</option>
-</select>
-
-<div id="fields-job-prefs" style="display: none;">
-    <label>PREFERRED JOB TITLES</label>
-    <input type="text" id="setup-pref-titles" class="nexus-input">
-    <label>PREFERRED LOCATIONS</label>
-    <input type="text" id="setup-pref-locations" class="nexus-input">
-</div>
+        <label>INSTITUTION (University / College)</label>
+        <div class="input-group">
+            <input type="text" id="setup-university" class="nexus-input" placeholder="Search or type your college..." autocomplete="off">
+            <div id="uni-suggestions" class="autocomplete-list"></div>
+        </div>
+        
+        <label>MAJOR / COURSE</label>
+        <div class="input-group">
+            <input type="text" id="setup-major" class="nexus-input" placeholder="e.g. Physics, B.Tech, Class 11..." autocomplete="off">
+            <div id="major-suggestions" class="autocomplete-list"></div>
+        </div>
+        
+        <label>YEAR / SEMESTER</label>
+        <select id="setup-year" class="nexus-input">
+            <option value="" disabled selected>Select current stage</option>
+            <optgroup label="Schooling">
+                <option value="11th Grade">11th Grade</option>
+                <option value="12th Grade">12th Grade</option>
+            </optgroup>
+            <optgroup label=" yearly">
+                <option value="1st Year">1st Year</option>
+                <option value="2nd Year">2nd Year</option>
+                <option value="3rd Year">3rd Year</option>
+                <option value="4th Year">4th Year</option>
+            </optgroup>
+            <optgroup label="Semester System">
+                <option value="1st Semester">1st Semester</option>
+                <option value="2nd Semester">2nd Semester</option>
+                <option value="3rd Semester">3rd Semester</option>
+                <option value="4th Semester">4th Semester</option>
+                <option value="5th Semester">5th Semester</option>
+                <option value="6th Semester">6th Semester</option>
+                <option value="7th Semester">7th Semester</option>
+                <option value="8th Semester">8th Semester</option>
+            </optgroup>
+        </select>
 
         <label>BIO <span id="bio-count" style="float:right; font-size:0.7rem;">0/150</span></label>
         <textarea id="setup-bio" class="nexus-input" rows="3" maxlength="150" oninput="updateBioCount()"></textarea>
@@ -2254,24 +2237,60 @@ select.nexus-input {
     <button id="btn-post" class="action-btn" onclick="createPost()">POST UPDATE</button>
 </main>
 
-        <main id="section-explore" class="content-area hidden" style="padding: 0; display: flex; flex-direction: column; height: 100vh;">
-    <div id="explore-map" style="flex: 1; min-height: 45vh; background: #e0e0e0;"></div>
-
-    <div class="explore-bottom-sheet">
-        <div class="h-flex" style="justify-content: space-between; margin-bottom: 15px;">
-            <h3 style="font-weight: 700;">Nearby Professionals</h3>
-            <span style="color: var(--accent); font-size: 0.85rem; font-weight: 600; cursor: pointer;">View all ></span>
-        </div>
-        
-        <div style="position:relative; margin-bottom: 20px;">
-            <i class="fa-solid fa-magnifying-glass" style="position:absolute; left:15px; top:14px; color:var(--text-secondary);"></i>
-            <input type="text" id="explore-search-input" class="nexus-input" style="padding-left: 45px; border-radius: 50px; background: var(--bg-input); margin-bottom:0;" placeholder="Find Video Editor, Coder..." oninput="handleExploreSearch(this.value)">
-        </div>
-
-        <div id="explore-user-list">
-            <div class="loader-spinner" style="margin: 20px auto;"></div>
+        <main id="section-radar" class="content-area hidden">
+    
+    <div class="h-flex" style="justify-content: center; margin-bottom: 15px;">
+        <div style="background: var(--bg-input); border-radius: 50px; padding: 4px; display: flex; border: 1px solid var(--border); width: 90%; max-width: 320px;">
+            <div id="rtab-radar" onclick="switchRadarTab('radar')" style="flex:1; text-align:center; padding: 8px 0; border-radius: 50px; font-size: 0.8rem; font-weight: 600; cursor: pointer; background: var(--accent); color: white;">
+                Radar
+            </div>
+            <div id="rtab-suggestion" onclick="switchRadarTab('suggestion')" style="flex:1; text-align:center; padding: 8px 0; border-radius: 50px; font-size: 0.8rem; font-weight: 600; cursor: pointer; color: var(--text-secondary);">
+                Suggestions
+            </div>
+            <div id="rtab-search" onclick="switchRadarTab('search')" style="flex:1; text-align:center; padding: 8px 0; border-radius: 50px; font-size: 0.8rem; font-weight: 600; cursor: pointer; color: var(--text-secondary);">
+                Search
+            </div>
         </div>
     </div>
+
+    <div id="tab-content-radar">
+        <div style="width: 100%; display: flex; justify-content: center; margin-bottom: 20px;">
+            <div id="gps-status-indicator" class="mono" style="font-size: 0.75rem; background: var(--bg-card); border: 1px solid var(--border); padding: 6px 16px; border-radius: 50px; color: var(--text-secondary);">
+                <i class="fa-solid fa-satellite-dish"></i> GPS: CHECKING...
+            </div>
+        </div>
+        
+        <div id="radar-permission-warning" class="hidden" style="text-align: center; padding: 20px;">
+            <button class="action-btn" onclick="retryGPS()">Allow Location</button>
+        </div>
+
+        <div id="radar-content" class="hidden">
+            <div class="radar-view">
+                <div class="radar-circle">
+                    <div class="radar-sweep"></div>
+                </div>
+            </div>
+            <h3 class="mono" style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 15px; text-align: center;">NEARBY STUDENTS</h3>
+            <div id="user-list"></div>
+        </div>
+    </div>
+
+    <div id="tab-content-suggestion" style="display: none;">
+        <div id="suggestion-stack" class="suggestion-container">
+            <div class="loader-spinner"></div>
+        </div>
+
+    
+    </div>
+
+    <div id="tab-content-search" style="display: none; padding: 0 5px;">
+        <div style="position:relative; margin-bottom: 20px;">
+            <i class="fa-solid fa-magnifying-glass" style="position:absolute; left:15px; top:14px; color:var(--text-secondary);"></i>
+            <input type="text" id="global-search-input" class="nexus-input" style="padding-left: 45px; border-radius: 50px;" placeholder="Search students..." oninput="handleUserSearch(this.value)">
+        </div>
+        <div id="global-search-results"></div>
+    </div>
+
 </main>
 
 <main id="section-notifications" class="content-area hidden">
@@ -2390,7 +2409,7 @@ select.nexus-input {
         <nav class="bottom-nav hidden" id="main-nav">
             <div class="nav-item active" onclick="switchTab('feed', this)"><i class="fa-solid fa-house"></i></div>
         
-            <div class="nav-item" onclick="switchTab('explore', this)"><i class="fa-solid fa-map-location-dot"></i></div>
+            <div class="nav-item" onclick="switchTab('radar', this)"><i class="fa-regular fa-compass"></i></div>
 
             <div class="nav-item" onclick="switchTab('reels', this)"><i class="fa-duotone fa-solid fa-circle-play"></i></div>
             
@@ -2666,10 +2685,6 @@ function isIOS() {
     || (navigator.userAgent.includes("Mac") && "ontouchend" in document);
 }
 
-let map;
-let exploreSearchTimeout = null;
-let markers = [];
-
 // 3. Logic to Show Install Prompt
 let deferredPrompt;
 const installModal = document.getElementById('install-modal');
@@ -2722,73 +2737,50 @@ function hideInstallModal() {
     installModal.style.display = 'none';
 }
 
-window.initMap = function() {
-    const centerLoc = myLocation || { lat: 26.1445, lng: 91.7362 }; 
-    map = new google.maps.Map(document.getElementById("explore-map"), {
-        zoom: 12,
-        center: centerLoc,
-        disableDefaultUI: true
-    });
-    loadExploreUsers(); 
-};
+// --- RADAR TAB SWITCHING ---
 
-function handleExploreSearch(query) {
-    if (exploreSearchTimeout) clearTimeout(exploreSearchTimeout);
-    exploreSearchTimeout = setTimeout(() => {
-        loadExploreUsers(query.toLowerCase());
-    }, 300);
+// 1. UPDATE TAB SWITCHER
+function switchRadarTab(tab) {
+    const radarContent = document.getElementById('tab-content-radar');
+    const suggestContent = document.getElementById('tab-content-suggestion');
+    const searchContent = document.getElementById('tab-content-search');
+    
+    const btnRadar = document.getElementById('rtab-radar');
+    const btnSuggest = document.getElementById('rtab-suggestion');
+    const btnSearch = document.getElementById('rtab-search');
+
+    // Reset Buttons
+    [btnRadar, btnSuggest, btnSearch].forEach(btn => {
+        btn.style.background = 'transparent';
+        btn.style.color = 'var(--text-secondary)';
+    });
+
+    // Hide All Content
+    radarContent.style.display = 'none';
+    suggestContent.style.display = 'none';
+    searchContent.style.display = 'none';
+
+    if (tab === 'radar') {
+        radarContent.style.display = 'block';
+        btnRadar.style.background = 'var(--accent)';
+        btnRadar.style.color = 'white';
+    } 
+    else if (tab === 'suggestion') {
+        suggestContent.style.display = 'block';
+        btnSuggest.style.background = 'var(--accent)';
+        btnSuggest.style.color = 'white';
+        // Trigger Algorithm
+        if(suggestedUsers.length === 0) loadSuggestions();
+    } 
+    else {
+        searchContent.style.display = 'block';
+        btnSearch.style.background = 'var(--accent)';
+        btnSearch.style.color = 'white';
+        setTimeout(() => document.getElementById('global-search-input').focus(), 100);
+    }
 }
 
-function loadExploreUsers(searchQuery = "") {
-    const list = document.getElementById('explore-user-list');
-    list.innerHTML = '<div class="loader-spinner" style="margin: 20px auto;"></div>';
-
-    db.collection('users').limit(50).get().then(snap => {
-        list.innerHTML = '';
-        markers.forEach(m => m.setMap(null));
-        markers = [];
-
-        snap.forEach(doc => {
-            const u = doc.data();
-            if(u.uid !== currentUser.uid) {
-                // Search filtering
-                let matchesSearch = true;
-                if (searchQuery) {
-                    const nameMatch = u.displayName?.toLowerCase().includes(searchQuery);
-                    const nicheMatch = u.niche?.toLowerCase().includes(searchQuery);
-                    matchesSearch = nameMatch || nicheMatch;
-                }
-
-                if (matchesSearch) {
-                    // 1. Add to List
-                    list.innerHTML += `
-                        <div class="explore-user-card" onclick="openUserProfile('${u.uid}')">
-                            <div class="avatar" style="background-image: url('${u.photoURL}')"></div>
-                            <div style="flex:1; margin-left: 12px;">
-                                <div style="font-weight: 700;">${u.displayName}</div>
-                                <div style="font-size: 0.85rem; color: var(--accent);">${u.niche || 'Professional'}</div>
-                            </div>
-                        </div>
-                    `;
-
-                    // 2. Add to Map
-                    if (u.location && u.location.lat && map) {
-                        const marker = new google.maps.Marker({
-                            position: { lat: u.location.lat, lng: u.location.lng },
-                            map: map,
-                            title: u.displayName,
-                            icon: { url: u.photoURL, scaledSize: new google.maps.Size(40, 40) }
-                        });
-                        marker.addListener("click", () => openUserProfile(u.uid));
-                        markers.push(marker);
-                    }
-                }
-            }
-        });
-    });
-}
-
-
+// 2. THE ALGORITHM: MATCHING LOGIC
 function calculateMatchScore(me, other) {
     let score = 0;
     let commonInterests = [];
@@ -2838,82 +2830,155 @@ function calculateMatchScore(me, other) {
     return { score, common: commonInterests };
 }
 
-function initMap() {
-    const centerLoc = myLocation || { lat: 26.1445, lng: 91.7362 }; // Default location
-    map = new google.maps.Map(document.getElementById("explore-map"), {
-        zoom: 12,
-        center: centerLoc,
-        disableDefaultUI: true
-    });
-    loadExploreUsers(); 
+// 3. LOAD & SORT USERS
+function loadSuggestions() {
+    const container = document.getElementById('suggestion-stack');
+    container.innerHTML = '<div class="loader-spinner"></div>';
+
+    // In a real app, use a Cloud Function for this. 
+    // For this prototype, we fetch latest 50 active users.
+    db.collection('users')
+      .orderBy('lastActive', 'desc')
+      .limit(50)
+      .get()
+      .then(snapshot => {
+          let candidates = [];
+
+          snapshot.forEach(doc => {
+              const u = doc.data();
+              // Don't suggest myself
+              if (u.uid !== currentUser.uid) {
+                  const matchData = calculateMatchScore(globalProfileData, u);
+                  // Only suggest if score > 0 (At least something in common)
+                  if(matchData.score > 0) {
+                      candidates.push({ ...u, matchScore: matchData.score, commonInterests: matchData.common });
+                  }
+              }
+          });
+
+          // Sort by Score (Highest first)
+          candidates.sort((a, b) => b.matchScore - a.matchScore);
+          suggestedUsers = candidates;
+          currentCardIndex = 0;
+
+          renderSwipeCard();
+      });
 }
 
-function handleExploreSearch(query) {
-    if (exploreSearchTimeout) clearTimeout(exploreSearchTimeout);
-    exploreSearchTimeout = setTimeout(() => {
-        loadExploreUsers(query.toLowerCase());
+// 4. RENDER SINGLE CARD
+// --- UPDATED CARD RENDERER ---
+
+// --- UPDATED CARD RENDERER WITH OVERLAY BUTTONS ---
+
+function renderSwipeCard() {
+    const container = document.getElementById('suggestion-stack');
+    container.innerHTML = ''; // Clear previous
+
+    if (currentCardIndex >= suggestedUsers.length) {
+        container.innerHTML = `
+            <div style="text-align:center; padding: 20px; animation: scaleIn 0.3s ease;">
+                <div style="font-size:3rem; margin-bottom:10px;">🎉</div>
+                <h3>All Caught Up!</h3>
+                <p style="color:var(--text-secondary); margin-bottom:20px;">Check back later for more suggestions.</p>
+                <button class="secondary-btn" onclick="loadSuggestions()" style="width:auto;">Refresh Radar</button>
+            </div>
+        `;
+        return;
+    }
+
+    const u = suggestedUsers[currentCardIndex];
+    
+    // Generate Common Interest Chips
+    let interestHTML = '';
+    if (u.commonInterests.length > 0) {
+        interestHTML = `<div class="common-interests-row">
+            ${u.commonInterests.map(i => `<div class="common-chip"><i class="fa-solid fa-check"></i> ${i}</div>`).join('')}
+        </div>`;
+    } else {
+        interestHTML = `<div class="common-interests-row"><div class="common-chip" style="border-style:dashed; color:var(--text-secondary); border-color:var(--border);">No common tags</div></div>`;
+    }
+
+    const cardHTML = `
+        <div id="active-card" class="tinder-card">
+            
+            <div class="t-card-img-container" onclick="openUserProfile('${u.uid}')">
+                <div class="match-badge">${u.matchScore}% Match</div>
+                <img src="${u.photoURL || 'default.png'}" class="t-card-img">
+                <div class="t-card-overlay"></div>
+
+                <div class="t-overlay-controls">
+                    <div class="t-action-btn pass" onclick="event.stopPropagation(); triggerSwipe('left')">
+                        <i class="fa-solid fa-xmark"></i>
+                    </div>
+                    <div class="t-action-btn like" onclick="event.stopPropagation(); triggerSwipe('right')">
+                        <i class="fa-solid fa-heart"></i>
+                    </div>
+                </div>
+                </div>
+
+            <div class="t-card-info">
+                <div class="t-name-row">
+                    <div class="t-name">${u.displayName.split(' ')[0]}</div>
+                    <div class="t-info-btn" onclick="openUserProfile('${u.uid}')">
+                        <i class="fa-solid fa-info"></i>
+                    </div>
+                </div>
+                
+                <div class="t-details">
+                    ${u.academic.major || 'Student'} • ${u.academic.year || '1st Year'}
+                </div>
+
+                <div class="t-uni">
+                    <i class="fa-solid fa-building-columns" style="color:var(--text-secondary);"></i> 
+                    ${u.academic.university}
+                </div>
+
+                ${interestHTML}
+            </div>
+        </div>
+    `;
+
+    container.innerHTML = cardHTML;
+}
+
+// 5. HANDLE SWIPE ACTION
+function triggerSwipe(direction) {
+    const card = document.getElementById('active-card');
+    if(!card) return;
+
+    if (direction === 'left') {
+        // PASS
+        card.classList.add('slide-out-left');
+    } else {
+        // CONNECT
+        card.classList.add('slide-out-right');
+        
+        // Execute Logic: Follow the user
+        const targetUid = suggestedUsers[currentCardIndex].uid;
+        
+        // Use existing follow logic (but quietly)
+        const myRef = db.collection('users').doc(currentUser.uid);
+        const otherRef = db.collection('users').doc(targetUid);
+        const timestamp = firebase.firestore.FieldValue.serverTimestamp();
+
+        // Add to following
+        myRef.collection('following').doc(targetUid).set({timestamp: timestamp});
+        otherRef.collection('followers').doc(currentUser.uid).set({timestamp: timestamp});
+        
+        // Send Notification
+        const myName = globalProfileData.displayName || currentUser.displayName;
+        sendAppNotification(targetUid, 'follow', 'found you via Suggestions!', null, null);
+
+        // Show a quick visual feedback
+        showBoostAnimation(); // Reuse the boost animation for match effect
+    }
+
+    // Wait for animation to finish then load next
+    setTimeout(() => {
+        currentCardIndex++;
+        renderSwipeCard();
     }, 300);
 }
-
-function loadExploreUsers(searchQuery = "") {
-    const list = document.getElementById('explore-user-list');
-    list.innerHTML = '<div class="loader-spinner" style="margin: 20px auto;"></div>';
-
-    db.collection('users').limit(50).get().then(snap => {
-        list.innerHTML = '';
-        
-        // Clear old map markers
-        markers.forEach(m => m.setMap(null));
-        markers = [];
-
-        let usersFound = false;
-
-        snap.forEach(doc => {
-            const u = doc.data();
-            if(u.uid !== currentUser.uid) {
-                
-                // Filter by Search Query
-                let matchesSearch = true;
-                if (searchQuery) {
-                    const nameMatch = u.displayName?.toLowerCase().includes(searchQuery);
-                    const nicheMatch = u.niche?.toLowerCase().includes(searchQuery);
-                    matchesSearch = nameMatch || nicheMatch;
-                }
-
-                if (matchesSearch) {
-                    usersFound = true;
-                    // Render List Item
-                    list.innerHTML += `
-                        <div class="explore-user-card" style="display:flex; align-items:center; padding:15px; background:var(--bg-glass); border:1px solid var(--border); border-radius:16px; margin-bottom:12px; cursor:pointer;" onclick="openUserProfile('${u.uid}')">
-                            <div class="avatar" style="background-image: url('${u.photoURL}'); width:55px; height:55px; border-radius:12px;"></div>
-                            <div style="flex:1; margin-left: 12px;">
-                                <div style="font-weight: 700; font-size: 1.05rem;">${u.displayName}</div>
-                                <div style="font-size: 0.85rem; color: var(--accent); font-family:'JetBrains Mono', monospace;">${u.niche || 'Professional'}</div>
-                            </div>
-                        </div>
-                    `;
-
-                    // Render Map Marker
-                    if (u.location && u.location.lat && map) {
-                        const marker = new google.maps.Marker({
-                            position: { lat: u.location.lat, lng: u.location.lng },
-                            map: map,
-                            title: u.displayName,
-                            icon: { url: u.photoURL, scaledSize: new google.maps.Size(40, 40) }
-                        });
-                        marker.addListener("click", () => openUserProfile(u.uid));
-                        markers.push(marker);
-                    }
-                }
-            }
-        });
-
-        if(!usersFound) {
-            list.innerHTML = '<p style="text-align:center; color:var(--text-secondary); margin-top:20px;">No professionals found.</p>';
-        }
-    });
-}
-
 
 // --- USER SEARCH LOGIC ---
 let searchTimeout = null;
@@ -3429,8 +3494,6 @@ const COURSES_MAJORS = [
 function setupAutocomplete(inputId, listId, dataArray) {
     const input = document.getElementById(inputId);
     const list = document.getElementById(listId);
-
-    if (!input || !list) return;
 
     // 1. Filter and Show List
     input.oninput = function() {
@@ -4128,11 +4191,6 @@ let gpsWatcher = null; // Store permission listener
 function requestGPS() {
     const MAX_RANGE = 5000;
     const statusEl = document.getElementById('gps-status-indicator');
-
-    // Safety check
-    if (statusEl) {
-        statusEl.innerHTML = `<i class="fa-solid fa-satellite-dish"></i> RANGE: <span style="color:#4dabf8">${MAX_RANGE / 1000} KM</span>`;
-    }
     
     // Display the max range in the indicator area
     statusEl.innerHTML = `<i class="fa-solid fa-satellite-dish"></i> RANGE: <span style="color:#4dabf8">${MAX_RANGE / 1000} KM</span>`;
@@ -4189,36 +4247,31 @@ function handlePermissionState(state) {
 }
 
 function attemptGeoFetch() {
-    if (!navigator.geolocation) return console.warn("GPS not supported");
+    if (!navigator.geolocation) return alert("GPS not supported");
 
     navigator.geolocation.getCurrentPosition(
         (position) => {
+            // --- SUCCESS: FORCE UI UPDATE HERE ---
             const lat = position.coords.latitude;
             const lng = position.coords.longitude;
             myLocation = { lat, lng };
 
-            // Safely update DOM only if elements exist
-            const warningEl = document.getElementById('radar-permission-warning');
-            if (warningEl) {
-                warningEl.classList.add('hidden');
-                warningEl.style.display = 'none';
-            }
-            
-            const contentEl = document.getElementById('radar-content');
-            if (contentEl) contentEl.classList.remove('hidden');
+            // 1. Force Hide Warning / Show Content
+            document.getElementById('radar-permission-warning').classList.add('hidden');
+            document.getElementById('radar-permission-warning').style.display = 'none'; // Double assurance
+            document.getElementById('radar-content').classList.remove('hidden');
 
-            const statusEl = document.getElementById('gps-status-indicator');
-            if (statusEl) statusEl.innerHTML = 'STATUS: <span style="color:#00e676">ONLINE</span>';
+            // 2. Update Status
+            document.getElementById('gps-status-indicator').innerHTML = 'STATUS: <span style="color:#00e676">ONLINE</span>';
 
-            // Save to DB
+            // 3. Save to DB
             db.collection('users').doc(currentUser.uid).update({
                 location: { lat, lng },
                 lastActive: firebase.firestore.FieldValue.serverTimestamp()
             });
             
-            // Load Data
-            if (typeof loadNearbyUsers === 'function') loadNearbyUsers();
-            if (typeof loadExploreUsers === 'function') loadExploreUsers();
+            // 4. Load Data
+            loadNearbyUsers();
         },
         (error) => {
             console.warn("GPS Error", error);
@@ -4277,11 +4330,6 @@ function retryGPS() {
 
     async function completeSetup() {
     const name = document.getElementById('setup-name').value;
-    const niche = document.getElementById('setup-niche').value;
-    const country = document.getElementById('setup-country').value;
-    const city = document.getElementById('setup-city').value;
-    const empStatus = document.getElementById('setup-emp-status').value;
-    const jobIntent = document.getElementById('setup-job-intent').value;
     const uni = document.getElementById('setup-university').value;
     const major = document.getElementById('setup-major').value;
     const year = document.getElementById('setup-year').value;
@@ -4319,38 +4367,16 @@ function retryGPS() {
 
         const userData = {
             uid: currentUser.uid, 
-        displayName: name, 
-        photoURL: finalPhotoURL,
-        bannerUrl: selectedBannerUrl,
-        niche: niche,
-        locationInfo: { country, city },
-        employmentStatus: empStatus,
-        jobIntent: jobIntent,
-        bio: document.getElementById('setup-bio').value,
-        futureGoal: document.getElementById('setup-goal').value,
-        interests: Array.from(selectedHobbies),
-        lastActive: firebase.firestore.FieldValue.serverTimestamp()
+            displayName: name, 
+            email: currentUser.email, 
+            photoURL: finalPhotoURL, // Save the new URL to Firestore
+            bannerUrl: selectedBannerUrl,
+            academic: { university: uni, major: major, year: year },
+            bio: bio,
+            futureGoal: futureGoal,
+            interests: Array.from(selectedHobbies),
+            lastActive: firebase.firestore.FieldValue.serverTimestamp()
         };
-
-        if (empStatus === 'student') {
-        userData.academic = {
-            university: document.getElementById('setup-university').value,
-            major: document.getElementById('setup-major').value
-        };
-    } else {
-        userData.jobInfo = {
-            title: document.getElementById('setup-job-title').value,
-            type: document.getElementById('setup-job-type').value,
-            company: document.getElementById('setup-company').value
-        };
-    }
-
-    if (jobIntent === 'yes' || jobIntent === 'open') {
-        userData.jobPrefs = {
-            titles: document.getElementById('setup-pref-titles').value,
-            locations: document.getElementById('setup-pref-locations').value
-        };
-    }
 
         // Send update
         await db.collection('users').doc(currentUser.uid).set(userData, { merge: true });
@@ -5698,6 +5724,91 @@ function openNotifications() {
     // --- POSTS & RADAR (With Blips) ---
 // Find this function and replace it:
 
+function loadNearbyUsers() {
+    const list = document.getElementById('user-list');
+    const radarCircle = document.querySelector('.radar-circle');
+    const MAX_RANGE = 5000; // 5000 meters (5 km)
+    
+    // Display the range prominently (in the GPS status indicator area)
+    const statusEl = document.getElementById('gps-status-indicator');
+    statusEl.innerHTML = `<i class="fa-solid fa-satellite-dish"></i> RANGE: <span style="color:#4dabf8">${MAX_RANGE / 1000} KM</span>`;
+
+    db.collection('users').orderBy('lastActive', 'desc').limit(20).onSnapshot(snap => {
+        list.innerHTML = '';
+        const oldBlips = radarCircle.querySelectorAll('.radar-blip, .blip-tooltip');
+        oldBlips.forEach(el => el.remove());
+        
+        let usersWithDistance = [];
+        snap.forEach(doc => {
+            const u = doc.data();
+            if(u.uid !== currentUser.uid) {
+                let dist = null;
+                // Only calculate distance if myLocation and user location exist
+                if(myLocation && u.location) {
+                    dist = getDistanceFromLatLonInMeters(myLocation.lat, myLocation.lng, u.location.lat, u.location.lng);
+                }
+                
+                // IMPORTANT: Filter out users immediately if distance is unknown or outside MAX_RANGE
+                if (dist !== null && dist <= MAX_RANGE) {
+                    usersWithDistance.push({ ...u, distance: dist });
+                }
+            }
+        });
+
+        if(usersWithDistance.length === 0) { 
+            list.innerHTML = '<p class="mono" style="color:var(--text-secondary); text-align:center;">No students found within range.</p>'; 
+            return; 
+        }
+
+        usersWithDistance.sort((a, b) => a.distance - b.distance);
+
+        usersWithDistance.forEach(u => {
+            let distText = `${Math.round(u.distance)}m`;
+            
+            // --- 1. Populate the User List (List View) ---
+            list.innerHTML += `
+                <div class="user-list-item" onclick="openUserProfile('${u.uid}')">
+                    <div class="avatar" style="background-image: url('${u.photoURL || ''}')"></div>
+                    <div style="flex:1;">
+                        <div class="h-flex" style="justify-content:space-between;">
+                            <div style="font-weight:600;">${u.displayName}</div>
+                            <div class="mono" style="font-size:0.7rem; color:var(--accent);">${distText}</div>
+                        </div>
+                        <div style="font-size:0.8rem; color:var(--text-secondary);">${u.academic?.major || 'Student'}</div>
+                    </div>
+                </div>
+            `;
+
+            // --- 2. Populate the Radar View (Blips) ---
+            if(u.distance !== null) {
+                const blip = document.createElement('div');
+                blip.className = 'radar-blip';
+                
+                // Calculate position based on distance: map 0m to 0% and MAX_RANGE to 45% radial distance
+                // We use 45% to keep the blip inside the radar circle boundary.
+                const percentFromCenter = (u.distance / MAX_RANGE) * 45; 
+                
+                // Keep random angle to distribute blips realistically
+                const randomAngle = Math.random() * 2 * Math.PI;
+                const top = 50 + (percentFromCenter * Math.sin(randomAngle));
+                const left = 50 + (percentFromCenter * Math.cos(randomAngle));
+                
+                blip.style.top = top + '%'; blip.style.left = left + '%';
+                blip.onclick = (e) => { e.stopPropagation(); openUserProfile(u.uid); };
+                
+                const tooltip = document.createElement('div');
+                tooltip.className = 'blip-tooltip';
+                tooltip.innerText = u.displayName.split(' ')[0] + ` (${distText})`;
+                tooltip.style.top = top + '%';
+                tooltip.style.left = left + '%';
+                
+                radarCircle.appendChild(tooltip);
+                radarCircle.appendChild(blip);
+            }
+        });
+    });
+}
+
     // --- MENU FUNCTIONS ---
 
 // Updated toggle function to handle unique IDs based on source
@@ -6540,45 +6651,24 @@ function addCommentToDB(pid, text) {
 
     
     function editProfile() {
-    // Safely load text data
-    if(document.getElementById('setup-name')) document.getElementById('setup-name').value = globalProfileData.displayName || "";
-    if(document.getElementById('setup-niche')) document.getElementById('setup-niche').value = globalProfileData.niche || "";
-    
-    if(globalProfileData.locationInfo) {
-        if(document.getElementById('setup-country')) document.getElementById('setup-country').value = globalProfileData.locationInfo.country || "";
-        if(document.getElementById('setup-city')) document.getElementById('setup-city').value = globalProfileData.locationInfo.city || "";
-    }
+    // Load text data
+    document.getElementById('setup-name').value = globalProfileData.displayName || "";
+    document.getElementById('setup-university').value = globalProfileData.academic.university || "";
+    document.getElementById('setup-major').value = globalProfileData.academic.major || "";
+    document.getElementById('setup-year').value = globalProfileData.academic.year || "";
+    document.getElementById('setup-bio').value = globalProfileData.bio || "";
+    document.getElementById('setup-goal').value = globalProfileData.futureGoal || "";
+    updateBioCount();
 
-    if(document.getElementById('setup-emp-status')) {
-        document.getElementById('setup-emp-status').value = globalProfileData.employmentStatus || 'student';
-        toggleEmpFields();
-    }
+    // NEW: Load current profile picture into the preview
+    document.getElementById('setup-pic-preview').src = globalProfileData.photoURL || currentUser.photoURL;
 
-    if (globalProfileData.employmentStatus === 'student' || !globalProfileData.employmentStatus) {
-        if(document.getElementById('setup-university')) document.getElementById('setup-university').value = globalProfileData.academic?.university || "";
-        if(document.getElementById('setup-major')) document.getElementById('setup-major').value = globalProfileData.academic?.major || "";
-    } else {
-        if(document.getElementById('setup-job-title')) document.getElementById('setup-job-title').value = globalProfileData.jobInfo?.title || "";
-        if(document.getElementById('setup-job-type')) document.getElementById('setup-job-type').value = globalProfileData.jobInfo?.type || "Full-time";
-        if(document.getElementById('setup-company')) document.getElementById('setup-company').value = globalProfileData.jobInfo?.company || "";
-    }
+    selectedBannerUrl = globalProfileData.bannerUrl || DEFAULT_BANNER;
+    document.getElementById('setup-banner-preview').src = selectedBannerUrl;
 
-    if(document.getElementById('setup-job-intent')) {
-        document.getElementById('setup-job-intent').value = globalProfileData.jobIntent || "no";
-        toggleIntentFields();
-    }
-
-    if (globalProfileData.jobPrefs) {
-        if(document.getElementById('setup-pref-titles')) document.getElementById('setup-pref-titles').value = globalProfileData.jobPrefs.titles || "";
-        if(document.getElementById('setup-pref-locations')) document.getElementById('setup-pref-locations').value = globalProfileData.jobPrefs.locations || "";
-    }
-
-    if(document.getElementById('setup-bio')) document.getElementById('setup-bio').value = globalProfileData.bio || "";
-    if(document.getElementById('setup-pic-preview')) document.getElementById('setup-pic-preview').src = globalProfileData.photoURL || currentUser.photoURL;
-    
     // Load saved hobbies
     selectedHobbies = new Set(globalProfileData.interests || []);
-    if(typeof renderHobbiesSelector === 'function') renderHobbiesSelector();
+    renderHobbiesSelector();
 
     switchTab('setup', null);
 }
