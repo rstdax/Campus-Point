@@ -257,57 +257,107 @@
         }
 
         /* --- Cards --- */
-        /* --- Cards --- */
         .chat-item {
             background: var(--bg-card);
-            backdrop-filter: blur(25px) saturate(180%);
-            -webkit-backdrop-filter: blur(25px) saturate(180%);
             border: 1px solid var(--border);
             border-radius: var(--radius-l);
             padding: 20px; margin-bottom: 20px;
-            box-shadow: 0 4px 24px -1px rgba(0, 0, 0, 0.2);
             display: flex; align-items: center; cursor: pointer;
         }
 
+        /* Cardless Edge-to-Edge Post Container */
         .post-card {
-            background: transparent;
-            border-bottom: 1px solid var(--border);
-            padding: 20px 20px 30px 20px; 
+            background: var(--bg-main);
+            border-bottom: 8px solid var(--bg-input); /* Thick divider like LinkedIn/Insta */
+            padding: 20px 15px 20px 15px; 
             margin-bottom: 0px;
-            margin-left: -20px; /* Stretch to edges of mobile screen */
-            margin-right: -20px;
+            border-radius: 0;
+            border-left: none;
+            border-right: none;
+            border-top: none;
+            box-shadow: none;
         }
         
         /* --- FEED IMAGE STYLES --- */
-.feed-post-img {
-    width: calc(100% + 40px);
-    margin-left: -20px;
-    display: block;
-    margin-top: 15px;
-    border-radius: 0;
-    border: none; }
+        .feed-post-img {
+            width: 100%;
+            display: block;
+            margin-top: 0;
+            border-radius: 12px; /* Rounded corners as seen in screenshot */
+            border: 1px solid var(--border);
+            object-fit: cover; 
+            height: auto;
+            max-height: 550px; 
+            min-height: 225px; 
+        }
 
-        .chat-item { display: flex; align-items: center; cursor: pointer; }
-        .chat-item:hover { border-color: var(--accent); }
+        /* --- MULTI-IMAGE CAROUSEL (FEED) --- */
+        .post-carousel {
+            position: relative;
+            width: 100%;
+            margin-top: 0;
+        }
 
+        .carousel-track {
+            display: flex;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            scrollbar-width: none;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+        .carousel-track::-webkit-scrollbar { display: none; }
+
+        .carousel-slide {
+            min-width: 100%;
+            scroll-snap-align: center;
+            position: relative;
+        }
+
+        /* Dots Indicator */
+        .carousel-dots {
+            display: flex; justify-content: center; gap: 6px; margin-top: 10px;
+        }
+        .dot {
+            width: 6px; height: 6px; background: var(--text-secondary); border-radius: 50%; opacity: 0.5;
+        }
+        .dot.active { background: var(--accent); opacity: 1; transform: scale(1.2); }
+
+        /* --- POST VIDEO CONTROLS --- */
+        .post-video-wrapper {
+            position: relative;
+            width: 100%;
+            height: 450px;
+            background: #000;
+            border-radius: 12px;
+            margin-top: 0;
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        /* Action Buttons Row */
         .post-actions {
-            display: flex; gap: 20px; margin-top: 15px; padding-top: 5px;
+            display: flex; align-items: center; justify-content: space-between; 
+            margin-top: 15px; padding-top: 5px;
         }
 
         .action-item {
-            display: flex; align-items: center; gap: 6px; cursor: pointer;
-            font-size: 0.9rem; color: var(--text-secondary); transition: 0.2s;
+            display: flex; align-items: center; cursor: pointer;
+            color: var(--text-primary); transition: 0.2s;
         }
+        .action-item i { font-size: 1.4rem; }
+        .action-item span { font-size: 0.9rem; margin-left: 8px; font-weight: 500; }
         
-        .action-item.boosted { color: var(--boost-color); }
-        .action-item:hover { color: var(--text-primary); }
+        /* Hashtags */
+        .post-tags {
+            margin-top: 12px; font-size: 0.85rem; color: #4f46e5; font-weight: 500;
+        }
 
         .discussion-area {
             margin-top: 15px; background: var(--bg-input); 
             border-radius: 8px; padding: 10px; display: none;
         }
         .discussion-area.show { display: block; }
-        
         .comment-item {
             font-size: 0.85rem; padding: 8px 0; border-bottom: 1px solid var(--border);
         }
@@ -2062,16 +2112,13 @@ select.nexus-input {
 
     <div class="app-container">
         
-        <header class="header">
-            <div class="brand mono" style="font-weight:700; cursor:pointer;" onclick="loadFeed(false)">CAMPUS<span style="color:var(--accent)">POINT</span></div>
+        <header class="header" style="background: var(--bg-main); border-bottom: none;">
+            <div class="brand" style="font-weight: 700; font-size: 1.4rem; color: var(--text-primary); cursor:pointer;" onclick="loadFeed(false)">Home</div>
             <div class="h-flex">
                 <div class="header-icon-btn" onclick="openNotifications()">
-                    <i class="fa-regular fa-bell" style="font-size: 1.2rem;"></i>
-                    <div id="notif-badge" class="notif-badge"></div>
+                    <i class="fa-regular fa-bell" style="font-size: 1.4rem; color: var(--text-primary);"></i>
+                    <div id="notif-badge" class="notif-badge" style="top: -2px; right: 0;"></div>
                 </div>
-
-                <i class="fa-solid fa-moon" id="theme-btn" onclick="openThemeModal()" style="margin-right: 20px; color: var(--text-secondary); cursor:pointer;"></i>
-                <img id="header-avatar" src="" style="width:28px; height:28px; border-radius:6px; display:none;">
             </div>
         </header>
 
@@ -6005,36 +6052,49 @@ function reportPost(pid, reportedUid, reportedName) {
     const el = document.createElement('div');
     el.className = 'post-card';
     
-    el.innerHTML = `
-        <div class="h-flex" style="margin-bottom:10px; align-items: flex-start;">
-            <div class="avatar" style="background-image: url('${post.userPhoto}'); cursor:pointer;" onclick="openUserProfile('${post.uid}')"></div>
-            <div style="flex:1" onclick="openUserProfile('${post.uid}')">
-                <div style="font-weight:600; font-size:0.95rem; cursor:pointer;">${post.userName}</div>
-                <div style="font-size:0.75rem; color:var(--text-secondary)">${time}</div>
+   el.innerHTML = `
+        <div class="h-flex" style="margin-bottom: 12px; align-items: center;">
+            <div class="avatar" style="background-image: url('${post.userPhoto}'); width: 45px; height: 45px; border-radius: 50%; cursor:pointer;" onclick="openUserProfile('${post.uid}')"></div>
+            <div style="flex:1; margin-left: 12px;" onclick="openUserProfile('${post.uid}')">
+                <div style="font-weight: 700; font-size: 1rem; cursor:pointer; color: var(--text-primary);">${post.userName}</div>
+                <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 2px;">Student</div>
+                <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px;">${time}</div>
             </div>
             <div class="post-header-right">
-                <i class="fa-solid fa-ellipsis-vertical menu-trigger" onclick="togglePostMenu('${pid}', '${source}', event)"></i>
+                <i class="fa-solid fa-ellipsis-vertical menu-trigger" style="color: var(--text-secondary); padding: 5px 10px; font-size: 1.1rem;" onclick="togglePostMenu('${pid}', '${source}', event)"></i>
                 <div id="menu-${source}-${pid}" class="dropdown-menu">
                     ${deleteBtn} ${reportBtn}
                     <div class="dropdown-item" onclick="togglePostMenu('${pid}', '${source}', event)"><i class="fa-solid fa-xmark"></i> Close</div>
                 </div>
             </div>
         </div>
-        <div class="goal-tag mono" style="margin-bottom:10px; display:inline-block;">${post.goal || ''}</div>
-        <p style="font-size:0.95rem; line-height:1.5;">${post.text}</p>
+        
+        <p style="font-size: 0.95rem; line-height: 1.5; margin-bottom: 15px; color: var(--text-primary);">${post.text}</p>
         
         ${mediaHTML}
         
         <div class="post-actions">
-            <div class="action-item ${isBoosted ? 'boosted' : ''}" onclick="toggleBoost('${pid}')">
-                <i id="post-boost-icon-${pid}" class="fa-solid fa-bolt" style="transition: transform 0.2s; ${isBoosted ? 'color: var(--boost-color); transform: scale(1.3);' : ''}"></i>
-                
-                <span>Boost (<span id="post-boost-count-${pid}">${boosts.length}</span>)</span>
+            <div class="h-flex" style="gap: 24px;">
+                <div class="action-item ${isBoosted ? 'boosted-active' : ''}" onclick="toggleBoost('${pid}')">
+                    <i id="post-boost-icon-${pid}" class="${isBoosted ? 'fa-solid' : 'fa-regular'} fa-heart" style="transition: transform 0.2s; ${isBoosted ? 'color: #ff3b30;' : ''}"></i>
+                    <span id="post-boost-count-${pid}">${boosts.length || 0}</span>
+                </div>
+                <div class="action-item" onclick="toggleDiscussion('${pid}')">
+                    <i class="fa-regular fa-comment"></i>
+                    <span>24</span> <!-- Layout placeholder -->
+                </div>
+                <div class="action-item">
+                    <i class="fa-solid fa-share-nodes"></i>
+                    <span>12</span> <!-- Layout placeholder -->
+                </div>
             </div>
-            <div class="action-item" onclick="toggleDiscussion('${pid}')">
-                <i class="fa-regular fa-comment-dots"></i><span>Discussion</span>
+            <div class="action-item">
+                <i class="fa-regular fa-bookmark"></i>
             </div>
         </div>
+
+        ${post.goal ? `<div class="post-tags">${post.goal}</div>` : ''}
+
         <div class="discussion-area" id="discuss-${pid}">
             <div id="preview-comments-${pid}" style="margin-bottom:10px;">
                 <p style="font-size:0.8rem; color:var(--text-secondary);">Loading preview...</p>
@@ -6240,32 +6300,26 @@ function updateCarouselDots(pid, count) {
 }
 
     function toggleBoost(pid, isReel = false) {
-    // 1. OPTIMISTIC UI UPDATE (Real-time feel)
     let icon, countSpan;
 
     if (isReel) {
-        // Target elements for Reels
         icon = document.getElementById(`reel-boost-icon-${pid}`);
         countSpan = document.getElementById(`reel-boost-count-${pid}`);
     } else {
-        // FIX: Target elements for Feed Posts (Added IDs)
         icon = document.getElementById(`post-boost-icon-${pid}`);
         countSpan = document.getElementById(`post-boost-count-${pid}`);
     }
 
-    // Determine state
     let isCurrentlyBoosted = false;
 
     if (icon) {
-        // Check current state by color or class
-        // (Using class is safer than relying solely on computed color strings)
-        isCurrentlyBoosted = icon.style.color === 'var(--boost-color)' || icon.classList.contains('boosted-active');
+        isCurrentlyBoosted = icon.classList.contains('boosted-active');
 
-        // Toggle State Visually
         if (isCurrentlyBoosted) {
-            // UN-BOOST ACTION
-            icon.style.color = ''; // Remove inline color to revert to CSS default
-            icon.classList.remove('boosted-active');
+            // UN-LIKE
+            icon.style.color = ''; 
+            icon.classList.remove('boosted-active', 'fa-solid');
+            icon.classList.add('fa-regular');
             icon.style.transform = 'scale(1)';
             
             if (countSpan) {
@@ -6273,24 +6327,23 @@ function updateCarouselDots(pid, count) {
                 countSpan.innerText = Math.max(0, currentCount - 1);
             }
         } else {
-            // BOOST ACTION
-            icon.style.color = 'var(--boost-color)'; // Apply Gold Color
-            icon.classList.add('boosted-active');
+            // LIKE
+            icon.style.color = '#ff3b30'; // Heart Red
+            icon.classList.add('boosted-active', 'fa-solid');
+            icon.classList.remove('fa-regular');
             
-            // Animation
             icon.style.transform = 'scale(1.3)';
-            setTimeout(() => icon.style.transform = 'scale(1)', 200); // Pulse effect
+            setTimeout(() => icon.style.transform = 'scale(1)', 200); 
             
             if (countSpan) {
                 let currentCount = parseInt(countSpan.innerText) || 0;
                 countSpan.innerText = currentCount + 1;
             }
-            
-            showBoostAnimation(); // Trigger the GIF overlay
+            showBoostAnimation();
         }
     }
 
-    // 2. DATABASE TRANSACTION
+    // DATABASE TRANSACTION
     const ref = db.collection('posts').doc(pid);
     db.runTransaction(t => {
         return t.get(ref).then(doc => {
@@ -6299,8 +6352,6 @@ function updateCarouselDots(pid, count) {
             const data = doc.data();
             const boosts = data.boosts || [];
             const dbIsBoosted = boosts.includes(currentUser.uid);
-
-            // Extract needed data for notification
             const postAuthorUid = data.uid;
             const postImage = data.imageUrl || null;
 
@@ -6310,33 +6361,26 @@ function updateCarouselDots(pid, count) {
                     : firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
             });
 
-            return {
-                wasBoosted: !dbIsBoosted,
-                authorUid: postAuthorUid,
-                image: postImage
-            };
+            return { wasBoosted: !dbIsBoosted, authorUid: postAuthorUid, image: postImage };
         });
     }).then(result => {
         if (result.wasBoosted) {
-            sendAppNotification(result.authorUid, 'like', 'boosted your post.', pid, result.image);
+            sendAppNotification(result.authorUid, 'like', 'liked your post.', pid, result.image);
         }
     }).catch(error => {
-        console.error("Boost failed:", error);
-        
-        // Revert UI if DB fails (Prevents desync)
+        console.error("Like failed:", error);
+        // Revert UI safely if DB fails
         if (icon) {
-            // If the icon is currently colored gold (meaning we optimistically boosted it), revert it
-            const isActiveNow = icon.style.color === 'var(--boost-color)';
-            
+            const isActiveNow = icon.classList.contains('boosted-active');
             if (isActiveNow) {
-                // Revert to Un-boosted
                 icon.style.color = '';
-                icon.classList.remove('boosted-active');
+                icon.classList.remove('boosted-active', 'fa-solid');
+                icon.classList.add('fa-regular');
                 if(countSpan) countSpan.innerText = Math.max(0, parseInt(countSpan.innerText) - 1);
             } else {
-                // Revert to Boosted
-                icon.style.color = 'var(--boost-color)';
-                icon.classList.add('boosted-active');
+                icon.style.color = '#ff3b30';
+                icon.classList.add('boosted-active', 'fa-solid');
+                icon.classList.remove('fa-regular');
                 if(countSpan) countSpan.innerText = parseInt(countSpan.innerText) + 1;
             }
         }
