@@ -4310,25 +4310,20 @@ function getHobbyDetails(hobby) {
     // --- NEW GPS HANDLING LOGIC ---
 // --- ADVANCED GPS HANDLING ---
 
-let gpsWatcher = null; // Store permission listener
-
 function requestGPS() {
-    const MAX_RANGE = 5000;
-    const statusEl = document.getElementById('gps-status-indicator');
-    
-    // Display the max range in the indicator area
-    statusEl.innerHTML = `<i class="fa-solid fa-satellite-dish"></i> RANGE: <span style="color:#4dabf8">${MAX_RANGE / 1000} KM</span>`;
-
     // 1. Check if Permissions API is supported
     if (navigator.permissions && navigator.permissions.query) {
         navigator.permissions.query({ name: 'geolocation' }).then(function(result) {
             
-            // Handle current state
-            handlePermissionState(result.state);
+            if (result.state === 'granted' || result.state === 'prompt') {
+                attemptGeoFetch();
+            }
 
-            // Listen for changes (e.g. if user resets settings while on page)
+            // Listen for changes
             result.onchange = function() {
-                handlePermissionState(this.state);
+                if (this.state === 'granted') {
+                    attemptGeoFetch();
+                }
             };
         });
     } else {
@@ -4337,75 +4332,31 @@ function requestGPS() {
     }
 }
 
-// --- UPDATED GPS LOGIC ---
-
-function handlePermissionState(state) {
-    const statusEl = document.getElementById('gps-status-indicator');
-    const warningDiv = document.getElementById('radar-permission-warning');
-    const contentDiv = document.getElementById('radar-content');
-    const msg = document.getElementById('gps-msg');
-    const retryBtn = document.getElementById('btn-gps-retry');
-
-    // ONLY reset UI if we haven't already successfully loaded the radar
-    // This prevents the "Allow" button from flickering back if permission state changes oddly
-    if (!myLocation) {
-        contentDiv.classList.add('hidden');
-        warningDiv.classList.remove('hidden');
-        warningDiv.style.display = 'flex';
-    }
-
-    if (state === 'granted') {
-        statusEl.innerHTML = 'STATUS: <span style="color:#4dabf8">ACTIVE</span>';
-        attemptGeoFetch(); // The callback inside this function will handle the UI switch
-    } 
-    else if (state === 'prompt') {
-        statusEl.innerHTML = 'STATUS: <span style="color:#FFD700">WAITING</span>';
-        msg.innerText = "Please tap 'Allow' when the browser popup appears.";
-        retryBtn.style.display = 'block';
-    } 
-    else if (state === 'denied') {
-        statusEl.innerHTML = 'STATUS: <span style="color:#ff5555">BLOCKED</span>';
-        msg.innerText = "Location access is blocked. Check site settings.";
-        retryBtn.style.display = 'none';
-    }
-}
-
 function attemptGeoFetch() {
-    if (!navigator.geolocation) return alert("GPS not supported");
+    if (!navigator.geolocation) return console.warn("GPS not supported");
 
     navigator.geolocation.getCurrentPosition(
         (position) => {
-            // --- SUCCESS: FORCE UI UPDATE HERE ---
+            // --- SUCCESS ---
             const lat = position.coords.latitude;
             const lng = position.coords.longitude;
             myLocation = { lat, lng };
 
-            // 1. Force Hide Warning / Show Content
-            document.getElementById('radar-permission-warning').classList.add('hidden');
-            document.getElementById('radar-permission-warning').style.display = 'none'; // Double assurance
-            document.getElementById('radar-content').classList.remove('hidden');
-
-            // 2. Update Status
-            document.getElementById('gps-status-indicator').innerHTML = 'STATUS: <span style="color:#00e676">ONLINE</span>';
-
-            // 3. Save to DB
+            // Save to DB silently
             db.collection('users').doc(currentUser.uid).update({
                 location: { lat, lng },
                 lastActive: firebase.firestore.FieldValue.serverTimestamp()
             });
-            
-            // 4. Load Data
-            loadNearbyUsers();
         },
         (error) => {
-            console.warn("GPS Error", error);
-            // Only show denied UI if we truly failed
-            if(error.code === 1) handlePermissionState('denied');
+            console.warn("GPS Error/Denied", error);
+            // We silently fail if denied, the user just won't see distance metrics
         },
         { enableHighAccuracy: true, timeout: 10000 }
     );
 }
 
+// We keep this empty or simple in case any other buttons call it
 function retryGPS() {
     attemptGeoFetch();
 }
