@@ -406,7 +406,7 @@
             margin-left: 8px;
             opacity: 1;
         }
-        
+
         /* --- Floating Action Button (FAB) --- */
         .floating-fab {
         position: fixed; bottom: 100px; right: 20px;
@@ -2182,18 +2182,33 @@ select.nexus-input {
             display: flex;
             margin-top: 25px;
             padding: 0 20px;
+            gap: 8px; /* Space between tabs */
         }
 
         .feed-tab-btn {
-            padding: 12px 20px;
-            background: rgba(0, 0, 0, 0.15); /* Makes inactive tabs translucent on the blue background */
-            color: rgba(255, 255, 255, 0.7); /* White text to read on blue */
-            font-weight: 600;
-            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 12px 16px;
+            background: rgba(0, 0, 0, 0.15); /* Translucent inactive state */
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 1.1rem;
             border-radius: 16px 16px 0 0;
             cursor: pointer;
-            transition: all 0.2s;
-            margin-right: 5px;
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); /* Smooth bouncy effect */
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .feed-tab-text {
+            font-weight: 600;
+            font-size: 0.95rem;
+            max-width: 0;
+            opacity: 0;
+            margin-left: 0;
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            display: inline-block;
+            white-space: nowrap;
         }
 
         .feed-tab-btn.active {
@@ -2202,6 +2217,14 @@ select.nexus-input {
             box-shadow: 0 -4px 15px rgba(0,0,0,0.05);
             z-index: 3;
             position: relative;
+            padding: 12px 20px; /* Expand padding slightly for active state */
+        }
+
+        /* Expanding the text only for the active tab */
+        .feed-tab-btn.active .feed-tab-text {
+            max-width: 150px; 
+            opacity: 1;
+            margin-left: 8px;
         }
 
         /* Filter Chips Container */
@@ -2240,8 +2263,8 @@ select.nexus-input {
 
     /* --- SKILL PASSPORT & SCORE UI --- */
         .skill-passport-card {
-            background: linear-gradient(135deg, rgba(10, 132, 255, 0.1), rgba(0, 85, 170, 0.05));
-            border: 1px solid var(--accent);
+            background: transparent;
+            border: 1px solid #007AFF; /* Thin blue border */
             border-radius: 16px;
             padding: 20px;
             margin-bottom: 20px;
@@ -2253,28 +2276,61 @@ select.nexus-input {
         .verified-badge {
             display: inline-flex;
             align-items: center;
-            gap: 5px;
+            gap: 6px;
             font-size: 0.75rem;
             font-weight: 600;
             color: #10b981;
             background: rgba(16, 185, 129, 0.1);
-            padding: 4px 10px;
+            padding: 6px 12px;
             border-radius: 50px;
             margin-top: 8px;
-            margin-right: 5px;
+            border: 1px solid rgba(16, 185, 129, 0.2);
         }
 
         .skill-score-circle {
-            width: 70px;
-            height: 70px;
+            width: 75px;
+            height: 75px;
             border-radius: 50%;
-            background: var(--bg-card);
-            border: 4px solid var(--accent);
+            background: transparent;
+            border: 3px solid var(--accent);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 4px 15px var(--accent-glow);
+            box-shadow: 0 0 15px var(--accent-glow), inset 0 0 10px var(--accent-glow);
+        }
+
+        /* --- NEW PROFILE STATS CARD --- */
+        .profile-stats-card {
+            background: #1c1c1e;
+            border-radius: 12px;
+            padding: 15px;
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+            border: 1px solid #2c2c2e;
+        }
+
+        .profile-stats-card .stat-box h3 {
+            font-size: 1.3rem;
+            margin-bottom: 4px;
+        }
+
+        /* --- PROFILE OUTLINE BUTTONS --- */
+        .profile-btn-outline {
+            background: transparent;
+            border: 1px solid var(--text-secondary);
+            color: var(--text-primary);
+            padding: 8px 24px;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        
+        .profile-btn-outline.danger {
+            border-color: #ff3b30;
+            color: #ff3b30;
         }
 
         /* --- LEARN ECOSYSTEM UI --- */
@@ -2562,13 +2618,16 @@ select.nexus-input {
                 <!-- Folder Tabs (Now inside blue area, sitting on the bottom edge) -->
                 <div class="feed-tabs-wrapper">
                     <div id="tab-recommended" class="feed-tab-btn active" onclick="switchFeedTab('recommended')">
-                        <i class="fa-solid fa-star" style="margin-right: 5px;"></i> Recommended
+                        <i class="fa-solid fa-star"></i> 
+                        <span class="feed-tab-text">Recommended</span>
                     </div>
                     <div id="tab-all" class="feed-tab-btn" onclick="switchFeedTab('all')">
-                        <i class="fa-solid fa-globe" style="margin-right: 5px;"></i> All Posts
+                        <i class="fa-solid fa-globe"></i> 
+                        <span class="feed-tab-text">All Posts</span>
                     </div>
                     <div id="tab-gigs" class="feed-tab-btn" onclick="switchFeedTab('gigs')">
-                        <i class="fa-solid fa-briefcase" style="margin-right: 5px;"></i> Gigs
+                        <i class="fa-solid fa-briefcase"></i> 
+                        <span class="feed-tab-text">Gigs</span>
                     </div>
                 </div>
 
@@ -2802,41 +2861,44 @@ select.nexus-input {
             </div>
 
             <div style="text-align: center; padding: 0 20px;">
-                <h2 id="profile-name">User</h2>
-                <p id="profile-academic" class="mono" style="color: var(--accent); font-size: 0.9rem; margin-bottom: 5px;"></p>
+                <h2 id="profile-name" style="font-weight: 800; font-size: 1.5rem; margin-bottom: 5px;">User</h2>
+                <p id="profile-academic" class="mono" style="color: var(--accent); font-size: 0.85rem; margin-bottom: 15px; font-weight: 600; line-height: 1.4;"></p>
                 
+                <div id="profile-bio" class="bio-text" style="margin-bottom: 15px;"></div>
+
                 <!-- NEW SKILL PASSPORT UI -->
-                <div class="skill-passport-card" style="margin-top: 15px; text-align: left;">
+                <div class="skill-passport-card" id="profile-skill-container" style="display:none; text-align: left;">
                     <div>
-                        <h3 style="font-weight: 700; font-size: 1.1rem; color: var(--text-primary); margin-bottom: 2px;">Skill Passport</h3>
-                        <div id="profile-skill" style="font-size: 0.9rem; color: var(--text-secondary);">Role</div>
-                        <div>
+                        <h3 style="font-weight: 700; font-size: 1.2rem; color: var(--text-primary); margin-bottom: 2px;">Skill Passport</h3>
+                        <div id="profile-skill" style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 10px;">Role</div>
+                        <div style="display: flex; flex-direction: column; align-items: flex-start;">
                             <span class="verified-badge"><i class="fa-solid fa-check-circle"></i> KYC Verified</span>
                             <span class="verified-badge"><i class="fa-solid fa-certificate"></i> Skills Verified</span>
                         </div>
                     </div>
                     <div class="skill-score-circle">
-                        <span id="profile-skill-score" style="font-size:1.1rem; font-weight:800; color:var(--accent);">--</span>
-                        <span style="font-size:0.5rem; font-weight:600; letter-spacing: 1px; color:var(--text-secondary);">SCORE</span>
+                        <span id="profile-skill-score" style="font-size:1.3rem; font-weight:800; color:var(--accent);">--</span>
+                        <span style="font-size:0.5rem; font-weight:700; letter-spacing: 1px; color:var(--text-secondary);">SCORE</span>
                     </div>
                 </div>
 
-                <div id="profile-bio" class="bio-text" style="margin-bottom: 15px;"></div>
-                <div id="profile-interests" class="interests-container"></div>
+                <div id="profile-interests" class="interests-container" style="margin-bottom: 20px;"></div>
                 
-                <div class="stats-row">
-                    <div class="stat-box"><h3 id="stat-followers" style="color:var(--text-primary)">0</h3><span class="mono" style="font-size:0.7rem">FOLLOWERS</span></div>
-                    <div class="stat-box"><h3 id="stat-following" style="color:var(--text-primary)">0</h3><span class="mono" style="font-size:0.7rem">FOLLOWING</span></div>
-                    <div class="stat-box"><h3 id="profile-rate-display" style="color:#10b981">₹0</h3><span class="mono" style="font-size:0.7rem">HOURLY RATE</span></div>
+                <!-- NEW DARK STATS CARD -->
+                <div class="profile-stats-card">
+                    <div class="stat-box"><h3 id="stat-followers" style="color:var(--text-primary)">0</h3><span class="mono" style="font-size:0.7rem; color: var(--text-secondary);">FOLLOWERS</span></div>
+                    <div class="stat-box"><h3 id="stat-following" style="color:var(--text-primary)">0</h3><span class="mono" style="font-size:0.7rem; color: var(--text-secondary);">FOLLOWING</span></div>
+                    <div class="stat-box"><h3 id="profile-rate-display" style="color:#10b981">₹0</h3><span class="mono" style="font-size:0.7rem; color: var(--text-secondary);">HOURLY RATE</span></div>
                 </div>
 
-                <div class="h-flex" style="justify-content: center; gap: 10px; margin-bottom: 20px;">
-                    <button class="secondary-btn" onclick="editProfile()">Edit Profile</button>
-                    <button class="secondary-btn" style="border-color: #ff5555; color: #ff5555;" onclick="firebase.auth().signOut()">Logout</button>
+                <div class="h-flex" style="justify-content: center; gap: 15px; margin-bottom: 25px;">
+                    <button class="profile-btn-outline" onclick="editProfile()">Edit Profile</button>
+                    <button class="profile-btn-outline danger" onclick="firebase.auth().signOut()">Logout</button>
                 </div>
             </div>
-            <h3 class="mono" style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 15px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">MY POSTS</h3>
-            <div id="profile-feed"></div>
+            
+            <h3 class="mono" style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 15px; border-bottom: 1px solid var(--border); padding-bottom: 10px; padding-left: 20px;">MY POSTS</h3>
+            <div id="profile-feed" style="padding: 0 20px;"></div>
         </main>
 
         <main id="section-other-profile" class="content-area hidden" style="padding-top: 0;">
@@ -3133,8 +3195,12 @@ let currentFeedFilter = 'All';
 
 window.switchFeedTab = function(tab) {
     currentFeedTab = tab;
+    // Visually toggle all three tabs
     document.getElementById('tab-recommended').classList.toggle('active', tab === 'recommended');
     document.getElementById('tab-all').classList.toggle('active', tab === 'all');
+    document.getElementById('tab-gigs').classList.toggle('active', tab === 'gigs');
+    
+    // Reload the feed to match the new filter
     loadFeed(false);
 };
 
@@ -4976,7 +5042,7 @@ function updateBioCount() {
         document.getElementById('profile-pic').src = userData.photoURL;
         document.getElementById('profile-banner').src = userData.bannerUrl || DEFAULT_BANNER;
         document.getElementById('profile-name').innerText = userData.displayName;
-        document.getElementById('profile-academic').innerText = `${userData.academic.major} • ${userData.academic.year} • ${userData.academic.university}`;
+        document.getElementById('profile-academic').innerHTML = `${userData.academic.major} • ${userData.academic.year} <br> <span style="color: var(--text-secondary);">${userData.academic.university}</span>`;
         document.getElementById('profile-bio').innerText = userData.bio || "";
         
         // Populate Skill Passport Data
@@ -6411,13 +6477,15 @@ function reportPost(pid, reportedUid, reportedName) {
 }
 
     function loadProfilePosts() {
-    db.collection('posts').where('uid', '==', currentUser.uid).orderBy('timestamp', 'desc').onSnapshot(snap => {
-        const container = document.getElementById('profile-feed'); 
-        container.innerHTML = '';
-        document.getElementById('stat-posts').innerText = snap.size;
-        // PASS 'profile' HERE
-        snap.forEach(doc => container.appendChild(renderPost(doc, 'profile')));
-    });
+        db.collection('posts').where('uid', '==', currentUser.uid).orderBy('timestamp', 'desc').onSnapshot(snap => {
+            const container = document.getElementById('profile-feed'); 
+            container.innerHTML = '';
+            
+            // The following line was crashing because 'stat-posts' no longer exists in the HTML
+            // document.getElementById('stat-posts').innerText = snap.size; 
+            
+            snap.forEach(doc => container.appendChild(renderPost(doc, 'profile')));
+        });
 }
 
     function renderPost(doc, source = 'feed') {
