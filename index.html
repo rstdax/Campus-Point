@@ -4922,18 +4922,20 @@ function updateBioCount() {
     function loadAppInterface(userData) {
         // Setup Header & My Profile
         document.getElementById('profile-pic').src = userData.photoURL;
-        document.getElementById('profile-uni').innerText = userData.academic.university;
         document.getElementById('profile-banner').src = userData.bannerUrl || DEFAULT_BANNER;
 
         document.getElementById('profile-name').innerText = userData.displayName;
-        document.getElementById('profile-academic').innerText = `${userData.academic.university}`;
+        
+        // Combine the academic info into the single remaining line
+        document.getElementById('profile-academic').innerText = `${userData.academic.major} • ${userData.academic.year} • ${userData.academic.university}`;
+        
         document.getElementById('profile-bio').innerText = userData.bio || "";
         
         // Populate Skill Passport Data
         document.getElementById('profile-skill').innerText = userData.skill || "Student";
         document.getElementById('profile-rate-display').innerText = `₹${userData.rate || "0"}`;
         
-        // Generate Dynamic Skill Score based on profile completeness and activity[cite: 8]
+        // Generate Dynamic Skill Score based on profile completeness and activity
         let baseScore = 600;
         if(userData.photoURL) baseScore += 50;
         if(userData.bio) baseScore += 40;
@@ -4941,18 +4943,8 @@ function updateBioCount() {
         if(userData.interests && userData.interests.length > 2) baseScore += 50;
         document.getElementById('profile-skill-score').innerText = baseScore;
 
-// 2. Show Skill & Rate
-        if(userData.skill) {
-            document.getElementById('profile-skill').innerText = userData.skill;
-            document.getElementById('profile-rate').innerText = userData.rate || "0";
-            document.getElementById('profile-skill-container').style.display = 'block';
-        } else {
-            document.getElementById('profile-skill-container').style.display = 'none';
-        }
-
-startNotificationListener(); 
-
-startStoryListener();
+        startNotificationListener(); 
+        startStoryListener();
 
 // 3. Show Interests
 const intContainer = document.getElementById('profile-interests');
