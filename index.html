@@ -6278,13 +6278,6 @@ function reportPost(pid, reportedUid, reportedName) {
         container.innerHTML = '<div id="feed-spinner" class="loader-spinner" style="margin:40px auto;"></div>';
     }
 
-    // --- 3. GIG TAB LOGIC ---
-                if (currentFeedTab === 'gigs') {
-                    if (post.type !== 'gig') return; // ONLY show gigs
-                } else if (currentFeedTab === 'all' || currentFeedTab === 'recommended') {
-                    if (post.type === 'gig') return; // Hide gigs from general feeds
-                }
-
     isFeedLoading = true;
 
     // Fetch top 50 recent posts to filter locally
@@ -6308,7 +6301,14 @@ function reportPost(pid, reportedUid, reportedName) {
             snapshot.forEach(doc => {
                 const post = doc.data();
                 
-                // --- 1. RECOMMENDED LOGIC ---
+                // --- 1. GIG TAB LOGIC (Now safely inside the loop) ---
+                if (currentFeedTab === 'gigs') {
+                    if (post.type !== 'gig') return; // ONLY show gigs
+                } else if (currentFeedTab === 'all' || currentFeedTab === 'recommended') {
+                    if (post.type === 'gig') return; // Hide gigs from general feeds
+                }
+
+                // --- 2. RECOMMENDED LOGIC ---
                 if (currentFeedTab === 'recommended') {
                     let isNear = false;
                     // Check if post is within 25km
@@ -6337,7 +6337,7 @@ function reportPost(pid, reportedUid, reportedName) {
                     if (!isNear && !isRelevant) return; 
                 }
 
-                // --- 2. CHIP FILTER LOGIC ---
+                // --- 3. CHIP FILTER LOGIC ---
                 if (currentFeedFilter !== 'All') {
                     const filterStr = currentFeedFilter.toLowerCase();
                     const tagStr = (post.goal || '').toLowerCase();
