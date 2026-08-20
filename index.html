@@ -2106,6 +2106,101 @@ select.nexus-input {
             margin-bottom: 10px;
         }
 
+
+        /* --- NEW HOME FEED UI --- */
+        .home-hero {
+            background: linear-gradient(135deg, #007AFF, #005bb5); /* Beautiful Apple Blue Gradient */
+            padding: 40px 20px 60px 20px; /* Extra bottom padding for overlap */
+            color: white;
+            position: relative;
+        }
+
+        .hero-search-bar {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 16px;
+            padding: 14px 18px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #555;
+            margin-top: 20px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        /* Overlapping Stories Card */
+        .hero-stories-card {
+            background: var(--bg-card);
+            border-radius: 20px;
+            padding: 15px 5px;
+            margin: -40px 15px 0 15px; /* Pulls it up over the blue background */
+            box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+            position: relative;
+            z-index: 2;
+            border: 1px solid var(--border);
+        }
+
+        /* Folder Tabs */
+        .feed-tabs-wrapper {
+            display: flex;
+            margin-top: 25px;
+            padding: 0 20px;
+        }
+
+        .feed-tab-btn {
+            padding: 12px 20px;
+            background: var(--bg-input);
+            color: var(--text-secondary);
+            font-weight: 600;
+            font-size: 0.95rem;
+            border-radius: 16px 16px 0 0;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-right: 5px;
+        }
+
+        .feed-tab-btn.active {
+            background: var(--bg-card);
+            color: var(--accent);
+            box-shadow: 0 -4px 15px rgba(0,0,0,0.05);
+            z-index: 3;
+            position: relative;
+        }
+
+        /* Filter Chips Container */
+        .feed-filters-row {
+            display: flex;
+            overflow-x: auto;
+            gap: 10px;
+            padding: 15px 20px;
+            background: var(--bg-card);
+            scrollbar-width: none;
+            border-bottom: 8px solid var(--bg-input); /* Replaces post separation */
+            border-top: 1px solid var(--border);
+            margin-bottom: 0;
+        }
+        .feed-filters-row::-webkit-scrollbar { display: none; }
+
+        .feed-filter-chip {
+            padding: 8px 18px;
+            border-radius: 50px;
+            border: 1px solid var(--border);
+            font-size: 0.85rem;
+            font-weight: 500;
+            white-space: nowrap;
+            cursor: pointer;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .feed-filter-chip.active {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: rgba(10, 132, 255, 0.1);
+        }
+
     </style>
 </head>
 <body>
@@ -2201,15 +2296,7 @@ select.nexus-input {
 
     <div class="app-container">
         
-        <header class="header" style="background: var(--bg-main); border-bottom: none;">
-            <div class="brand" style="font-weight: 700; font-size: 1.4rem; color: var(--text-primary); cursor:pointer;" onclick="loadFeed(false)">Home</div>
-            <div class="h-flex">
-                <div class="header-icon-btn" onclick="openNotifications()">
-                    <i class="fa-regular fa-bell" style="font-size: 1.4rem; color: var(--text-primary);"></i>
-                    <div id="notif-badge" class="notif-badge" style="top: -2px; right: 0;"></div>
-                </div>
-            </div>
-        </header>
+        
 
         
 
@@ -2295,11 +2382,50 @@ select.nexus-input {
     </div>
 </main>
 
-        <main id="section-feed" class="content-area hidden">
-            <div class="stories-wrapper">
-        <div id="stories-tray" class="story-tray">
+        <main id="section-feed" class="content-area hidden" style="padding: 0;">
+            <!-- Blue Header Section -->
+            <div class="home-hero">
+                <div class="h-flex" style="justify-content: space-between;">
+                    <div class="brand mono" style="font-weight: 800; font-size: 1.6rem; letter-spacing: -0.5px;">CampusPoint</div>
+                    <div style="position: relative; cursor: pointer;" onclick="openNotifications()">
+                        <i class="fa-regular fa-bell" style="font-size: 1.5rem;"></i>
+                        <div id="notif-badge" class="notif-badge" style="top: -2px; right: -2px; border-color: #007AFF;"></div>
+                    </div>
+                </div>
+
+                <div class="hero-search-bar" onclick="switchTab('radar')">
+                    <i class="fa-solid fa-magnifying-glass" style="color: #007AFF;"></i>
+                    <span style="font-size: 0.95rem; font-weight: 500;">Search for skills, services or people...</span>
+                </div>
             </div>
-    </div>
+
+            <!-- Overlapping Stories -->
+            <div class="hero-stories-card">
+                <div style="font-size: 0.85rem; font-weight: 700; color: var(--text-primary); margin-left: 10px; margin-bottom: 10px;">Campus Stories</div>
+                <div class="stories-wrapper" style="background: transparent; border: none; padding: 0;">
+                    <div id="stories-tray" class="story-tray"></div>
+                </div>
+            </div>
+
+            <!-- Folder Tabs -->
+            <div class="feed-tabs-wrapper">
+                <div id="tab-recommended" class="feed-tab-btn active" onclick="switchFeedTab('recommended')">
+                    <i class="fa-solid fa-star" style="margin-right: 5px;"></i> Recommended
+                </div>
+                <div id="tab-all" class="feed-tab-btn" onclick="switchFeedTab('all')">
+                    <i class="fa-solid fa-globe" style="margin-right: 5px;"></i> All Posts
+                </div>
+            </div>
+
+            <!-- Horizontal Filters -->
+            <div class="feed-filters-row">
+                <div class="feed-filter-chip active" onclick="switchFeedFilter('All', this)">All</div>
+                <div class="feed-filter-chip" onclick="switchFeedFilter('Development', this)"><i class="fa-solid fa-code"></i> Development</div>
+                <div class="feed-filter-chip" onclick="switchFeedFilter('Design', this)"><i class="fa-solid fa-pen-nib"></i> Design</div>
+                <div class="feed-filter-chip" onclick="switchFeedFilter('Photography', this)"><i class="fa-solid fa-camera"></i> Photography</div>
+                <div class="feed-filter-chip" onclick="switchFeedFilter('Tutor', this)"><i class="fa-solid fa-book"></i> Tutoring</div>
+            </div>
+
             <div id="feed-container"></div>
         </main>
 
@@ -2810,6 +2936,23 @@ select.nexus-input {
 </div>
 
     <script>
+
+let currentFeedTab = 'recommended';
+let currentFeedFilter = 'All';
+
+window.switchFeedTab = function(tab) {
+    currentFeedTab = tab;
+    document.getElementById('tab-recommended').classList.toggle('active', tab === 'recommended');
+    document.getElementById('tab-all').classList.toggle('active', tab === 'all');
+    loadFeed(false);
+};
+
+window.switchFeedFilter = function(filter, el) {
+    currentFeedFilter = filter;
+    document.querySelectorAll('.feed-filter-chip').forEach(e => e.classList.remove('active'));
+    el.classList.add('active');
+    loadFeed(false);
+};
 
         // Pre-defined high quality banners (Unsplash)
 const BANNER_OPTIONS = [
@@ -5958,72 +6101,96 @@ function reportPost(pid, reportedUid, reportedName) {
 }
 
     function loadFeed(isNextPage = false) {
-    // 1. Safety Checks
-    if (!currentUser || isFeedLoading || isFeedEnd) return;
+    if (!currentUser || isFeedLoading) return;
     
     const container = document.getElementById('feed-container');
 
-    // 2. Initial Load Setup
     if (!isNextPage) {
-        container.innerHTML = '';
-        lastFeedDoc = null;
-        isFeedEnd = false;
-        // Add Spinner to bottom
-        container.innerHTML = '<div id="feed-spinner" class="loader-spinner" style="margin:20px auto;"></div>';
-    } else {
-        // Add Spinner to bottom for next page
-        const spinner = document.createElement('div');
-        spinner.id = 'feed-spinner';
-        spinner.className = 'loader-spinner';
-        spinner.style.margin = '20px auto';
-        container.appendChild(spinner);
+        container.innerHTML = '<div id="feed-spinner" class="loader-spinner" style="margin:40px auto;"></div>';
     }
 
     isFeedLoading = true;
 
-    // 3. Build Query
-    let query = db.collection('posts')
+    // Fetch top 50 recent posts to filter locally
+    db.collection('posts')
         .orderBy('timestamp', 'desc')
-        .limit(10); // Load 10 posts at a time
+        .limit(50)
+        .get()
+        .then(snapshot => {
+            const spinner = document.getElementById('feed-spinner');
+            if (spinner) spinner.remove();
 
-    // 4. Pagination
-    if (isNextPage && lastFeedDoc) {
-        query = query.startAfter(lastFeedDoc);
-    }
-
-    // 5. Fetch Data
-    query.get().then(snapshot => {
-        // Remove Spinner
-        const spinner = document.getElementById('feed-spinner');
-        if (spinner) spinner.remove();
-
-        // Check if empty
-        if (snapshot.empty) {
-            isFeedEnd = true;
-            isFeedLoading = false;
-            if (!isNextPage && container.children.length === 0) {
+            if (snapshot.empty) {
                 container.innerHTML = '<div style="text-align:center; padding:40px; color:var(--text-secondary);">No updates yet.</div>';
+                isFeedLoading = false;
+                return;
             }
-            return;
-        }
 
-        // Update Cursor
-        lastFeedDoc = snapshot.docs[snapshot.docs.length - 1];
+            container.innerHTML = ''; 
+            let matchedCount = 0;
 
-        // Render Posts
-        snapshot.forEach(doc => {
-            const postEl = renderPost(doc, 'feed');
-            container.appendChild(postEl);
+            snapshot.forEach(doc => {
+                const post = doc.data();
+                
+                // --- 1. RECOMMENDED LOGIC ---
+                if (currentFeedTab === 'recommended') {
+                    let isNear = false;
+                    // Check if post is within 25km
+                    if (myLocation && post.location) {
+                        const dist = getDistanceFromLatLonInMeters(myLocation.lat, myLocation.lng, post.location.lat, post.location.lng);
+                        if (dist <= 25000) isNear = true; 
+                    } else if (post.uid === currentUser.uid) {
+                        isNear = true; // Always see your own posts
+                    }
+
+                    let isRelevant = false;
+                    const myInt = globalProfileData.interests || [];
+                    
+                    // Check shared interests
+                    if (post.authorInterests && myInt.length > 0) {
+                        isRelevant = post.authorInterests.some(i => myInt.includes(i));
+                    }
+                    // Check hashtags against interests
+                    if (post.goal && myInt.length > 0) {
+                         const tag = post.goal.toLowerCase();
+                         if (myInt.some(i => tag.includes(i.toLowerCase()))) isRelevant = true;
+                    }
+                    if (post.uid === currentUser.uid) isRelevant = true;
+
+                    // If neither near nor relevant, skip this post
+                    if (!isNear && !isRelevant) return; 
+                }
+
+                // --- 2. CHIP FILTER LOGIC ---
+                if (currentFeedFilter !== 'All') {
+                    const filterStr = currentFeedFilter.toLowerCase();
+                    const tagStr = (post.goal || '').toLowerCase();
+                    const textStr = (post.text || '').toLowerCase();
+                    
+                    if (!tagStr.includes(filterStr) && !textStr.includes(filterStr)) {
+                        return; // Skip if it doesn't match the chip category
+                    }
+                }
+
+                // If it passes filters, render it!
+                container.appendChild(renderPost(doc, 'feed'));
+                matchedCount++;
+            });
+
+            if (matchedCount === 0) {
+                container.innerHTML = `
+                    <div style="text-align:center; padding:50px 20px;">
+                        <i class="fa-solid fa-ghost" style="font-size: 3rem; color: var(--border); margin-bottom: 15px;"></i>
+                        <h3 style="color: var(--text-primary); margin-bottom: 5px;">It's quiet here.</h3>
+                        <p style="color:var(--text-secondary); font-size: 0.9rem;">No posts match your current filters. Switch to "All Posts" to explore.</p>
+                    </div>`;
+            }
+
+            isFeedLoading = false;
+        }).catch(err => {
+            console.error("Feed Error:", err);
+            isFeedLoading = false;
         });
-
-        isFeedLoading = false;
-
-    }).catch(err => {
-        console.error("Feed Error:", err);
-        const spinner = document.getElementById('feed-spinner');
-        if (spinner) spinner.remove();
-        isFeedLoading = false;
-    });
 }
 
     function loadProfilePosts() {
@@ -6305,6 +6472,10 @@ function updateCarouselDots(pid, count) {
             images: imageUrls,       // Array of image URLs
             imageUrl: imageUrls[0] || null, // Fallback
             videoUrl: videoUrl,      // Video URL if reel
+
+            // --- NEW FIELDS FOR SMART FILTERING ---
+            location: myLocation || null, 
+            authorInterests: Array.from(selectedHobbies) || [],
             
             boosts: [],
             timestamp: firebase.firestore.FieldValue.serverTimestamp()
