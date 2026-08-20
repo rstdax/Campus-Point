@@ -2109,8 +2109,8 @@ select.nexus-input {
 
         /* --- NEW HOME FEED UI --- */
         .home-hero {
-            background: linear-gradient(135deg, #007AFF, #005bb5); /* Beautiful Apple Blue Gradient */
-            padding: 40px 20px 60px 20px; /* Extra bottom padding for overlap */
+            background: linear-gradient(135deg, #007AFF, #005bb5);
+            padding: 40px 0 0 0; /* Remove side padding so background touches edges */
             color: white;
             position: relative;
         }
@@ -2123,7 +2123,7 @@ select.nexus-input {
             align-items: center;
             gap: 12px;
             color: #555;
-            margin-top: 20px;
+            margin: 20px 20px 0 20px; /* Added margins to contain it horizontally */
             cursor: pointer;
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
@@ -2133,7 +2133,7 @@ select.nexus-input {
             background: var(--bg-card);
             border-radius: 20px;
             padding: 15px 5px;
-            margin: -40px 15px 0 15px; /* Pulls it up over the blue background */
+            margin: 25px 15px 0 15px; /* Removed negative overlap margin */
             box-shadow: 0 8px 25px rgba(0,0,0,0.08);
             position: relative;
             z-index: 2;
@@ -2149,8 +2149,8 @@ select.nexus-input {
 
         .feed-tab-btn {
             padding: 12px 20px;
-            background: var(--bg-input);
-            color: var(--text-secondary);
+            background: rgba(0, 0, 0, 0.15); /* Makes inactive tabs translucent on the blue background */
+            color: rgba(255, 255, 255, 0.7); /* White text to read on blue */
             font-weight: 600;
             font-size: 0.95rem;
             border-radius: 16px 16px 0 0;
@@ -2383,9 +2383,10 @@ select.nexus-input {
 </main>
 
         <main id="section-feed" class="content-area hidden" style="padding: 0;">
-            <!-- Blue Header Section -->
+            <!-- Blue Header Section contains everything down to the tabs -->
             <div class="home-hero">
-                <div class="h-flex" style="justify-content: space-between;">
+                
+                <div class="h-flex" style="justify-content: space-between; padding: 0 20px;">
                     <div class="brand mono" style="font-weight: 800; font-size: 1.6rem; letter-spacing: -0.5px;">CampusPoint</div>
                     <div style="position: relative; cursor: pointer;" onclick="openNotifications()">
                         <i class="fa-regular fa-bell" style="font-size: 1.5rem;"></i>
@@ -2397,25 +2398,26 @@ select.nexus-input {
                     <i class="fa-solid fa-magnifying-glass" style="color: #007AFF;"></i>
                     <span style="font-size: 0.95rem; font-weight: 500;">Search for skills, services or people...</span>
                 </div>
-            </div>
 
-            <!-- Overlapping Stories -->
-            <div class="hero-stories-card">
-                <div style="font-size: 0.85rem; font-weight: 700; color: var(--text-primary); margin-left: 10px; margin-bottom: 10px;">Campus Stories</div>
-                <div class="stories-wrapper" style="background: transparent; border: none; padding: 0;">
-                    <div id="stories-tray" class="story-tray"></div>
+                <!-- Overlapping Stories (Now safely inside blue area) -->
+                <div class="hero-stories-card">
+                    <div style="font-size: 0.85rem; font-weight: 700; color: var(--text-primary); margin-left: 10px; margin-bottom: 10px;">Campus Stories</div>
+                    <div class="stories-wrapper" style="background: transparent; border: none; padding: 0;">
+                        <div id="stories-tray" class="story-tray"></div>
+                    </div>
                 </div>
-            </div>
 
-            <!-- Folder Tabs -->
-            <div class="feed-tabs-wrapper">
-                <div id="tab-recommended" class="feed-tab-btn active" onclick="switchFeedTab('recommended')">
-                    <i class="fa-solid fa-star" style="margin-right: 5px;"></i> Recommended
+                <!-- Folder Tabs (Now inside blue area, sitting on the bottom edge) -->
+                <div class="feed-tabs-wrapper">
+                    <div id="tab-recommended" class="feed-tab-btn active" onclick="switchFeedTab('recommended')">
+                        <i class="fa-solid fa-star" style="margin-right: 5px;"></i> Recommended
+                    </div>
+                    <div id="tab-all" class="feed-tab-btn" onclick="switchFeedTab('all')">
+                        <i class="fa-solid fa-globe" style="margin-right: 5px;"></i> All Posts
+                    </div>
                 </div>
-                <div id="tab-all" class="feed-tab-btn" onclick="switchFeedTab('all')">
-                    <i class="fa-solid fa-globe" style="margin-right: 5px;"></i> All Posts
-                </div>
-            </div>
+
+            </div> <!-- End of home-hero -->
 
             <!-- Horizontal Filters -->
             <div class="feed-filters-row">
