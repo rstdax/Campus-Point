@@ -2201,6 +2201,78 @@ select.nexus-input {
             background: rgba(10, 132, 255, 0.1);
         }
 
+    /* --- SKILL PASSPORT & SCORE UI --- */
+        .skill-passport-card {
+            background: linear-gradient(135deg, rgba(10, 132, 255, 0.1), rgba(0, 85, 170, 0.05));
+            border: 1px solid var(--accent);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .verified-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #10b981;
+            background: rgba(16, 185, 129, 0.1);
+            padding: 4px 10px;
+            border-radius: 50px;
+            margin-top: 8px;
+            margin-right: 5px;
+        }
+
+        .skill-score-circle {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: var(--bg-card);
+            border: 4px solid var(--accent);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 15px var(--accent-glow);
+        }
+
+        /* --- LEARN ECOSYSTEM UI --- */
+        .course-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            overflow: hidden;
+            margin-bottom: 15px;
+            display: flex;
+        }
+        .course-img {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+        }
+        .course-info {
+            padding: 12px;
+            flex: 1;
+        }
+
+        /* --- GIG / JOB UI --- */
+        .gig-card-highlight {
+            background: linear-gradient(to right, rgba(16, 185, 129, 0.05), transparent);
+            border-left: 4px solid #10b981 !important;
+        }
+        .gig-price-tag {
+            background: #10b981;
+            color: white;
+            font-weight: 700;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
+
     </style>
 </head>
 <body>
@@ -2296,7 +2368,45 @@ select.nexus-input {
 
     <div class="app-container">
         
-        
+        <!-- NEW LEARN ECOSYSTEM SECTION -->
+        <main id="section-learn" class="content-area hidden">
+            <h2 style="font-weight: 700; font-size: 1.6rem; margin-bottom: 5px;">Upskill & Grow</h2>
+            <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 25px;">Verified courses, mentorship & resources.</p>
+
+            <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 12px;">Recommended Courses</h3>
+            
+            <div class="course-card">
+                <img src="https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=400&q=80" class="course-img">
+                <div class="course-info">
+                    <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-primary);">React Native Masterclass</div>
+                    <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px;">By CampusTech</div>
+                    <div class="h-flex" style="margin-top: 8px; justify-content: space-between;">
+                        <span class="verified-badge" style="margin:0;"><i class="fa-solid fa-star"></i> 4.8</span>
+                        <button class="action-btn" style="width: auto; padding: 4px 12px; margin: 0; font-size: 0.8rem;">Enroll</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="course-card">
+                <img src="https://images.unsplash.com/photo-1561070791-2526d30994b5?w=400&q=80" class="course-img">
+                <div class="course-info">
+                    <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-primary);">Figma UI/UX Design</div>
+                    <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px;">By Design Academy</div>
+                    <div class="h-flex" style="margin-top: 8px; justify-content: space-between;">
+                        <span class="verified-badge" style="margin:0;"><i class="fa-solid fa-star"></i> 4.9</span>
+                        <button class="action-btn" style="width: auto; padding: 4px 12px; margin: 0; font-size: 0.8rem;">Enroll</button>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 12px; margin-top: 25px;">Find a Mentor</h3>
+            <div style="background: var(--bg-input); border-radius: 16px; padding: 20px; text-align:center;">
+                <i class="fa-solid fa-chalkboard-user" style="font-size: 2.5rem; color: var(--accent); margin-bottom: 15px;"></i>
+                <h4 style="margin-bottom: 5px; font-size:1rem;">1-on-1 Guidance</h4>
+                <p style="font-size:0.8rem; color:var(--text-secondary); margin-bottom: 15px;">Connect with verified alumni and industry professionals.</p>
+                <button class="secondary-btn" style="width: 100%; border-color: var(--accent); color: var(--accent);">Browse Mentors</button>
+            </div>
+        </main>
 
         
 
@@ -2388,9 +2498,14 @@ select.nexus-input {
                 
                 <div class="h-flex" style="justify-content: space-between; padding: 0 20px;">
                     <div class="brand mono" style="font-weight: 800; font-size: 1.6rem; letter-spacing: -0.5px;">CampusPoint</div>
-                    <div style="position: relative; cursor: pointer;" onclick="openNotifications()">
-                        <i class="fa-regular fa-bell" style="font-size: 1.5rem;"></i>
-                        <div id="notif-badge" class="notif-badge" style="top: -2px; right: -2px; border-color: #007AFF;"></div>
+                    <div class="h-flex" style="gap: 15px;">
+                        <div style="position: relative; cursor: pointer;" onclick="switchTab('chat-list')">
+                            <i class="fa-regular fa-comment-dots" style="font-size: 1.5rem;"></i>
+                        </div>
+                        <div style="position: relative; cursor: pointer;" onclick="openNotifications()">
+                            <i class="fa-regular fa-bell" style="font-size: 1.5rem;"></i>
+                            <div id="notif-badge" class="notif-badge" style="top: -2px; right: -2px; border-color: #007AFF;"></div>
+                        </div>
                     </div>
                 </div>
 
@@ -2414,6 +2529,9 @@ select.nexus-input {
                     </div>
                     <div id="tab-all" class="feed-tab-btn" onclick="switchFeedTab('all')">
                         <i class="fa-solid fa-globe" style="margin-right: 5px;"></i> All Posts
+                    </div>
+                    <div id="tab-gigs" class="feed-tab-btn" onclick="switchFeedTab('gigs')">
+                        <i class="fa-solid fa-briefcase" style="margin-right: 5px;"></i> Gigs
                     </div>
                 </div>
 
@@ -2465,28 +2583,40 @@ select.nexus-input {
         
 
         <main id="section-create" class="content-area hidden">
-    <h2 class="mono" style="margin-bottom: 20px;">NEW UPDATE</h2>
-    
-    <label>TOPIC TAG</label>
+    <!-- TOGGLE TABS -->
+    <div style="background: var(--bg-input); border-radius: 50px; padding: 4px; display: flex; margin-bottom: 20px;">
+        <div id="create-tab-post" onclick="switchCreateType('post')" style="flex:1; text-align:center; padding: 8px 0; border-radius: 50px; font-size: 0.85rem; font-weight: 600; cursor: pointer; background: var(--accent); color: white;">
+            General Post
+        </div>
+        <div id="create-tab-gig" onclick="switchCreateType('gig')" style="flex:1; text-align:center; padding: 8px 0; border-radius: 50px; font-size: 0.85rem; font-weight: 600; cursor: pointer; color: var(--text-secondary);">
+            Post a Gig
+        </div>
+    </div>
+
+    <!-- COMMON FIELDS -->
+    <label id="lbl-goal">TOPIC / TAGS</label>
     <input type="text" id="post-goal" class="nexus-input" placeholder="#ExamPrep, #Project... ">
     
-    <label>CONTENT</label>
-    <textarea id="post-text" class="nexus-input" rows="5" placeholder="Share your thoughts..."></textarea>
+    <!-- GIG SPECIFIC FIELDS -->
+    <div id="gig-fields" class="hidden">
+        <label>BUDGET / PAY (₹)</label>
+        <input type="number" id="gig-budget" class="nexus-input" placeholder="e.g. 500">
+    </div>
+
+    <label id="lbl-text">CONTENT</label>
+    <textarea id="post-text" class="nexus-input" rows="5" placeholder="Share your thoughts or describe the gig..."></textarea>
     
     <label>MEDIA (Photos or Video)</label>
-    
     <div id="final-preview-container" class="selected-thumbs-preview" style="display:none; flex-wrap: wrap;"></div>
-
     <input type="file" id="raw-gallery-input" accept="image/*" multiple style="display:none;" onchange="handleRawInput(this)">
+    <div style="margin-bottom: 20px;">
+        <button class="secondary-btn" onclick="document.getElementById('raw-gallery-input').click()" style="width: 100%; text-align:center; border-style: dashed; padding: 15px; margin-top: 0;">
+            <i class="fa-solid fa-image" style="font-size: 1.2rem; display: block; margin-bottom: 5px;"></i> 
+            Attach Image
+        </button>
+    </div>
 
-<div style="margin-bottom: 20px;">
-    <button class="secondary-btn" onclick="document.getElementById('raw-gallery-input').click()" style="width: 100%; text-align:center; border-style: dashed; padding: 15px; margin-top: 0;">
-        <i class="fa-solid fa-image" style="font-size: 1.2rem; display: block; margin-bottom: 5px;"></i> 
-        Attach Image
-    </button>
-</div>
-
-    <button id="btn-post" class="action-btn" onclick="createPost()">POST UPDATE</button>
+    <button id="btn-post" class="action-btn" onclick="createPost()">POST</button>
 </main>
 
         <main id="section-radar" class="content-area hidden">
@@ -2637,19 +2767,30 @@ select.nexus-input {
             <div style="text-align: center; padding: 0 20px;">
                 <h2 id="profile-name">User</h2>
                 <p id="profile-academic" class="mono" style="color: var(--accent); font-size: 0.9rem; margin-bottom: 5px;"></p>
-                <p id="profile-uni" style="color: var(--text-secondary); font-size: 0.8rem; margin-bottom: 15px;"></p>
+                
+                <!-- NEW SKILL PASSPORT UI -->
+                <div class="skill-passport-card" style="margin-top: 15px; text-align: left;">
+                    <div>
+                        <h3 style="font-weight: 700; font-size: 1.1rem; color: var(--text-primary); margin-bottom: 2px;">Skill Passport</h3>
+                        <div id="profile-skill" style="font-size: 0.9rem; color: var(--text-secondary);">Role</div>
+                        <div>
+                            <span class="verified-badge"><i class="fa-solid fa-check-circle"></i> KYC Verified</span>
+                            <span class="verified-badge"><i class="fa-solid fa-certificate"></i> Skills Verified</span>
+                        </div>
+                    </div>
+                    <div class="skill-score-circle">
+                        <span id="profile-skill-score" style="font-size:1.1rem; font-weight:800; color:var(--accent);">--</span>
+                        <span style="font-size:0.5rem; font-weight:600; letter-spacing: 1px; color:var(--text-secondary);">SCORE</span>
+                    </div>
+                </div>
 
-                <div id="profile-bio" class="bio-text"></div>
-<div id="profile-skill-container" style="display:none; margin-bottom: 15px;">
-    <div style="font-weight: 600; font-size: 1.1rem; color: var(--text-primary);" id="profile-skill"></div>
-    <div style="font-size: 0.9rem; color: #10b981; font-weight: 700; margin-top: 5px;">₹<span id="profile-rate"></span> /hr</div>
-</div>
-<div id="profile-interests" class="interests-container"></div>
+                <div id="profile-bio" class="bio-text" style="margin-bottom: 15px;"></div>
+                <div id="profile-interests" class="interests-container"></div>
                 
                 <div class="stats-row">
-                    <div class="stat-box"><h3 id="stat-followers" style="color:var(--accent)">0</h3><span class="mono" style="font-size:0.7rem">FOLLOWERS</span></div>
+                    <div class="stat-box"><h3 id="stat-followers" style="color:var(--text-primary)">0</h3><span class="mono" style="font-size:0.7rem">FOLLOWERS</span></div>
                     <div class="stat-box"><h3 id="stat-following" style="color:var(--text-primary)">0</h3><span class="mono" style="font-size:0.7rem">FOLLOWING</span></div>
-                    <div class="stat-box"><h3 id="stat-posts" style="color:var(--text-primary)">0</h3><span class="mono" style="font-size:0.7rem">POSTS</span></div>
+                    <div class="stat-box"><h3 id="profile-rate-display" style="color:#10b981">₹0</h3><span class="mono" style="font-size:0.7rem">HOURLY RATE</span></div>
                 </div>
 
                 <div class="h-flex" style="justify-content: center; gap: 10px; margin-bottom: 20px;">
@@ -2704,13 +2845,9 @@ select.nexus-input {
 
         <nav class="bottom-nav hidden" id="main-nav">
             <div class="nav-item active" onclick="switchTab('feed', this)"><i class="fa-solid fa-house"></i></div>
-        
-            <div class="nav-item" onclick="switchTab('radar', this)"><i class="fa-regular fa-compass"></i></div>
-
-            <div class="nav-item" onclick="switchTab('create', this)"><i class="fa-solid fa-plus"></i></div>
-            
-            <div class="nav-item" onclick="switchTab('chat-list', this)"><i class="fa-regular fa-comments"></i></div>
-            
+            <div class="nav-item" onclick="switchTab('radar', this)"><i class="fa-solid fa-magnifying-glass"></i></div>
+            <div class="nav-item" onclick="switchTab('create', this)"><i class="fa-solid fa-circle-plus" style="color: var(--accent);"></i></div>
+            <div class="nav-item" onclick="switchTab('learn', this)"><i class="fa-solid fa-book-open-reader"></i></div>
             <div class="nav-item" onclick="switchTab('profile', this)"><i class="fa-regular fa-user"></i></div>
         </nav>
 
@@ -3024,6 +3161,31 @@ if (!isAppInstalled) {
         setTimeout(() => {
             showInstallModal('ios');
         }, 2000);
+    }
+}
+
+let currentCreateType = 'post';
+
+function switchCreateType(type) {
+    currentCreateType = type;
+    const tabPost = document.getElementById('create-tab-post');
+    const tabGig = document.getElementById('create-tab-gig');
+    const gigFields = document.getElementById('gig-fields');
+    
+    if (type === 'post') {
+        tabPost.style.background = 'var(--accent)'; tabPost.style.color = 'white';
+        tabGig.style.background = 'transparent'; tabGig.style.color = 'var(--text-secondary)';
+        gigFields.classList.add('hidden');
+        document.getElementById('lbl-goal').innerText = "TOPIC / TAGS";
+        document.getElementById('lbl-text').innerText = "CONTENT";
+        document.getElementById('post-text').placeholder = "Share your thoughts...";
+    } else {
+        tabGig.style.background = 'var(--accent)'; tabGig.style.color = 'white';
+        tabPost.style.background = 'transparent'; tabPost.style.color = 'var(--text-secondary)';
+        gigFields.classList.remove('hidden');
+        document.getElementById('lbl-goal').innerText = "GIG TITLE";
+        document.getElementById('lbl-text').innerText = "GIG DESCRIPTION";
+        document.getElementById('post-text').placeholder = "Describe the task, requirements, and timeline...";
     }
 }
 
@@ -4109,7 +4271,7 @@ function router() {
 
     // --- NEW: DYNAMIC BOTTOM NAV VISIBILITY ---
     // The bottom nav should ONLY be visible on the 5 primary tabs
-    const mainTabs = ['feed', 'radar', 'create', 'chat-list', 'profile'];
+    const mainTabs = ['feed', 'radar', 'create', , 'learn', 'profile'];
     if (mainTabs.includes(newHash)) {
         document.body.classList.remove('hide-nav');
     } else {
@@ -4760,11 +4922,24 @@ function updateBioCount() {
     function loadAppInterface(userData) {
         // Setup Header & My Profile
         document.getElementById('profile-pic').src = userData.photoURL;
-        document.getElementById('profile-name').innerText = userData.displayName;
-        document.getElementById('profile-academic').innerText = `${userData.academic.major} • ${userData.academic.year}`;
         document.getElementById('profile-uni').innerText = userData.academic.university;
-        document.getElementById('profile-bio').innerText = userData.bio || "";
         document.getElementById('profile-banner').src = userData.bannerUrl || DEFAULT_BANNER;
+
+        document.getElementById('profile-name').innerText = userData.displayName;
+        document.getElementById('profile-academic').innerText = `${userData.academic.university}`;
+        document.getElementById('profile-bio').innerText = userData.bio || "";
+        
+        // Populate Skill Passport Data
+        document.getElementById('profile-skill').innerText = userData.skill || "Student";
+        document.getElementById('profile-rate-display').innerText = `₹${userData.rate || "0"}`;
+        
+        // Generate Dynamic Skill Score based on profile completeness and activity[cite: 8]
+        let baseScore = 600;
+        if(userData.photoURL) baseScore += 50;
+        if(userData.bio) baseScore += 40;
+        if(userData.skill && userData.rate) baseScore += 85;
+        if(userData.interests && userData.interests.length > 2) baseScore += 50;
+        document.getElementById('profile-skill-score').innerText = baseScore;
 
 // 2. Show Skill & Rate
         if(userData.skill) {
@@ -6111,6 +6286,13 @@ function reportPost(pid, reportedUid, reportedName) {
         container.innerHTML = '<div id="feed-spinner" class="loader-spinner" style="margin:40px auto;"></div>';
     }
 
+    // --- 3. GIG TAB LOGIC ---
+                if (currentFeedTab === 'gigs') {
+                    if (post.type !== 'gig') return; // ONLY show gigs
+                } else if (currentFeedTab === 'all' || currentFeedTab === 'recommended') {
+                    if (post.type === 'gig') return; // Hide gigs from general feeds
+                }
+
     isFeedLoading = true;
 
     // Fetch top 50 recent posts to filter locally
@@ -6377,6 +6559,25 @@ function reportPost(pid, reportedUid, reportedName) {
         }
     }
 
+    if (post.type === 'gig') {
+        el.classList.add('gig-card-highlight');
+        el.innerHTML = `
+            <div class="h-flex" style="margin-bottom: 12px; align-items: center; justify-content: space-between;">
+                <div class="h-flex">
+                    <div class="avatar" style="background-image: url('${post.userPhoto}'); width: 40px; height: 40px; border-radius: 8px;"></div>
+                    <div style="margin-left: 10px;">
+                        <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-primary);">${post.userName}</div>
+                        <div style="font-size: 0.75rem; color: var(--text-secondary);">${time}</div>
+                    </div>
+                </div>
+                <div class="gig-price-tag">₹${post.budget || 0}</div>
+            </div>
+            <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 8px;">${post.goal}</h3>
+            <p style="font-size: 0.9rem; line-height: 1.5; margin-bottom: 15px; color: var(--text-secondary);">${post.text}</p>
+            <button class="action-btn" style="width: 100%; margin-top: 0; background: #10b981; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);">Apply for Gig</button>
+        `;
+    }
+
     return el;
 }
 
@@ -6462,23 +6663,22 @@ function updateCarouselDots(pid, count) {
         const authorName = globalProfileData.displayName || currentUser.displayName;
         const authorPhoto = globalProfileData.photoURL || currentUser.photoURL;
 
+        const gigBudget = document.getElementById('gig-budget').value;
+        const finalType = currentCreateType === 'gig' ? 'gig' : postType;
+
         await db.collection('posts').add({
             text: text,
             goal: goal,
+            budget: gigBudget ? parseInt(gigBudget) : null, // NEW FIELD
             uid: currentUser.uid,
             userName: authorName,
             userPhoto: authorPhoto,
-            
-            // Media Fields
-            type: postType,          // 'post' or 'reel'
-            images: imageUrls,       // Array of image URLs
-            imageUrl: imageUrls[0] || null, // Fallback
-            videoUrl: videoUrl,      // Video URL if reel
-
-            // --- NEW FIELDS FOR SMART FILTERING ---
+            type: finalType, // Saves as 'post', 'reel', or 'gig'
+            images: imageUrls,       
+            imageUrl: imageUrls[0] || null, 
+            videoUrl: videoUrl,      
             location: myLocation || null, 
             authorInterests: Array.from(selectedHobbies) || [],
-            
             boosts: [],
             timestamp: firebase.firestore.FieldValue.serverTimestamp()
         });
