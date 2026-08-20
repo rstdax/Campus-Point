@@ -358,17 +358,54 @@
 
         /* --- Nav --- */
         .bottom-nav {
-        height: 65px; 
-        background: var(--bg-glass);
-        backdrop-filter: blur(30px) saturate(180%); -webkit-backdrop-filter: blur(30px) saturate(180%);
-        border: 1px solid var(--border-light);
-        display: flex; justify-content: space-around; align-items: center;
-        position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-        width: 90%; max-width: 400px; z-index: 1000;
-        border-radius: 50px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-    }
-    .nav-item { font-size: 1.4rem; color: var(--text-secondary); cursor: pointer; padding: 10px; transition: color 0.2s; }
-    .nav-item.active { color: var(--accent); filter: drop-shadow(0 0 8px var(--accent-glow)); }
+            height: 70px; 
+            background: var(--bg-glass);
+            backdrop-filter: blur(30px) saturate(180%); 
+            -webkit-backdrop-filter: blur(30px) saturate(180%);
+            border: 1px solid var(--border-light);
+            display: flex; justify-content: space-between; align-items: center;
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            width: 92%; max-width: 400px; z-index: 1000;
+            border-radius: 50px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            padding: 0 10px;
+        }
+
+        .nav-item { 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem; 
+            color: var(--text-secondary); 
+            cursor: pointer; 
+            padding: 10px 14px; 
+            border-radius: 50px;
+            transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55); /* Bouncy effect */
+            overflow: hidden;
+        }
+
+        .nav-text {
+            font-size: 0.95rem;
+            font-weight: 700;
+            margin-left: 0;
+            max-width: 0;
+            opacity: 0;
+            transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            display: inline-block;
+            white-space: nowrap;
+        }
+
+        .nav-item.active { 
+            color: white; 
+            background: var(--accent); /* Highlight pill color */
+            padding: 10px 20px;
+            box-shadow: 0 4px 15px var(--accent-glow);
+        }
+
+        .nav-item.active .nav-text {
+            max-width: 100px;
+            margin-left: 8px;
+            opacity: 1;
+        }
         
         /* --- Floating Action Button (FAB) --- */
         .floating-fab {
@@ -2844,11 +2881,26 @@ select.nexus-input {
         </main>
 
         <nav class="bottom-nav hidden" id="main-nav">
-            <div class="nav-item active" onclick="switchTab('feed', this)"><i class="fa-solid fa-house"></i></div>
-            <div class="nav-item" onclick="switchTab('radar', this)"><i class="fa-solid fa-magnifying-glass"></i></div>
-            <div class="nav-item" onclick="switchTab('create', this)"><i class="fa-solid fa-circle-plus" style="color: var(--accent);"></i></div>
-            <div class="nav-item" onclick="switchTab('learn', this)"><i class="fa-solid fa-book-open-reader"></i></div>
-            <div class="nav-item" onclick="switchTab('profile', this)"><i class="fa-regular fa-user"></i></div>
+            <div class="nav-item active" onclick="switchTab('feed', this)">
+                <i class="fa-solid fa-house"></i>
+                <span class="nav-text">Home</span>
+            </div>
+            <div class="nav-item" onclick="switchTab('radar', this)">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <span class="nav-text">Search</span>
+            </div>
+            <div class="nav-item" onclick="switchTab('create', this)">
+                <i class="fa-solid fa-circle-plus"></i>
+                <span class="nav-text">Post</span>
+            </div>
+            <div class="nav-item" onclick="switchTab('learn', this)">
+                <i class="fa-solid fa-book-open-reader"></i>
+                <span class="nav-text">Learn</span>
+            </div>
+            <div class="nav-item" onclick="switchTab('profile', this)">
+                <i class="fa-regular fa-user"></i>
+                <span class="nav-text">Profile</span>
+            </div>
         </nav>
 
     </div>
@@ -4923,12 +4975,8 @@ function updateBioCount() {
         // Setup Header & My Profile
         document.getElementById('profile-pic').src = userData.photoURL;
         document.getElementById('profile-banner').src = userData.bannerUrl || DEFAULT_BANNER;
-
         document.getElementById('profile-name').innerText = userData.displayName;
-        
-        // Combine the academic info into the single remaining line
         document.getElementById('profile-academic').innerText = `${userData.academic.major} • ${userData.academic.year} • ${userData.academic.university}`;
-        
         document.getElementById('profile-bio').innerText = userData.bio || "";
         
         // Populate Skill Passport Data
@@ -4946,52 +4994,45 @@ function updateBioCount() {
         startNotificationListener(); 
         startStoryListener();
 
-// 3. Show Interests
-const intContainer = document.getElementById('profile-interests');
-intContainer.innerHTML = '';
-(userData.interests || []).forEach(hobby => {
-    const span = document.createElement('div');
-    span.className = 'interest-chip selected display-only';
-    
-    // --- START NEW COLOR CODE ---
-    const uniqueColor = getHobbyDetails(hobby);
-    span.style.backgroundColor = uniqueColor;
-    span.style.borderColor = uniqueColor;
-    span.style.color = 'white';
-    // --- END NEW COLOR CODE ---
-    
-    span.innerText = hobby;
-    intContainer.appendChild(span);
-});
+        // Show Interests
+        const intContainer = document.getElementById('profile-interests');
+        intContainer.innerHTML = '';
+        (userData.interests || []).forEach(hobby => {
+            const span = document.createElement('div');
+            span.className = 'interest-chip selected display-only';
+            const uniqueColor = getHobbyDetails(hobby);
+            span.style.backgroundColor = uniqueColor;
+            span.style.borderColor = uniqueColor;
+            span.style.color = 'white';
+            span.innerText = hobby;
+            intContainer.appendChild(span);
+        });
         
         // Load Stats
-        // Load Stats (Updated with OnClick)
-const followerEl = document.getElementById('stat-followers');
-followerEl.innerText = userData.followersCount || 0;
-followerEl.parentElement.style.cursor = "pointer";
-followerEl.parentElement.onclick = () => openFollowList('followers', currentUser.uid, 'profile');
+        const followerEl = document.getElementById('stat-followers');
+        followerEl.innerText = userData.followersCount || 0;
+        followerEl.parentElement.style.cursor = "pointer";
+        followerEl.parentElement.onclick = () => openFollowList('followers', currentUser.uid, 'profile');
 
-const followingEl = document.getElementById('stat-following');
-followingEl.innerText = userData.followingCount || 0;
-followingEl.parentElement.style.cursor = "pointer";
-followingEl.parentElement.onclick = () => openFollowList('following', currentUser.uid, 'profile');
+        const followingEl = document.getElementById('stat-following');
+        followingEl.innerText = userData.followingCount || 0;
+        followingEl.parentElement.style.cursor = "pointer";
+        followingEl.parentElement.onclick = () => openFollowList('following', currentUser.uid, 'profile');
 
         document.getElementById('main-nav').classList.remove('hidden');
 
         // GPS Logic
         requestGPS();
-        // 2. Set up a loop to update every 5 minutes (300,000 milliseconds)
-        // This keeps location fresh without killing battery or Quota
-        if (window.gpsInterval) clearInterval(window.gpsInterval); // Clear existing if any
+        if (window.gpsInterval) clearInterval(window.gpsInterval);
         
         window.gpsInterval = setInterval(() => {
             console.log("Auto-updating GPS location...");
             attemptGeoFetch(); 
-        }, 300000); // 300000ms = 5 minutes
+        }, 300000); 
 
         loadFeed(false);
         loadProfilePosts();
-        loadChatList(); // Load Chats
+        loadChatList(); 
         
         switchTab('feed', document.querySelector('.nav-item'));
     }
