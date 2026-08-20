@@ -2911,9 +2911,20 @@ select.nexus-input {
         
         <div id="other-bio" class="bio-text"></div>
         
-        <div id="other-skill-container" style="display:none; margin-bottom: 15px;">
-            <div style="font-weight: 600; font-size: 1.1rem; color: var(--text-primary);" id="other-skill"></div>
-            <div style="font-size: 0.9rem; color: #10b981; font-weight: 700; margin-top: 5px;">₹<span id="other-rate"></span> /hr</div>
+        <!-- NEW SKILL PASSPORT UI FOR OTHER USERS -->
+        <div class="skill-passport-card" id="other-skill-container" style="display:none; text-align: left;">
+            <div>
+                <h3 style="font-weight: 700; font-size: 1.2rem; color: var(--text-primary); margin-bottom: 2px;">Skill Passport</h3>
+                <div id="other-skill" style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 10px;">Role</div>
+                <div style="display: flex; flex-direction: column; align-items: flex-start;">
+                    <span class="verified-badge"><i class="fa-solid fa-check-circle"></i> KYC Verified</span>
+                    <span class="verified-badge"><i class="fa-solid fa-certificate"></i> Skills Verified</span>
+                </div>
+            </div>
+            <div class="skill-score-circle">
+                <span id="other-skill-score" style="font-size:1.3rem; font-weight:800; color:#0A84FF;">--</span>
+                <span style="font-size:0.5rem; font-weight:700; letter-spacing: 1px; color:var(--text-secondary);">SCORE</span>
+            </div>
         </div>
         
         <div id="other-interests" class="interests-container"></div>
@@ -5049,12 +5060,21 @@ function updateBioCount() {
         document.getElementById('profile-rate-display').innerText = `₹${userData.rate || "0"}`;
         
         // Generate Dynamic Skill Score based on profile completeness and activity
+        // Generate Dynamic Skill Score based on profile completeness and activity
         let baseScore = 600;
         if(userData.photoURL) baseScore += 50;
         if(userData.bio) baseScore += 40;
         if(userData.skill && userData.rate) baseScore += 85;
         if(userData.interests && userData.interests.length > 2) baseScore += 50;
         document.getElementById('profile-skill-score').innerText = baseScore;
+
+        // --- ADD THESE LINES TO SHOW THE CARD ---
+        if (userData.skill) {
+            document.getElementById('profile-skill-container').style.display = 'flex';
+        } else {
+            document.getElementById('profile-skill-container').style.display = 'none';
+        }
+        // ----------------------------------------
 
         startNotificationListener(); 
         startStoryListener();
@@ -5938,7 +5958,22 @@ function openUserProfile(uid) {
         if (u.skill) {
             document.getElementById('other-skill').innerText = u.skill;
             document.getElementById('other-rate').innerText = u.rate || "0";
-            document.getElementById('other-skill-container').style.display = 'block';
+            
+            // FIX: Change 'block' to 'flex' so the layout doesn't break!
+            document.getElementById('other-skill-container').style.display = 'flex';
+            
+            // Calculate and show score for other users
+            let otherScore = 600;
+            if(u.photoURL) otherScore += 50;
+            if(u.bio) otherScore += 40;
+            if(u.skill && u.rate) otherScore += 85;
+            if(u.interests && u.interests.length > 2) otherScore += 50;
+            
+            // Add a score element for other users if it doesn't exist, or just show the card
+            if(document.getElementById('other-skill-score')) {
+                 document.getElementById('other-skill-score').innerText = otherScore;
+            }
+            
         } else {
             document.getElementById('other-skill-container').style.display = 'none';
         }
