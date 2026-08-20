@@ -2703,8 +2703,13 @@ select.nexus-input {
     <textarea id="post-text" class="nexus-input" rows="5" placeholder="Share your thoughts or describe the gig..."></textarea>
     
     <label>MEDIA (Photos or Video)</label>
+    
+    <!-- FIX: Restored the missing indicator to prevent the JavaScript crash -->
+    <div id="upload-type-indicator" style="display: none; color: var(--accent); font-size: 0.85rem; font-weight: 600; margin-bottom: 10px;">Media Selected</div>
+    
     <div id="final-preview-container" class="selected-thumbs-preview" style="display:none; flex-wrap: wrap;"></div>
     <input type="file" id="raw-gallery-input" accept="image/*" multiple style="display:none;" onchange="handleRawInput(this)">
+    
     <div style="margin-bottom: 20px;">
         <button class="secondary-btn" onclick="document.getElementById('raw-gallery-input').click()" style="width: 100%; text-align:center; border-style: dashed; padding: 15px; margin-top: 0;">
             <i class="fa-solid fa-image" style="font-size: 1.2rem; display: block; margin-bottom: 5px;"></i> 
@@ -6445,9 +6450,10 @@ function reportPost(pid, reportedUid, reportedName) {
                 // --- 1. GIG TAB LOGIC (Now safely inside the loop) ---
                 if (currentFeedTab === 'gigs') {
                     if (post.type !== 'gig') return; // ONLY show gigs
-                } else if (currentFeedTab === 'all' || currentFeedTab === 'recommended') {
-                    if (post.type === 'gig') return; // Hide gigs from general feeds
-                }
+                } else if (currentFeedTab === 'all') {
+                    if (post.type === 'gig') return; // Hide gigs ONLY from the general "All Posts" feed
+                } 
+                // Notice: 'recommended' is no longer blocked! It will now evaluate BOTH posts and gigs.
 
                 // --- 2. RECOMMENDED LOGIC ---
                 if (currentFeedTab === 'recommended') {
